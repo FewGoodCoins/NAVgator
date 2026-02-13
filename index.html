@@ -213,6 +213,7 @@ const TOKENS = {
     daoWallet: '98SPcyUZ2rqM2dgjCqqSXS4gJrNTLSNUAAVCF38xYj9u',
     ammWallet: 'DzYtzoNvPbyFCzwZA6cSm9eDEEmxEB9f8AGkJXUXgnSA',
     ammWallet2: '2zsbECzM7roqnDcuv2TNGpfv5PAnuqGmMo5YPtqmUz5p',
+    lockWallet: 'Bo24B7DDVtpa9VxZ4LN8FrAT7TM3cgkri41a5GjFg5Dk',
     gtPool: 'o5rJFXSKTsuws58rBMNPG8jdKdnY4Z7ouU29dyohE4g',
     raise: 8_000_000, supply: 10_000_000, icoPrice: 0.80, ath: 1.09,
     monthlyBurn: 100_000, realizedVol: 99, tradingDays: 85,
@@ -600,6 +601,11 @@ async function fetchSpot() {
     if (pair) {
       CFG.spot = parseFloat(pair.priceUsd);
       CFG.volume24h = parseFloat(pair.volume?.h24 || 0);
+      // Derive circulating supply from DexScreener marketCap
+      if (pair.marketCap && CFG.spot > 0) {
+        CFG.circulatingSupply = pair.marketCap / CFG.spot;
+        console.log(`${CFG.ticker} DexScreener: mcap=$${pair.marketCap.toLocaleString()}, fdv=$${(pair.fdv||0).toLocaleString()}, derived circSupply=${CFG.circulatingSupply.toLocaleString()}`);
+      }
       return true;
     }
   } catch (e) { console.warn('DexScreener failed:', e.message); }
@@ -652,23 +658,25 @@ async function fetchEffectiveSupply() {
     const supplyJson = await supplyRes.json();
     const onChainSupply = parseFloat(supplyJson?.result?.value?.uiAmount || 0);
 
-    // Fetch token balances in ALL excluded wallets: AMMs, DAO treasury, buyback
-    const [amm1Tokens, amm2Tokens, daoTokens, buybackTokens] = await Promise.all([
+    // Fetch token balances in excluded wallets: AMMs, DAO, buyback, lock contract
+    const [amm1Tokens, amm2Tokens, daoTokens, buybackTokens, lockedTokens] = await Promise.all([
       getTokenBalance(CFG.ammWallet),
       getTokenBalance(CFG.ammWallet2),
       getTokenBalance(CFG.daoWallet),
       getTokenBalance(CFG.buybackWallet),
+      getTokenBalance(CFG.lockWallet),
     ]);
-    const excludedTokens = amm1Tokens + amm2Tokens + daoTokens + buybackTokens;
-    CFG.ammTokenBalance = amm1Tokens + amm2Tokens;
+    const ammTokens = amm1Tokens + amm2Tokens;
+    CFG.ammTokenBalance = ammTokens;
     CFG.daoTokenBalance = daoTokens;
     CFG.buybackTokenBalance = buybackTokens;
+    CFG.lockedTokenBalance = lockedTokens;
 
-    // Effective supply = hardcoded supply minus AMM-held tokens
-    // On-chain total includes locked/vesting tokens that aren't eligible for redemption
-    const totalSupply = CFG.supply;
-    CFG.effectiveSupply = Math.max(1, totalSupply - excludedTokens);
-    console.log(`${CFG.ticker} supply: onChain=${totalSupply.toLocaleString()}, AMM=${(amm1Tokens+amm2Tokens).toLocaleString()}, DAO=${daoTokens.toLocaleString()}, Buyback=${buybackTokens.toLocaleString()}, excluded=${excludedTokens.toLocaleString()}, effective=${CFG.effectiveSupply.toLocaleString()}`);
+    // Effective supply = on-chain total minus locked/vesting minus AMM tokens
+    // Locked tokens can't redeem (vesting), AMM tokens don't redeem in dissolution
+    const totalSupply = onChainSupply > 0 ? onChainSupply : CFG.supply;
+    CFG.effectiveSupply = Math.max(1, totalSupply - lockedTokens - ammTokens);
+    console.log(`${CFG.ticker} supply: onChain=${totalSupply.toLocaleString()}, Locked=${lockedTokens.toLocaleString()}, AMM=${ammTokens.toLocaleString()}, effective=${CFG.effectiveSupply.toLocaleString()}`);
     return true;
   } catch (e) { console.warn('Effective supply fetch failed:', e.message); return false; }
 }
