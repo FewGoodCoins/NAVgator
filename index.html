@@ -165,7 +165,7 @@
 
   <div class="chart-section">
     <div class="chart-title" id="chart-label"></div>
-    <div class="chart-controls">
+    <div class="chart-controls" style="display:none">
       <button class="chart-btn active" data-view="full">Full</button>
       <button class="chart-btn" data-view="strike">Focus NAV</button>
     </div>
@@ -701,17 +701,16 @@ function genFallback() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// CHART — Pure Canvas
+// CHART — Candlesticks + flat NAV line
 // ═══════════════════════════════════════════════════════════════════════
-function drawChart(history, strike, vol, viewMode) {
-  viewMode = viewMode || 'full';
+function drawChart(history, navPerToken) {
   const container = document.getElementById('chart-container');
   container.innerHTML = '';
 
   const dpr = window.devicePixelRatio || 1;
   const cw = Math.min(920, container.clientWidth);
   const ch = 400;
-  const mg = { top: 24, right: 58, bottom: 52, left: 62 };
+  const mg = { top: 24, right: 68, bottom: 52, left: 62 };
   const w = cw - mg.left - mg.right;
   const h = ch - mg.top - mg.bottom;
 
@@ -722,259 +721,145 @@ function drawChart(history, strike, vol, viewMode) {
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const draws = CFG.draws.map(d => ({ ...d, date: new Date(d.date) })).sort((a,b) => a.date - b.date);
-  const now = Date.now();
-  const supplyDiv = CFG.effectiveSupply || CFG.supply;
-  const startingTreasury = CFG.raise;
-  
-  function treasuryAtDate(t) {
-    let treasury = startingTreasury;
-    for (const draw of draws) {
-      if (draw.date.getTime() <= t) treasury -= draw.amount;
-    }
-    return Math.max(0, treasury);
-  }
+  const tMin = history[0].date.getTime();
+  const tMax = history[history.length - 1].date.getTime();
 
-  const enriched = history.map((d, idx) => {
-    const t = d.date.getTime();
-    const treasuryAtT = treasuryAtDate(t);
-    const K = treasuryAtT / supplyDiv;
-    return { ...d, t, strikeAtDate: K, intrinsic: Math.max(0, K - d.price) };
-  });
-
-  const tMin = enriched[0].t, tMax = enriched[enriched.length-1].t;
-  const allP = enriched.flatMap(d => [d.high || d.price, d.low || d.price, d.strikeAtDate]).concat([CFG.icoPrice]);
-  let pMin, pMax;
-  if (viewMode === 'strike') {
-    const strikes = enriched.map(d => d.strikeAtDate);
-    const kMin = Math.min(...strikes);
-    const kMax = Math.max(...strikes);
-    const kMid = (kMin + kMax) / 2;
-    const kRange = Math.max(kMax - kMin, kMid * 0.15);
-    const spotNearStrike = Math.abs(CFG.spot - kMid) < kRange * 3;
-    pMin = Math.min(kMin - kRange * 2, spotNearStrike ? CFG.spot * 0.9 : kMin - kRange * 2);
-    pMax = Math.max(kMax + kRange * 2, spotNearStrike ? CFG.spot * 1.1 : kMax + kRange * 2);
-  } else {
-    pMin = Math.min(...allP) * 0.85;
-    pMax = Math.max(...allP) * 1.06;
+  let allHigh = -Infinity, allLow = Infinity;
+  for (const d of history) {
+    const hi = d.high || d.price;
+    const lo = d.low || d.price;
+    if (hi > allHigh) allHigh = hi;
+    if (lo < allLow) allLow = lo;
   }
+  if (navPerToken > allHigh) allHigh = navPerToken;
+  if (navPerToken < allLow) allLow = navPerToken;
+  const pPad = (allHigh - allLow) * 0.08 || allHigh * 0.05;
+  const pMin = allLow - pPad;
+  const pMax = allHigh + pPad;
 
   const sx = t => mg.left + (t - tMin) / (tMax - tMin) * w;
   const sy = p => mg.top + (1 - (p - pMin) / (pMax - pMin)) * h;
 
   // Grid
   ctx.strokeStyle = '#222228'; ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 6; i++) { const v = pMin + (pMax-pMin)*i/6, y = sy(v); ctx.beginPath(); ctx.moveTo(mg.left, y); ctx.lineTo(mg.left+w, y); ctx.stroke(); }
+  for (let i = 0; i <= 6; i++) {
+    const v = pMin + (pMax - pMin) * i / 6;
+    ctx.beginPath(); ctx.moveTo(mg.left, sy(v)); ctx.lineTo(mg.left + w, sy(v)); ctx.stroke();
+  }
 
   // Y labels
   const yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
   ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right';
-  for (let i = 0; i <= 6; i++) { const v = pMin + (pMax-pMin)*i/6; ctx.fillText('$'+v.toFixed(yd), mg.left-8, sy(v)+3); }
+  for (let i = 0; i <= 6; i++) {
+    const v = pMin + (pMax - pMin) * i / 6;
+    ctx.fillText('$' + v.toFixed(yd), mg.left - 8, sy(v) + 3);
+  }
 
   // X labels
   const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  ctx.textAlign = 'center';
-  for (let i = 0; i <= 8; i++) { const t = tMin + (tMax-tMin)*i/8; const d = new Date(t); ctx.fillText(`${mo[d.getMonth()]}-${String(d.getDate()).padStart(2,'0')}`, sx(t), mg.top+h+20); }
-
-  // NAV line — red staircase
-  const startNAVperToken = startingTreasury / supplyDiv;
-  const currentNAVperToken = CFG.treasuryUSDC / supplyDiv;
-
-  const allDraws = draws.sort((a,b) => a.date - b.date);
-  const segments = [];
-  let segStart = mg.left;
-  let navLevel = startNAVperToken;
-  
-  for (const draw of allDraws) {
-    const drawT = draw.date.getTime();
-    if (drawT > tMax) break;
-    const drawX = Math.max(mg.left, sx(drawT));
-    if (drawX > segStart) {
-      segments.push({ x1: segStart, x2: drawX, nav: navLevel, draw: drawT >= tMin ? draw : null });
-    }
-    navLevel -= draw.amount / supplyDiv;
-    segStart = drawX;
-  }
-  const finalNAV = navLevel;
-  segments.push({ x1: segStart, x2: mg.left + w, nav: finalNAV, draw: null });
-
-  if (allDraws.length === 0) {
-    segments.length = 0;
-    segments.push({ x1: mg.left, x2: mg.left + w, nav: currentNAVperToken, draw: null });
+  ctx.textAlign = 'center'; ctx.fillStyle = '#555560';
+  const xTicks = Math.min(8, history.length);
+  for (let i = 0; i <= xTicks; i++) {
+    const t = tMin + (tMax - tMin) * i / xTicks;
+    const d = new Date(t);
+    ctx.fillText(mo[d.getMonth()] + '-' + String(d.getDate()).padStart(2, '0'), sx(t), mg.top + h + 20);
   }
 
-  // Draw staircase
-  ctx.strokeStyle = '#e84057'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
-  ctx.beginPath();
-  ctx.moveTo(segments[0].x1, sy(segments[0].nav));
-  for (let i = 0; i < segments.length; i++) {
-    const y = sy(segments[i].nav);
-    ctx.lineTo(segments[i].x2, y);
-    if (i < segments.length - 1) {
-      const nextY = sy(segments[i + 1].nav);
-      ctx.lineTo(segments[i].x2, nextY);
-    }
-  }
-  ctx.stroke();
-
-  // Tick marks at drops
-  const tickExtend = 6;
-  ctx.strokeStyle = '#e84057'; ctx.lineWidth = 2;
-  for (let i = 0; i < segments.length - 1; i++) {
-    const x = segments[i].x2;
-    const yTop = sy(segments[i].nav) - tickExtend;
-    const yBot = sy(segments[i + 1].nav) + tickExtend;
-    ctx.beginPath(); ctx.moveTo(x, yTop); ctx.lineTo(x, yBot); ctx.stroke();
-  }
-
-  // Labels at drops
-  ctx.fillStyle = '#e84057'; ctx.font = '8px Inter, sans-serif'; ctx.textAlign = 'center';
-  for (const seg of segments) {
-    if (seg.draw) {
-      const x = seg.x2;
-      const y = sy(seg.nav);
-      ctx.fillText('-' + fmtBurn(seg.draw.amount), x, y - 8);
-    }
-  }
-
-  // NAV label on right edge
-  ctx.fillStyle = '#e84057'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('NAV ' + fmt$(currentNAVperToken), mg.left + w + 4, sy(segments[segments.length - 1].nav) + 4);
-
-  // Premium/Discount shading (using close prices vs NAV)
-  function navAtTime(t) {
-    for (let i = segments.length - 1; i >= 0; i--) {
-      if (sx(t) >= segments[i].x1 - 0.5) return segments[i].nav;
-    }
-    return segments[0].nav;
-  }
-
-  for (let i = 0; i < enriched.length - 1; i++) {
-    const p0 = enriched[i], p1 = enriched[i + 1];
-    const nav0 = navAtTime(p0.t), nav1 = navAtTime(p1.t);
-    const x0 = sx(p0.t), x1 = sx(p1.t);
-    const yPrice0 = sy(p0.price), yPrice1 = sy(p1.price);
-    const yNav0 = sy(nav0), yNav1 = sy(nav1);
-    const midPrice = (p0.price + p1.price) / 2;
-    const midNav = (nav0 + nav1) / 2;
-    const isAbove = midPrice >= midNav;
-
-    ctx.fillStyle = isAbove ? 'rgba(0,229,160,0.06)' : 'rgba(232,64,87,0.10)';
-    ctx.beginPath();
-    ctx.moveTo(x0, yPrice0);
-    ctx.lineTo(x1, yPrice1);
-    ctx.lineTo(x1, yNav1);
-    ctx.lineTo(x0, yNav0);
-    ctx.closePath();
-    ctx.fill();
-  }
+  // NAV flat line
+  const navY = sy(navPerToken);
+  // Shading
+  ctx.fillStyle = 'rgba(232,64,87,0.06)';
+  ctx.fillRect(mg.left, navY, w, mg.top + h - navY);
+  ctx.fillStyle = 'rgba(0,229,160,0.04)';
+  ctx.fillRect(mg.left, mg.top, w, navY - mg.top);
+  // Line
+  ctx.strokeStyle = '#e84057'; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
+  ctx.beginPath(); ctx.moveTo(mg.left, navY); ctx.lineTo(mg.left + w, navY); ctx.stroke();
+  ctx.setLineDash([]);
+  // Label
+  ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
 
   // Candlesticks
-  const totalCandles = enriched.length;
-  const candleSpacing = w / Math.max(totalCandles, 1);
-  const candleWidth = Math.max(1, Math.min(candleSpacing * 0.7, 12));
-  const wickWidth = Math.max(1, candleWidth < 4 ? 1 : 1.5);
+  const n = history.length;
+  const candleSpacing = w / Math.max(n, 1);
+  const candleW = Math.max(1, Math.min(candleSpacing * 0.65, 14));
+  const wickW = candleW < 4 ? 1 : 1.5;
 
-  for (let i = 0; i < enriched.length; i++) {
-    const d = enriched[i];
-    const x = sx(d.t);
-    const hasOHLC = d.open !== undefined && d.high !== undefined && d.low !== undefined;
-    
+  for (let i = 0; i < n; i++) {
+    const d = history[i];
+    const x = sx(d.date.getTime());
+    const hasOHLC = d.open != null && d.high != null && d.low != null;
+
     if (hasOHLC) {
-      const bullish = d.close >= d.open;
-      const bodyColor = bullish ? '#00e5a0' : '#e84057';
-      const wickColor = bullish ? 'rgba(0,229,160,0.6)' : 'rgba(232,64,87,0.6)';
-      
-      const yOpen = sy(d.open);
-      const yClose = sy(d.close);
-      const yHigh = sy(d.high);
-      const yLow = sy(d.low);
-      const bodyTop = Math.min(yOpen, yClose);
-      const bodyBot = Math.max(yOpen, yClose);
-      const bodyHeight = Math.max(1, bodyBot - bodyTop);
+      const bull = d.close >= d.open;
+      const bodyCol = bull ? '#00e5a0' : '#e84057';
+      const wickCol = bull ? 'rgba(0,229,160,0.5)' : 'rgba(232,64,87,0.5)';
+      const yH = sy(d.high), yL = sy(d.low);
+      const yO = sy(d.open), yC = sy(d.close);
+      const bTop = Math.min(yO, yC), bBot = Math.max(yO, yC);
+      const bH = Math.max(1, bBot - bTop);
 
-      // Wick (high to low)
-      ctx.strokeStyle = wickColor;
-      ctx.lineWidth = wickWidth;
-      ctx.beginPath();
-      ctx.moveTo(x, yHigh);
-      ctx.lineTo(x, yLow);
-      ctx.stroke();
+      ctx.strokeStyle = wickCol; ctx.lineWidth = wickW;
+      ctx.beginPath(); ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
 
-      // Body
-      ctx.fillStyle = bodyColor;
-      if (candleWidth >= 3) {
-        // Filled rectangle body
-        ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
-        // Subtle border for definition
-        ctx.strokeStyle = bodyColor;
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+      ctx.fillStyle = bodyCol;
+      if (candleW >= 3) {
+        ctx.fillRect(x - candleW / 2, bTop, candleW, bH);
       } else {
-        // Too narrow for rect — draw as a thick line
-        ctx.strokeStyle = bodyColor;
-        ctx.lineWidth = Math.max(1.5, candleWidth);
-        ctx.beginPath();
-        ctx.moveTo(x, bodyTop);
-        ctx.lineTo(x, bodyBot);
-        ctx.stroke();
+        ctx.strokeStyle = bodyCol; ctx.lineWidth = Math.max(1.5, candleW);
+        ctx.beginPath(); ctx.moveTo(x, bTop); ctx.lineTo(x, bBot); ctx.stroke();
       }
     } else {
-      // Fallback: no OHLC data, draw as a dot
       ctx.fillStyle = '#f0f0f5';
-      ctx.beginPath();
-      ctx.arc(x, sy(d.price), 1.5, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(x, sy(d.price), 1.5, 0, Math.PI * 2); ctx.fill();
     }
   }
 
-  // Current price dot (last candle highlight)
-  const last = enriched[enriched.length-1];
-  const lastBullish = last.close >= (last.open || last.price);
-  ctx.fillStyle = lastBullish ? '#00e5a0' : '#e84057';
-  ctx.beginPath(); ctx.arc(sx(last.t), sy(last.price), 4, 0, Math.PI*2); ctx.fill();
+  // Current price marker
+  const last = history[n - 1];
+  const lastBull = (last.close || last.price) >= (last.open || last.price);
+  ctx.fillStyle = lastBull ? '#00e5a0' : '#e84057';
+  ctx.beginPath(); ctx.arc(sx(last.date.getTime()), sy(last.price), 5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#0c0c10'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(sx(last.t), sy(last.price), 4, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sx(last.date.getTime()), sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
+  // Spot label
+  ctx.fillStyle = '#f0f0f5'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(fmt$(last.price), mg.left + w + 4, sy(last.price) + 4);
 
   // Tooltip
-  const lastStrike = currentNAVperToken;
   const tt = document.createElement('div');
   tt.className = 'chart-tooltip';
   container.appendChild(tt);
-  canvas.addEventListener('mousemove', e => {
+  canvas.addEventListener('mousemove', function(e) {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
-    if (mx < mg.left || mx > mg.left+w) { tt.style.display='none'; return; }
-    const t = tMin + (mx - mg.left)/w * (tMax - tMin);
+    if (mx < mg.left || mx > mg.left + w) { tt.style.display = 'none'; return; }
+    const t = tMin + (mx - mg.left) / w * (tMax - tMin);
     let ci = 0, md = Infinity;
-    for (let i = 0; i < enriched.length; i++) { const dist = Math.abs(enriched[i].t - t); if (dist < md) { md = dist; ci = i; } }
-    const d = enriched[ci];
+    for (let i = 0; i < n; i++) {
+      const dist = Math.abs(history[i].date.getTime() - t);
+      if (dist < md) { md = dist; ci = i; }
+    }
+    const d = history[ci];
+    const belowNAV = d.price < navPerToken;
+    const pctNAV = navPerToken > 0 ? Math.abs((d.price - navPerToken) / navPerToken * 100) : 0;
     tt.style.display = 'block';
-    tt.style.left = Math.min(sx(d.t)+16, cw-160)+'px';
-    tt.style.top = Math.max(sy(d.price)-80, 0)+'px';
-    tt.innerHTML = `<div class="tt-price">${fmt$(d.price)}</div>
-      ${d.open !== undefined ? `<div class="tt-line" style="color:var(--dim)">O ${fmt$(d.open)} · H ${fmt$(d.high)} · L ${fmt$(d.low)}</div>` : ''}
-      <div class="tt-line" style="color:#e84057">NAV: ${fmt$(lastStrike)}</div>
-      <div class="tt-line" style="color:${d.price < lastStrike ? '#e84057' : '#00e5a0'}">${d.price < lastStrike ? ((lastStrike - d.price) / lastStrike * 100).toFixed(1) + '% below NAV' : ((d.price - lastStrike) / lastStrike * 100).toFixed(0) + '% above NAV'}</div>
-      <div class="tt-date">${d.date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>`;
+    tt.style.left = Math.min(sx(d.date.getTime()) + 16, cw - 180) + 'px';
+    tt.style.top = Math.max(sy(d.high || d.price) - 90, 0) + 'px';
+    tt.innerHTML = '<div class="tt-price">' + fmt$(d.price) + '</div>'
+      + (d.open != null ? '<div class="tt-line" style="color:var(--dim)">O ' + fmt$(d.open) + ' · H ' + fmt$(d.high) + ' · L ' + fmt$(d.low) + '</div>' : '')
+      + '<div class="tt-line" style="color:#e84057">NAV: ' + fmt$(navPerToken) + '</div>'
+      + '<div class="tt-line" style="color:' + (belowNAV ? '#e84057' : '#00e5a0') + '">' + pctNAV.toFixed(1) + '% ' + (belowNAV ? 'below' : 'above') + ' NAV</div>'
+      + '<div class="tt-date">' + d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</div>';
   });
-  canvas.addEventListener('mouseleave', () => { tt.style.display='none'; });
+  canvas.addEventListener('mouseleave', function() { tt.style.display = 'none'; });
 
+  // Resize
   let rt;
-  window._chartViewMode = viewMode;
-  window._chartArgs = [history, strike, vol];
-  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => drawChart(history, strike, vol, window._chartViewMode), 400); });
+  window._chartArgs = [history, navPerToken];
+  window.addEventListener('resize', function() { clearTimeout(rt); rt = setTimeout(function() { drawChart(history, navPerToken); }, 400); });
 }
-
-// Chart view toggle
-document.querySelector('.chart-controls')?.addEventListener('click', e => {
-  const btn = e.target.closest('.chart-btn');
-  if (!btn || !window._chartArgs) return;
-  document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  window._chartViewMode = btn.dataset.view;
-  drawChart(...window._chartArgs, btn.dataset.view);
-});
 
 // ═══════════════════════════════════════════════════════════════════════
 // RENDER UI
@@ -982,39 +867,35 @@ document.querySelector('.chart-controls')?.addEventListener('click', e => {
 function renderUI(isLive) {
   const supplyForNAV = CFG.effectiveSupply || CFG.supply;
   const strike = CFG.treasuryUSDC / supplyForNAV;
-  const intrinsic = Math.max(0, strike - CFG.spot);
   const itm = CFG.spot < strike;
-  const intrPct = CFG.spot > 0 ? (intrinsic / CFG.spot * 100) : 0;
-  const monthsLeft = CFG.monthlyBurn > 0 ? Math.floor(CFG.treasuryUSDC / CFG.monthlyBurn) : '∞';
+  const monthsLeft = CFG.monthlyBurn > 0 ? Math.floor(CFG.treasuryUSDC / CFG.monthlyBurn) : '\u221e';
   const discPct = strike > 0 ? ((CFG.spot - strike) / strike * 100) : 0;
   const isDiscount = discPct < 0;
 
-  document.getElementById('sub-line').innerHTML = `${CFG.pair} · FUTARCHY CPMM · <span class="data-tag">${isLive ? 'REAL DATA' : 'SNAPSHOT DATA'}</span>`;
-  document.getElementById('title').textContent = `${CFG.ticker} — ${itm ? 'Trading Below Treasury Floor' : 'Trading Above Treasury Floor'}`;
+  document.getElementById('sub-line').innerHTML = CFG.pair + ' \u00b7 FUTARCHY CPMM \u00b7 <span class="data-tag">' + (isLive ? 'LIVE' : 'SNAPSHOT') + '</span>';
+  document.getElementById('title').textContent = CFG.ticker + ' \u2014 ' + (itm ? 'Trading Below Treasury Floor' : 'Trading Above Treasury Floor');
   document.getElementById('desc').innerHTML =
-    `${CFG.ticker} is trading at <b>${fmt$(CFG.spot)}</b>, ${itm?'below':'above'} the <b>${fmt$(strike)}</b> treasury floor (treasury/token). ` +
-    `Token holders can vote for dissolution and claim their pro-rata share of the treasury. ` +
-    (itm ? `Currently trading at a <span class="hl-orange">${Math.abs(discPct).toFixed(1)}%</span> discount — each token is backed by more than its market price. ` : '');
+    CFG.ticker + ' is trading at <b>' + fmt$(CFG.spot) + '</b>, ' + (itm ? 'below' : 'above') + ' the <b>' + fmt$(strike) + '</b> treasury floor (treasury/token). ' +
+    'Token holders can vote for dissolution and claim their pro-rata share of the treasury. ' +
+    (itm ? 'Currently trading at a <span class="hl-orange">' + Math.abs(discPct).toFixed(1) + '%</span> discount \u2014 each token is backed by more than its market price.' : '');
 
-  document.getElementById('cards').innerHTML = `
-    <div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">${fmtM(CFG.treasuryUSDC)}</div><div class="card-sub">${fmtM(CFG.monthlyBurn)}/mo burn</div></div>
-    <div class="card"><div class="card-label">Spot Price</div><div class="card-value" style="color:var(--white)">${fmt$(CFG.spot)}</div><div class="card-sub">current market price</div></div>
-    <div class="card"><div class="card-label">Backing / Token</div><div class="card-value" style="color:var(--white)">${fmt$(strike)}</div><div class="card-sub">treasury ÷ holder supply</div></div>
-    <div class="card"><div class="card-label">${isDiscount ? 'Discount' : 'Premium'}</div><div class="card-value" style="color:${isDiscount ? 'var(--red)' : 'var(--green)'}">${isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%'}</div><div class="card-sub">${isDiscount ? 'below treasury floor' : 'above treasury floor'}</div></div>
-    <div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">${monthsLeft} mo</div><div class="card-sub">at current burn rate</div></div>
-  `;
+  document.getElementById('cards').innerHTML =
+    '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">' + fmtM(CFG.monthlyBurn) + '/mo burn</div></div>' +
+    '<div class="card"><div class="card-label">Spot Price</div><div class="card-value" style="color:var(--white)">' + fmt$(CFG.spot) + '</div><div class="card-sub">current market price</div></div>' +
+    '<div class="card"><div class="card-label">Backing / Token</div><div class="card-value" style="color:var(--white)">' + fmt$(strike) + '</div><div class="card-sub">treasury \u00f7 holder supply</div></div>' +
+    '<div class="card"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub">' + (isDiscount ? 'below treasury floor' : 'above treasury floor') + '</div></div>' +
+    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">at current burn rate</div></div>';
 
-  document.getElementById('params').innerHTML = `
-    <span>Raise <b>${fmtM(CFG.raise)}</b></span>
-    <span>Supply <b>${(supplyForNAV/1e6).toFixed(1)}M</b></span>
-    <span>S₀ <b>${fmt$(CFG.icoPrice)}</b></span>
-    <span>NAV <span class="hl">${fmt$(strike)}</span></span>
-    <span>Spot now <span class="spot">${fmt$(CFG.spot)}</span></span>
-    <span>ATH <b>${fmt$(CFG.ath)}</b></span>
-    <span>Burn <b>${fmtBurn(CFG.monthlyBurn)}/mo</b></span>
-  `;
+  document.getElementById('params').innerHTML =
+    '<span>Raise <b>' + fmtM(CFG.raise) + '</b></span>' +
+    '<span>Supply <b>' + (supplyForNAV / 1e6).toFixed(1) + 'M</b></span>' +
+    '<span>S\u2080 <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
+    '<span>NAV <span class="hl">' + fmt$(strike) + '</span></span>' +
+    '<span>Spot now <span class="spot">' + fmt$(CFG.spot) + '</span></span>' +
+    '<span>ATH <b>' + fmt$(CFG.ath) + '</b></span>' +
+    '<span>Burn <b>' + fmtBurn(CFG.monthlyBurn) + '/mo</b></span>';
 
-  document.getElementById('chart-label').innerHTML = `${CFG.ticker} Price History — <span style="color:#e84057">red line = NAV (treasury/token)</span>`;
+  document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price History \u2014 <span style="color:#e84057">dashed line = NAV (treasury \u00f7 holder supply)</span>';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' bullish';
   document.getElementById('leg-strike').textContent = fmt$(strike);
 
@@ -1027,74 +908,45 @@ function renderUI(isLive) {
 (async function main() {
   if (!CFG.live) return;
   CFG.effectiveSupply = CFG.supply;
-  let strike = renderUI(false);
+  var navPerToken = renderUI(false);
+
   try {
-    const [ohlcv, spotOk, treasuryOk] = await Promise.all([fetchOHLCV(), fetchSpot(), fetchTreasury()]);
+    var results = await Promise.all([fetchOHLCV(), fetchSpot(), fetchTreasury()]);
+    var ohlcv = results[0], spotOk = results[1], treasuryOk = results[2];
     await fetchEffectiveSupply();
-    const isLive = !!(ohlcv || spotOk || treasuryOk);
-    strike = renderUI(isLive);
+    var isLive = !!(ohlcv || spotOk || treasuryOk);
+    navPerToken = renderUI(isLive);
 
-    let chartData;
-    if (ohlcv && ohlcv.length > 0) {
-      const firstPrice = ohlcv[0].price;
-      const firstDate = ohlcv[0].date;
-      const tge = new Date(CFG.tge);
-      const daysBetween = Math.max(1, Math.floor((firstDate - tge) / 86400000));
-      
-      if (daysBetween > 3) {
-        const fb = CFG.fallback;
-        const synth = [];
-        let price = fb.listPrice;
-        let seed = 42;
-        const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-        for (let i = 0; i < daysBetween; i++) {
-          const d = new Date(tge.getTime() + i * 86400000);
-          const noise = (rng() - 0.48) * 0.02 * price;
-          if (i < fb.peakDay && fb.peakDay <= daysBetween) {
-            price += (fb.listPrice + (fb.peakPrice - fb.listPrice) * (1 - Math.pow(1 - i / fb.peakDay, 1.8)) - price) * 0.12 + noise;
-          } else if (fb.peakDay > daysBetween) {
-            const pct = i / daysBetween;
-            price = fb.listPrice + (firstPrice - fb.listPrice) * Math.pow(pct, 0.6) + noise;
-          } else {
-            const postPeak = (i - fb.peakDay) / (daysBetween - fb.peakDay);
-            price = fb.peakPrice + (firstPrice - fb.peakPrice) * Math.pow(postPeak, 0.5) + noise;
-          }
-          price = Math.max(fb.floor || 0.01, price);
-          synth.push({ date: d, price: parseFloat(price.toFixed(6)) });
-        }
-        chartData = [...synth, ...ohlcv];
-        console.log(`Prepended ${synth.length} synthetic days (${fb.listPrice} → ${firstPrice}) before API data`);
-      } else {
-        chartData = ohlcv;
+    var chartData = (ohlcv && ohlcv.length > 0) ? ohlcv : genFallback();
+
+    if (spotOk && chartData.length > 0) {
+      var lastCandle = chartData[chartData.length - 1];
+      if (Math.abs(lastCandle.price - CFG.spot) > CFG.spot * 0.01) {
+        chartData.push({ date: new Date(), open: lastCandle.price, high: Math.max(lastCandle.price, CFG.spot), low: Math.min(lastCandle.price, CFG.spot), close: CFG.spot, price: CFG.spot });
       }
-    } else {
-      chartData = genFallback();
-    }
-    if (ohlcv && spotOk) {
-      const last = chartData[chartData.length - 1];
-      if (Math.abs(last.price - CFG.spot) > CFG.spot * 0.01) chartData.push({ date: new Date(), price: CFG.spot });
     }
 
-    document.getElementById('chart-loading')?.remove();
-    drawChart(chartData, strike, CFG.realizedVol);
+    var loadEl = document.getElementById('chart-loading');
+    if (loadEl) loadEl.remove();
+    drawChart(chartData, navPerToken);
 
     if (!ohlcv) {
-      const notice = document.createElement('div');
+      var notice = document.createElement('div');
       notice.style.cssText = 'text-align:center;font-size:9px;color:#ff8c42;font-family:Inter,sans-serif;padding:6px 0';
-      notice.textContent = '⚠ GeckoTerminal API unreachable — showing simulated data.';
+      notice.textContent = '\u26a0 GeckoTerminal API unreachable \u2014 showing simulated data.';
       document.getElementById('chart-container').appendChild(notice);
     }
 
-    console.log(`NAVgator ${CFG.ticker} | Live: ${isLive} | OHLCV: ${ohlcv?ohlcv.length+' candles':'fallback'} | Spot: $${CFG.spot} | Treasury: $${CFG.treasuryUSDC.toLocaleString()} | EffSupply: ${(CFG.effectiveSupply||CFG.supply).toLocaleString()} | NAV: $${strike.toFixed(6)}`);
+    console.log('NAVgator ' + CFG.ticker + ' | Live: ' + isLive + ' | OHLCV: ' + (ohlcv ? ohlcv.length + ' candles' : 'fallback') + ' | Spot: $' + CFG.spot + ' | Treasury: $' + CFG.treasuryUSDC.toLocaleString() + ' | EffSupply: ' + (CFG.effectiveSupply || CFG.supply).toLocaleString() + ' | NAV: $' + navPerToken.toFixed(6));
   } catch (err) {
     console.error('NAVgator init error:', err);
-    document.getElementById('chart-loading')?.remove();
-    const chartData = genFallback();
-    drawChart(chartData, strike, CFG.realizedVol);
-    const notice = document.createElement('div');
-    notice.style.cssText = 'text-align:center;font-size:9px;color:#e84057;font-family:Inter,sans-serif;padding:6px 0';
-    notice.textContent = '⚠ Error loading data — showing simulated chart. Check console for details.';
-    document.getElementById('chart-container').appendChild(notice);
+    var loadEl2 = document.getElementById('chart-loading');
+    if (loadEl2) loadEl2.remove();
+    drawChart(genFallback(), navPerToken);
+    var notice2 = document.createElement('div');
+    notice2.style.cssText = 'text-align:center;font-size:9px;color:#e84057;font-family:Inter,sans-serif;padding:6px 0';
+    notice2.textContent = '\u26a0 Error loading data \u2014 showing simulated chart.';
+    document.getElementById('chart-container').appendChild(notice2);
   }
 })();
 } // end if (_hasToken)
