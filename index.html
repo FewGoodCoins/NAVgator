@@ -664,8 +664,9 @@ async function fetchEffectiveSupply() {
     CFG.daoTokenBalance = daoTokens;
     CFG.buybackTokenBalance = buybackTokens;
 
-    // Effective supply = on-chain total minus all non-circulating tokens
-    const totalSupply = onChainSupply > 0 ? onChainSupply : CFG.supply;
+    // Effective supply = hardcoded supply minus AMM-held tokens
+    // On-chain total includes locked/vesting tokens that aren't eligible for redemption
+    const totalSupply = CFG.supply;
     CFG.effectiveSupply = Math.max(1, totalSupply - excludedTokens);
     console.log(`${CFG.ticker} supply: onChain=${totalSupply.toLocaleString()}, AMM=${(amm1Tokens+amm2Tokens).toLocaleString()}, DAO=${daoTokens.toLocaleString()}, Buyback=${buybackTokens.toLocaleString()}, excluded=${excludedTokens.toLocaleString()}, effective=${CFG.effectiveSupply.toLocaleString()}`);
     return true;
