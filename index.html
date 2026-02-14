@@ -1059,15 +1059,34 @@ function initChart(rawCandles, navPerToken) {
       _chartScrollPx -= e.deltaX;
       redraw();
     } else {
-      // Vertical scroll — zoom
+      // Vertical scroll — zoom anchored to cursor position
+      var rect = container.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var cw = Math.min(920, container.clientWidth);
+      var mgLeft = 62, mgRight = 68;
+      var ww = cw - mgLeft - mgRight;
+      
+      // Where is the cursor as a fraction of the chart width? (0=left, 1=right)
+      var cursorFrac = Math.max(0, Math.min(1, (mx - mgLeft) / ww));
+      
+      var oldCandleW = Math.max(2, Math.floor(ww / _chartVisible));
       var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
+      var oldVisible = _chartVisible;
+      
       if (e.deltaY < 0) {
-        // Scroll up = skinnier = more candles visible
         _chartVisible = Math.min(500, _chartVisible + zoomAmt);
       } else {
-        // Scroll down = fatter = fewer candles visible
         _chartVisible = Math.max(5, _chartVisible - zoomAmt);
       }
+      
+      var newCandleW = Math.max(2, Math.floor(ww / _chartVisible));
+      
+      // Adjust scroll so the candle under the cursor stays in place
+      // The pixel position of the cursor relative to the block stays the same
+      var scale = newCandleW / oldCandleW;
+      var cursorPxInChart = mx - mgLeft;
+      _chartScrollPx = _chartScrollPx * scale + cursorPxInChart * (1 - scale);
+      
       redraw();
     }
   }, { passive: false });
