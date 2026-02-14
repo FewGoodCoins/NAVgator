@@ -83,6 +83,19 @@
   .legend-fill { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
   .legend-dash { display: inline-block; width: 16px; height: 0; border-top: 2px dashed; }
 
+  /* Address section */
+  .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
+  .addr-title { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
+  .addr-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; }
+  .addr-row:last-child { border-bottom: none; }
+  .addr-label { color: var(--muted); font-weight: 500; min-width: 100px; }
+  .addr-val { display: flex; align-items: center; gap: 8px; }
+  .addr-val a { color: var(--green); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .addr-val a:hover { text-decoration: underline; }
+  .addr-copy { background: none; border: 1px solid var(--border2); border-radius: 4px; color: var(--dim); font-size: 10px; padding: 2px 6px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+  .addr-copy:hover { border-color: var(--green); color: var(--green); }
+  .addr-copy.copied { border-color: var(--green); color: var(--green); }
+
   .footer { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; color: var(--dim); text-align: center; padding: 24px 0; border-top: 1px solid var(--border); }
   .footer a { color: var(--muted); text-decoration: underline; }
 
@@ -128,7 +141,7 @@
   <!-- ══ LANDING PAGE ══ -->
   <div class="landing" id="landing-view">
     <div class="hero">
-      <div class="logo-mark">N</div>
+      <div class="logo-mark" style="background:transparent;box-shadow:none"><svg width="48" height="30" viewBox="0 0 160 100"><ellipse cx="80" cy="50" rx="55" ry="30" fill="none" stroke="#00e5a0" stroke-width="5"/><ellipse cx="80" cy="50" rx="7" ry="26" fill="#00e5a0"/></svg></div>
       <h1>NAV<span>gator</span></h1>
       <p class="tagline">Real-time NAV analytics for MetaDAO ownership tokens. Treasury tracking, discount/premium metrics, and live on-chain data.</p>
     </div>
@@ -147,7 +160,7 @@
         <div class="how-item"><div class="how-num" style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">03</div><div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:5px">Dissolution right</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Any holder can propose dissolution via futarchy. If passed, treasury distributes pro-rata. This creates a soft price floor enforced by rational arbitrage.</div></div>
       </div>
     </div>
-    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · Data via GeckoTerminal + DexScreener + Solana RPC · Not financial advice</div>
+    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · Data via NAVgator API + GeckoTerminal + Solana RPC · Not financial advice</div>
   </div>
 
   <!-- ══ DASHBOARD VIEW ══ -->
@@ -178,6 +191,9 @@
       <span class="legend-item"><span class="legend-line" style="background:#e84057"></span> NAV <span id="leg-strike">…</span></span>
     </div>
   </div>
+
+  <!-- Address section -->
+  <div class="addr-section" id="addr-section"></div>
 
   <div class="footer">
     <a href="index.html">← NAVgator Home</a> · Treasury analytics for ownership tokens · Not financial advice
@@ -255,6 +271,7 @@ const TOKENS = {
     daoWallet: '6VsC8PuKkXm5xo54c2vbrAaSfQipkpGHqNuKTxXFySx6',
     ammWallet: 'BLkBSE96kQys7SrMioKxeMiVbeo4Ckk2Y4n1JphKxYnv',
     ammWallet2: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
+    lockWallet: '3kX3EWm9iPB6oxFS2NJ71L6v5wzFZ8rQMEG6HC8QHJtF',
     gtPool: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
     gtPoolLegacy: 'BLkBSE96kQys7SrMioKxeMiVbeo4Ckk2Y4n1JphKxYnv',
     raise: 3_000_000, supply: 10_000_000, icoPrice: 0.30, ath: 2.43,
@@ -277,6 +294,7 @@ const TOKENS = {
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: 'DGgYoUcu1aDZt4GEL5NQiducwHRGbkMWsUzsXh2j622G',
     ammWallet: '3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn',
+    ammWallet2: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     gtPool: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     gtPoolLegacy: '3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn',
     raise: 3_500_000, supply: 12_900_000, icoPrice: 0.35, ath: 7.57,
@@ -340,7 +358,7 @@ const TOKENS = {
   omfg: { live: true,
     name: 'Omnipair', ticker: 'OMFG', pair: 'OMFG/USDC',
     color: '#ff8855',
-    mint: 'DHW6DToYjhwknzVCDvZ6r7hSv7ZpGw9adEN8NvZuUpVh',
+    mint: 'omfgRBnxHsNJh6YeGbGAmWenNkenzsXyBXm3WDhmeta',
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: '34rned2SLUcYjUrM9meQkuyJY4QDBcKhkcUPXCgGuXD9',
     ammWallet: '2WNhaB6TPyZ3ynJjAUM4ZZ1Hdeep8FJ3A76FjGjTVjjS',
@@ -388,6 +406,7 @@ const TOKENS = {
     ammWallet: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
     ammWallet2: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
     buybackWallet: '33AEddb7BxoA7Y65BzybFCV5WyGy7LfBdjiL2anCDEkr',
+    lockWallet: 'F35JE1HZMtZXXWdy3koSPRe1gGFQyqd5kpbPw2xNcjR8',
     gtPool: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
     gtPoolLegacy: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
     raise: 8_000_000, supply: 10_000_000, icoPrice: 0.60, ath: 0.865,
@@ -457,63 +476,25 @@ if (!_hasToken) {
     renderTokens(btn.dataset.sort);
   });
 
-  // Fetch live spot prices for all live tokens and re-render
-  const HELIUS_RPC = 'https://mainnet.helius-rpc.com/?api-key=6ac6fe69-3333-4cb8-a1ba-03a3d17fa70e';
+  // Fetch live data from backend API
+  const API_BASE = 'https://navgator-api.vercel.app';
   const currentSort = () => document.querySelector('.sort-btn.active')?.dataset.sort || 'mcap';
 
   async function fetchLandingData() {
-    const liveEntries = Object.entries(TOKENS).filter(([k, t]) => t.live && t.mint);
-    // Fetch spot prices from DexScreener in parallel
-    const spotPromises = liveEntries.map(async ([key, t]) => {
-      try {
-        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${t.mint}`);
-        const data = await res.json();
-        const pair = data.pairs?.find(p => p.quoteToken?.symbol === 'USDC');
-        if (pair) return { key, spot: parseFloat(pair.priceUsd) };
-      } catch (e) {}
-      return null;
-    });
-    // Fetch treasury USDC balances from Helius in parallel
-    const treasuryPromises = liveEntries.map(async ([key, t]) => {
-      try {
-        const getBalance = async (owner) => {
-          if (!owner) return 0;
-          const res = await fetch(HELIUS_RPC, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'getTokenAccountsByOwner',
-              params: [owner, { mint: t.usdcMint }, { encoding: 'jsonParsed' }] }),
-          });
-          const json = await res.json();
-          let total = 0;
-          for (const acct of (json.result?.value || [])) total += acct.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
-          return total;
-        };
-        const [dao, amm, amm2] = await Promise.all([getBalance(t.daoWallet), getBalance(t.ammWallet), getBalance(t.ammWallet2)]);
-        const total = dao + amm + amm2;
-        if (total > 0) return { key, treasury: total };
-      } catch (e) {}
-      return null;
-    });
-
-    const [spots, treasuries] = await Promise.all([
-      Promise.all(spotPromises),
-      Promise.all(treasuryPromises),
-    ]);
-
-    // Update landingTokens with live data
-    for (const s of spots) {
-      if (!s) continue;
-      const lt = landingTokens.find(t => t.key === s.key);
-      if (lt) { lt.spot = s.spot; lt.mcap = s.spot * TOKENS[s.key].supply; }
-    }
-    for (const tr of treasuries) {
-      if (!tr) continue;
-      const lt = landingTokens.find(t => t.key === tr.key);
-      if (lt) { lt.treasury = tr.treasury; lt.strike = tr.treasury / TOKENS[tr.key].supply; }
-    }
-
-    renderTokens(currentSort());
-    console.log('NAVgator landing: live data loaded for', spots.filter(Boolean).length, 'tokens');
+    try {
+      const res = await fetch(API_BASE + '/api/current');
+      const data = await res.json();
+      if (!data.tokens) return;
+      for (const t of data.tokens) {
+        if (t.error) continue;
+        const lt = landingTokens.find(x => x.key === t.token);
+        if (!lt) continue;
+        if (t.spot > 0) { lt.spot = t.spot; lt.mcap = t.spot * (t.effectiveSupply || TOKENS[t.token].supply); }
+        if (t.treasuryUSDC > 0 && t.effectiveSupply > 0) { lt.treasury = t.treasuryUSDC; lt.strike = t.treasuryUSDC / t.effectiveSupply; }
+      }
+      renderTokens(currentSort());
+      console.log('NAVgator landing: live data loaded from API');
+    } catch (e) { console.warn('API fetch failed:', e.message); }
   }
 
   fetchLandingData();
@@ -526,14 +507,14 @@ if (_hasToken) {
 const params = new URLSearchParams(window.location.search);
 const tokenKey = (params.get('token') || 'solo').toLowerCase();
 const CFG = TOKENS[tokenKey] || TOKENS.solo;
-CFG.rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=6ac6fe69-3333-4cb8-a1ba-03a3d17fa70e';
+const API_BASE_DASH = 'https://navgator-api.vercel.app';
 
 document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
 
 // Build nav — dim non-live tokens
 const navEl = document.getElementById('nav');
 const LIVE_KEYS = new Set(Object.entries(TOKENS).filter(([k,v]) => v.live).map(([k]) => k));
-let navHTML = '<a href="index.html" class="nav-brand"><span class="nav-brand-icon">N</span> NAV<span>gator</span></a><span class="nav-sep">·</span><div class="nav-tokens">';
+let navHTML = '<a href="index.html" class="nav-brand"><svg width="22" height="14" viewBox="0 0 160 100" style="flex-shrink:0"><ellipse cx="80" cy="50" rx="55" ry="30" fill="none" stroke="#00e5a0" stroke-width="6"/><ellipse cx="80" cy="50" rx="7" ry="26" fill="#00e5a0"/></svg> NAV<span>gator</span></a><span class="nav-sep">·</span><div class="nav-tokens">';
 for (const [key, tok] of Object.entries(TOKENS)) {
   const isLive = LIVE_KEYS.has(key);
   const dimStyle = !isLive ? 'opacity:0.35;pointer-events:none;' : '';
@@ -592,93 +573,20 @@ async function fetchOHLCV() {
   } catch (e) { console.warn('GeckoTerminal OHLCV failed:', e.message); return null; }
 }
 
-async function fetchSpot() {
-  if (!CFG.mint) return false;
+async function fetchFromAPI() {
   try {
-    const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${CFG.mint}`);
+    const res = await fetch(API_BASE_DASH + '/api/current?token=' + tokenKey);
     const data = await res.json();
-    const pair = data.pairs?.find(p => p.quoteToken?.symbol === 'USDC');
-    if (pair) {
-      CFG.spot = parseFloat(pair.priceUsd);
-      CFG.volume24h = parseFloat(pair.volume?.h24 || 0);
-      // Derive circulating supply from DexScreener marketCap
-      if (pair.marketCap && CFG.spot > 0) {
-        CFG.circulatingSupply = pair.marketCap / CFG.spot;
-        console.log(`${CFG.ticker} DexScreener: mcap=$${pair.marketCap.toLocaleString()}, fdv=$${(pair.fdv||0).toLocaleString()}, derived circSupply=${CFG.circulatingSupply.toLocaleString()}`);
-      }
-      return true;
-    }
-  } catch (e) { console.warn('DexScreener failed:', e.message); }
-  return false;
-}
-
-async function fetchTreasury() {
-  if (!CFG.daoWallet) return false;
-  try {
-    const getBalance = async (owner) => {
-      if (!owner) return 0;
-      const res = await fetch(CFG.rpcUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'getTokenAccountsByOwner',
-          params: [owner, { mint: CFG.usdcMint }, { encoding: 'jsonParsed' }] }),
-      });
-      const json = await res.json();
-      let total = 0;
-      for (const acct of (json.result?.value || [])) total += acct.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
-      return total;
-    };
-    const [dao, amm, amm2] = await Promise.all([getBalance(CFG.daoWallet), getBalance(CFG.ammWallet), getBalance(CFG.ammWallet2)]);
-    const total = dao + amm + amm2;
-    console.log(`Treasury fetch ${CFG.ticker}: DAO(${CFG.daoWallet?.slice(0,8)})=$${dao.toLocaleString()}, AMM1(${CFG.ammWallet?.slice(0,8)})=$${amm.toLocaleString()}, AMM2(${CFG.ammWallet2?.slice(0,8) || 'none'})=$${amm2.toLocaleString()}, TOTAL=$${total.toLocaleString()}`);
-    if (total > 0) { CFG.treasuryUSDC = total; CFG.daoUSDC = dao; CFG.ammUSDCLive = amm + amm2; return true; }
-  } catch (e) { console.warn('RPC failed:', e.message); }
-  return false;
-}
-
-async function fetchEffectiveSupply() {
-  if (!CFG.mint) return false;
-  try {
-    const getTokenBalance = async (owner) => {
-      if (!owner) return 0;
-      const res = await fetch(CFG.rpcUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'getTokenAccountsByOwner',
-          params: [owner, { mint: CFG.mint }, { encoding: 'jsonParsed' }] }),
-      });
-      const json = await res.json();
-      let total = 0;
-      for (const acct of (json.result?.value || [])) total += acct.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0;
-      return total;
-    };
-
-    const supplyRes = await fetch(CFG.rpcUrl, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'getTokenSupply', params: [CFG.mint] }),
-    });
-    const supplyJson = await supplyRes.json();
-    const onChainSupply = parseFloat(supplyJson?.result?.value?.uiAmount || 0);
-
-    // Fetch token balances in excluded wallets: AMMs, DAO, buyback, lock contract
-    const [amm1Tokens, amm2Tokens, daoTokens, buybackTokens, lockedTokens] = await Promise.all([
-      getTokenBalance(CFG.ammWallet),
-      getTokenBalance(CFG.ammWallet2),
-      getTokenBalance(CFG.daoWallet),
-      getTokenBalance(CFG.buybackWallet),
-      getTokenBalance(CFG.lockWallet),
-    ]);
-    const ammTokens = amm1Tokens + amm2Tokens;
-    CFG.ammTokenBalance = ammTokens;
-    CFG.daoTokenBalance = daoTokens;
-    CFG.buybackTokenBalance = buybackTokens;
-    CFG.lockedTokenBalance = lockedTokens;
-
-    // Effective supply = on-chain total minus locked/vesting minus AMM tokens
-    // Locked tokens can't redeem (vesting), AMM tokens don't redeem in dissolution
-    const totalSupply = onChainSupply > 0 ? onChainSupply : CFG.supply;
-    CFG.effectiveSupply = Math.max(1, totalSupply - lockedTokens - ammTokens);
-    console.log(`${CFG.ticker} supply: onChain=${totalSupply.toLocaleString()}, Locked=${lockedTokens.toLocaleString()}, AMM=${ammTokens.toLocaleString()}, effective=${CFG.effectiveSupply.toLocaleString()}`);
+    if (data.error) return false;
+    if (data.spot > 0) CFG.spot = data.spot;
+    if (data.treasuryUSDC > 0) CFG.treasuryUSDC = data.treasuryUSDC;
+    if (data.effectiveSupply > 0) CFG.effectiveSupply = data.effectiveSupply;
+    if (data.onChainSupply > 0) CFG.onChainSupply = data.onChainSupply;
+    if (data.lockedTokens > 0) CFG.lockedTokenBalance = data.lockedTokens;
+    if (data.ammTokens > 0) CFG.ammTokenBalance = data.ammTokens;
+    console.log('API data:', data);
     return true;
-  } catch (e) { console.warn('Effective supply fetch failed:', e.message); return false; }
+  } catch (e) { console.warn('API fetch failed:', e.message); return false; }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -912,23 +820,50 @@ function renderUI(isLive) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// ADDRESS SECTION
+// ═══════════════════════════════════════════════════════════════════════
+function renderAddresses() {
+  const section = document.getElementById('addr-section');
+  if (!section) return;
+  const truncAddr = a => a.slice(0, 6) + '…' + a.slice(-4);
+  const solscanType = (label) => label === 'Token CA' ? 'token' : 'account';
+  const addrs = [];
+  if (CFG.mint) addrs.push(['Token CA', CFG.mint]);
+  if (CFG.daoWallet) addrs.push(['DAO Treasury', CFG.daoWallet]);
+  if (CFG.ammWallet) addrs.push(['AMM Pool 1', CFG.ammWallet]);
+  if (CFG.ammWallet2) addrs.push(['AMM Pool 2', CFG.ammWallet2]);
+  if (CFG.lockWallet) addrs.push(['Lock Contract', CFG.lockWallet]);
+  if (CFG.buybackWallet) addrs.push(['Buyback Wallet', CFG.buybackWallet]);
+
+  section.innerHTML = '<div class="addr-title">On-Chain Addresses</div>' +
+    addrs.map(function(a) {
+      var label = a[0], addr = a[1];
+      var type = solscanType(label);
+      return '<div class="addr-row"><span class="addr-label">' + label + '</span><div class="addr-val">' +
+        '<a href="https://solscan.io/' + type + '/' + addr + '" target="_blank">' + truncAddr(addr) + '</a>' +
+        '<button class="addr-copy" onclick="navigator.clipboard.writeText(\'' + addr + '\');this.textContent=\'Copied!\';this.classList.add(\'copied\');setTimeout(function(){this.textContent=\'Copy\';this.classList.remove(\'copied\')}.bind(this),1500)">Copy</button>' +
+        '</div></div>';
+    }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════
 (async function main() {
   if (!CFG.live) return;
   CFG.effectiveSupply = CFG.supply;
   var navPerToken = renderUI(false);
+  renderAddresses();
 
   try {
-    var results = await Promise.all([fetchOHLCV(), fetchSpot(), fetchTreasury()]);
-    var ohlcv = results[0], spotOk = results[1], treasuryOk = results[2];
-    await fetchEffectiveSupply();
-    var isLive = !!(ohlcv || spotOk || treasuryOk);
+    var results = await Promise.all([fetchOHLCV(), fetchFromAPI()]);
+    var ohlcv = results[0], apiOk = results[1];
+    var isLive = !!(ohlcv || apiOk);
     navPerToken = renderUI(isLive);
 
     var chartData = (ohlcv && ohlcv.length > 0) ? ohlcv : genFallback();
 
-    if (spotOk && chartData.length > 0) {
+    if (apiOk && chartData.length > 0) {
       var lastCandle = chartData[chartData.length - 1];
       if (Math.abs(lastCandle.price - CFG.spot) > CFG.spot * 0.01) {
         chartData.push({ date: new Date(), open: lastCandle.price, high: Math.max(lastCandle.price, CFG.spot), low: Math.min(lastCandle.price, CFG.spot), close: CFG.spot, price: CFG.spot });
