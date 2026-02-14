@@ -675,8 +675,8 @@ function drawChart(candles, navPerToken) {
   ctx.scale(dpr, dpr);
 
   // Fixed-width candles based on zoom level
-  var candleW = Math.max(2, Math.floor(w / _chartVisible));
-  var bodyW = Math.max(1, candleW - 2);
+  var candleW = Math.max(1, Math.floor(w / _chartVisible));
+  var bodyW = Math.max(1, candleW <= 2 ? candleW : candleW - 2);
   var wickW = bodyW < 4 ? 1 : 1.5;
 
   // Total width of all candles as a block
@@ -872,7 +872,7 @@ function drawNAVChart(candles, navPerToken) {
   ctx.scale(dpr, dpr);
 
   // Fixed-width based on zoom
-  var candleW = Math.max(2, Math.floor(w / _chartVisible));
+  var candleW = Math.max(1, Math.floor(w / _chartVisible));
   var totalBlockW = n * candleW;
   var defaultOffset = w - totalBlockW;
   var blockX = mg.left + defaultOffset + _chartScrollPx;
@@ -1113,17 +1113,19 @@ function initChart(rawCandles, navPerToken) {
       var mgLeft = 16, mgRight = 72;
       var ww = cw - mgLeft - mgRight;
       
-      var oldCandleW = Math.max(2, Math.floor(ww / _chartVisible));
-      // Very gentle zoom — 0.5% per scroll tick
-      var zoomAmt = Math.max(1, Math.round(_chartVisible * 0.005));
+      var oldCandleW = Math.max(1, Math.floor(ww / _chartVisible));
+      // Zoom rate scales up as you zoom out further — 2% of current visible
+      var zoomAmt = Math.max(1, Math.round(_chartVisible * 0.02));
       
       if (e.deltaY < 0) {
-        _chartVisible = Math.min(500, _chartVisible + zoomAmt);
+        // Scroll up = skinnier = more candles
+        _chartVisible = Math.min(5000, _chartVisible + zoomAmt);
       } else {
-        _chartVisible = Math.max(5, _chartVisible - zoomAmt);
+        // Scroll down = fatter = fewer candles
+        _chartVisible = Math.max(3, _chartVisible - zoomAmt);
       }
       
-      var newCandleW = Math.max(2, Math.floor(ww / _chartVisible));
+      var newCandleW = Math.max(1, Math.floor(ww / _chartVisible));
       
       // Asymmetric anchor: anchor point at 7/8 of the way from left
       // This means right side (recent candles) barely moves, left side expands more
