@@ -86,6 +86,17 @@
   .legend-dash { display: inline-block; width: 16px; height: 0; border-top: 2px dashed; }
 
   /* Address section */
+  .nav-stats-bar { display: flex; gap: 0; margin-top: 12px; border-radius: 10px; overflow: hidden; font-family: 'Inter', sans-serif; font-size: 12px; }
+  .nav-stats-bar .ns-item { flex: 1; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .nav-stats-bar .ns-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+  .nav-stats-bar .ns-value { font-size: 16px; font-weight: 600; }
+  .nav-stats-bar .ns-sub { font-size: 10px; opacity: 0.6; }
+  .nav-stats-bar .ns-above { background: rgba(0,229,160,0.08); color: #00e5a0; }
+  .nav-stats-bar .ns-below { background: rgba(232,64,87,0.08); color: #e84057; }
+  .nav-stats-bar .ns-neutral { background: rgba(255,255,255,0.04); color: var(--muted); }
+  .nav-stats-bar .ns-progress { height: 4px; border-radius: 2px; margin-top: 6px; background: rgba(255,255,255,0.06); overflow: hidden; }
+  .nav-stats-bar .ns-progress-fill { height: 100%; border-radius: 2px; }
+
   .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
   .addr-title { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
   .addr-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; }
@@ -200,6 +211,7 @@
       <span class="legend-item"><span class="legend-fill" style="background:#e84057"></span> Bearish</span>
       <span class="legend-item"><span class="legend-line" style="background:#e84057"></span> NAV <span id="leg-strike">…</span></span>
     </div>
+    <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
 
   <!-- Address section -->
@@ -914,6 +926,33 @@ function drawNAVChart(candles, navPerToken) {
   ctx.beginPath(); ctx.moveTo(mg.left, navY); ctx.lineTo(mg.left + w, navY); ctx.stroke();
   ctx.setLineDash([]);
 
+  // Percentage reference lines from NAV (-10%, -20%, etc. and +10%, +20%, etc.)
+  var pctSteps = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+  ctx.font = '9px Inter, sans-serif';
+  for (var pi = 0; pi < pctSteps.length; pi++) {
+    var pct = pctSteps[pi];
+    // Below NAV
+    var belowPrice = navPerToken * (1 - pct / 100);
+    var belowY = sy(belowPrice);
+    if (belowY > mg.top && belowY < mg.top + h) {
+      ctx.strokeStyle = 'rgba(232,64,87,0.25)'; ctx.lineWidth = 0.5; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(mg.left, belowY); ctx.lineTo(mg.left + w, belowY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(232,64,87,0.5)'; ctx.textAlign = 'right';
+      ctx.fillText('-' + pct + '%', mg.left + w - 4, belowY - 3);
+    }
+    // Above NAV
+    var abovePrice = navPerToken * (1 + pct / 100);
+    var aboveY = sy(abovePrice);
+    if (aboveY > mg.top && aboveY < mg.top + h) {
+      ctx.strokeStyle = 'rgba(0,229,160,0.25)'; ctx.lineWidth = 0.5; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(mg.left, aboveY); ctx.lineTo(mg.left + w, aboveY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(0,229,160,0.5)'; ctx.textAlign = 'right';
+      ctx.fillText('+' + pct + '%', mg.left + w - 4, aboveY - 3);
+    }
+  }
+
   // Fill areas between price line and NAV line — green above, red below
   // Build the price path for visible range
   var fillStart = Math.max(0, visStart);
@@ -1067,19 +1106,16 @@ function initChart(rawCandles, navPerToken) {
       _chartScrollPx -= e.deltaX;
       redraw();
     } else {
-      // Vertical scroll — zoom anchored to cursor position
+      // Vertical scroll — zoom, right side (recent) expands slowly, left side (old) expands faster
       var rect = container.getBoundingClientRect();
       var mx = e.clientX - rect.left;
       var cw = Math.min(920, container.clientWidth);
       var mgLeft = 16, mgRight = 72;
       var ww = cw - mgLeft - mgRight;
       
-      // Where is the cursor as a fraction of the chart width? (0=left, 1=right)
-      var cursorFrac = Math.max(0, Math.min(1, (mx - mgLeft) / ww));
-      
       var oldCandleW = Math.max(2, Math.floor(ww / _chartVisible));
-      var zoomAmt = Math.max(1, Math.round(_chartVisible * 0.04));
-      var oldVisible = _chartVisible;
+      // Very gentle zoom — 0.5% per scroll tick
+      var zoomAmt = Math.max(1, Math.round(_chartVisible * 0.005));
       
       if (e.deltaY < 0) {
         _chartVisible = Math.min(500, _chartVisible + zoomAmt);
@@ -1089,11 +1125,11 @@ function initChart(rawCandles, navPerToken) {
       
       var newCandleW = Math.max(2, Math.floor(ww / _chartVisible));
       
-      // Adjust scroll so the candle under the cursor stays in place
-      // The pixel position of the cursor relative to the block stays the same
+      // Asymmetric anchor: anchor point at 7/8 of the way from left
+      // This means right side (recent candles) barely moves, left side expands more
+      var anchorPx = ww * (7 / 8);
       var scale = newCandleW / oldCandleW;
-      var cursorPxInChart = mx - mgLeft;
-      _chartScrollPx = _chartScrollPx * scale + cursorPxInChart * (1 - scale);
+      _chartScrollPx = _chartScrollPx * scale + anchorPx * (1 - scale);
       
       redraw();
     }
@@ -1181,6 +1217,7 @@ function initChart(rawCandles, navPerToken) {
         if (candles.length === 0) candles = rawCandles;
         _chartVisible = Math.min(60, candles.length);
         redraw();
+        renderNAVStats(candles, _navPerToken);
       }
     });
   }
@@ -1232,6 +1269,74 @@ function renderUI(isLive) {
   document.getElementById('leg-strike').textContent = fmt$(strike);
 
   return strike;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// NAV STATS BAR
+// ═══════════════════════════════════════════════════════════════════════
+function renderNAVStats(candles, navPerToken) {
+  var bar = document.getElementById('nav-stats-bar');
+  if (!bar || !candles || candles.length === 0 || !navPerToken) { if (bar) bar.innerHTML = ''; return; }
+
+  var aboveDays = 0, belowDays = 0;
+  var currentStreak = 0, currentAbove = false;
+  var maxAboveStreak = 0, maxBelowStreak = 0;
+  var tempAbove = 0, tempBelow = 0;
+  var avgAbovePct = 0, avgBelowPct = 0;
+  var abovePctSum = 0, belowPctSum = 0;
+
+  for (var i = 0; i < candles.length; i++) {
+    var p = candles[i].close || candles[i].price;
+    var pct = (p - navPerToken) / navPerToken * 100;
+    if (p >= navPerToken) {
+      aboveDays++;
+      abovePctSum += pct;
+      tempAbove++;
+      if (tempAbove > maxAboveStreak) maxAboveStreak = tempAbove;
+      tempBelow = 0;
+    } else {
+      belowDays++;
+      belowPctSum += Math.abs(pct);
+      tempBelow++;
+      if (tempBelow > maxBelowStreak) maxBelowStreak = tempBelow;
+      tempAbove = 0;
+    }
+  }
+
+  var total = aboveDays + belowDays;
+  var abovePct = total > 0 ? (aboveDays / total * 100) : 0;
+  var belowPct = total > 0 ? (belowDays / total * 100) : 0;
+  var avgAbove = aboveDays > 0 ? (abovePctSum / aboveDays) : 0;
+  var avgBelow = belowDays > 0 ? (belowPctSum / belowDays) : 0;
+
+  // Current streak
+  var lastP = candles[candles.length - 1].close || candles[candles.length - 1].price;
+  var isAboveNow = lastP >= navPerToken;
+  currentStreak = 0;
+  for (var j = candles.length - 1; j >= 0; j--) {
+    var jp = candles[j].close || candles[j].price;
+    if ((jp >= navPerToken) === isAboveNow) currentStreak++;
+    else break;
+  }
+
+  bar.innerHTML =
+    '<div class="ns-item ns-above">' +
+      '<div class="ns-label">Time Above NAV</div>' +
+      '<div class="ns-value">' + abovePct.toFixed(1) + '%</div>' +
+      '<div class="ns-sub">' + aboveDays + ' of ' + total + ' periods · avg +' + avgAbove.toFixed(1) + '%</div>' +
+      '<div class="ns-progress"><div class="ns-progress-fill" style="width:' + abovePct + '%;background:#00e5a0"></div></div>' +
+    '</div>' +
+    '<div class="ns-item ns-below">' +
+      '<div class="ns-label">Time Below NAV</div>' +
+      '<div class="ns-value">' + belowPct.toFixed(1) + '%</div>' +
+      '<div class="ns-sub">' + belowDays + ' of ' + total + ' periods · avg -' + avgBelow.toFixed(1) + '%</div>' +
+      '<div class="ns-progress"><div class="ns-progress-fill" style="width:' + belowPct + '%;background:#e84057"></div></div>' +
+    '</div>' +
+    '<div class="ns-item ns-neutral">' +
+      '<div class="ns-label">Current Streak</div>' +
+      '<div class="ns-value" style="color:' + (isAboveNow ? '#00e5a0' : '#e84057') + '">' + currentStreak + ' periods</div>' +
+      '<div class="ns-sub">' + (isAboveNow ? 'above' : 'below') + ' NAV · longest ' + (isAboveNow ? maxAboveStreak + ' above' : maxBelowStreak + ' below') + '</div>' +
+    '</div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1288,6 +1393,7 @@ function renderAddresses() {
     var loadEl = document.getElementById('chart-loading');
     if (loadEl) loadEl.remove();
     initChart(chartData, navPerToken);
+    renderNAVStats(chartData, navPerToken);
 
     if (!ohlcv) {
       var notice = document.createElement('div');
