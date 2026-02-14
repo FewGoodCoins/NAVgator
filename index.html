@@ -63,7 +63,9 @@
   .chart-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 24px 20px 16px; margin-bottom: 28px; position: relative; }
   .chart-title { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 16px; }
   .chart-title span { color: var(--red); }
-  .chart-controls { display: flex; gap: 6px; position: absolute; top: 20px; right: 20px; z-index: 2; }
+  .chart-controls { display: flex; gap: 6px; position: absolute; top: 20px; right: 20px; z-index: 2; align-items: center; }
+  .chart-btn-group { display: flex; gap: 4px; }
+  .chart-btn-group + .chart-btn-group { margin-left: 8px; padding-left: 10px; border-left: 1px solid var(--border2); }
   .chart-btn { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border2); color: var(--muted); background: transparent; cursor: pointer; transition: all 0.2s; }
   .chart-btn:hover { border-color: var(--green); color: var(--white); }
   .chart-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
@@ -179,10 +181,16 @@
   <div class="chart-section">
     <div class="chart-title" id="chart-label"></div>
     <div class="chart-controls" id="chart-controls">
-      <button class="chart-btn" data-tf="12H">12H</button>
-      <button class="chart-btn active" data-tf="1D">1D</button>
-      <button class="chart-btn" data-tf="1W">1W</button>
-      <button class="chart-btn" data-tf="1M">1M</button>
+      <div class="chart-btn-group" id="chart-view-toggle">
+        <button class="chart-btn active" data-view="candle">Candle</button>
+        <button class="chart-btn" data-view="nav">NAV</button>
+      </div>
+      <div class="chart-btn-group">
+        <button class="chart-btn" data-tf="12H">12H</button>
+        <button class="chart-btn active" data-tf="1D">1D</button>
+        <button class="chart-btn" data-tf="1W">1W</button>
+        <button class="chart-btn" data-tf="1M">1M</button>
+      </div>
     </div>
     <div id="chart-container">
       <div class="chart-loading" id="chart-loading">⏳ Fetching price history…</div>
@@ -606,6 +614,7 @@ var _chartTF = '1D';
 var _chartScrollPx = 0;  // pixel offset for panning
 var _chartVisible = 60;  // how many candles fit in view (controls zoom)
 var _chartYScale = 1.0;  // vertical zoom multiplier (>1 = stretched, <1 = compressed)
+var _chartViewMode = 'candle'; // 'candle' or 'nav'
 
 async function fetchCandlesForTF(tf) {
   if (_allCandles[tf]) return _allCandles[tf];
@@ -824,6 +833,211 @@ function drawChart(candles, navPerToken) {
   canvas.addEventListener('mouseleave', function() { tt.style.display = 'none'; });
 }
 
+function drawNAVChart(candles, navPerToken) {
+  var container = document.getElementById('chart-container');
+  container.innerHTML = '';
+  var n = candles.length;
+  if (n === 0) { container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:#555560">No chart data available</div>'; return; }
+
+  var dpr = window.devicePixelRatio || 1;
+  var cw = Math.min(920, container.clientWidth);
+  var ch = 400;
+  var mg = { top: 24, right: 68, bottom: 52, left: 62 };
+  var w = cw - mg.left - mg.right;
+  var h = ch - mg.top - mg.bottom;
+
+  var canvas = document.createElement('canvas');
+  canvas.width = cw * dpr; canvas.height = ch * dpr;
+  canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+  canvas.style.cursor = 'crosshair';
+  container.appendChild(canvas);
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Fixed-width based on zoom
+  var candleW = Math.max(2, Math.floor(w / _chartVisible));
+  var totalBlockW = n * candleW;
+  var defaultOffset = w - totalBlockW;
+  var blockX = mg.left + defaultOffset + _chartScrollPx;
+  var minScroll = -(w - candleW);
+  var maxScroll = Math.max(0, (n - 1) * candleW);
+  _chartScrollPx = Math.max(minScroll, Math.min(maxScroll, _chartScrollPx));
+  blockX = mg.left + defaultOffset + _chartScrollPx;
+
+  var sx = function(i) { return blockX + i * candleW + candleW / 2; };
+  var visStart = Math.max(0, Math.floor((mg.left - blockX) / candleW));
+  var visEnd = Math.min(n, Math.ceil((mg.left + w - blockX) / candleW));
+
+  // Price range from all candles
+  var allHigh = -Infinity, allLow = Infinity;
+  for (var i = 0; i < n; i++) {
+    var p = candles[i].close || candles[i].price;
+    if (p > allHigh) allHigh = p;
+    if (p < allLow) allLow = p;
+  }
+  if (navPerToken > allHigh) allHigh = navPerToken;
+  if (navPerToken < allLow) allLow = navPerToken;
+  var pPad = (allHigh - allLow) * 0.08 || allHigh * 0.05;
+  var pMinBase = allLow - pPad;
+  var pMaxBase = allHigh + pPad;
+  var pMid = (pMinBase + pMaxBase) / 2;
+  var pHalf = (pMaxBase - pMinBase) / 2;
+  var pMin = pMid - pHalf / _chartYScale;
+  var pMax = pMid + pHalf / _chartYScale;
+
+  var sy = function(p) { return mg.top + (1 - (p - pMin) / (pMax - pMin)) * h; };
+
+  // Clip to chart area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(mg.left, 0, w, ch);
+  ctx.clip();
+
+  // Grid
+  ctx.strokeStyle = '#222228'; ctx.lineWidth = 0.5;
+  for (var gi = 0; gi <= 6; gi++) {
+    var v = pMin + (pMax - pMin) * gi / 6;
+    ctx.beginPath(); ctx.moveTo(mg.left, sy(v)); ctx.lineTo(mg.left + w, sy(v)); ctx.stroke();
+  }
+
+  // NAV horizontal line
+  var navY = sy(navPerToken);
+  ctx.strokeStyle = '#e84057'; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
+  ctx.beginPath(); ctx.moveTo(mg.left, navY); ctx.lineTo(mg.left + w, navY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Fill areas between price line and NAV line — green above, red below
+  // Build the price path for visible range
+  var fillStart = Math.max(0, visStart);
+  var fillEnd = Math.min(n, visEnd);
+
+  // Green fill (price above NAV)
+  ctx.beginPath();
+  for (var fi = fillStart; fi < fillEnd; fi++) {
+    var px = sx(fi);
+    var pp = candles[fi].close || candles[fi].price;
+    var priceY = sy(pp);
+    var clampedY = Math.min(priceY, navY); // only above NAV
+    if (fi === fillStart) ctx.moveTo(px, navY);
+    ctx.lineTo(px, clampedY);
+  }
+  ctx.lineTo(sx(fillEnd - 1), navY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,229,160,0.15)';
+  ctx.fill();
+
+  // Red fill (price below NAV)
+  ctx.beginPath();
+  for (var ri = fillStart; ri < fillEnd; ri++) {
+    var rx = sx(ri);
+    var rp = candles[ri].close || candles[ri].price;
+    var rpY = sy(rp);
+    var clampedRY = Math.max(rpY, navY); // only below NAV
+    if (ri === fillStart) ctx.moveTo(rx, navY);
+    ctx.lineTo(rx, clampedRY);
+  }
+  ctx.lineTo(sx(fillEnd - 1), navY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(232,64,87,0.15)';
+  ctx.fill();
+
+  // Price line
+  ctx.beginPath();
+  ctx.strokeStyle = '#f0f0f5'; ctx.lineWidth = 2;
+  for (var li = fillStart; li < fillEnd; li++) {
+    var lx = sx(li);
+    var lp = candles[li].close || candles[li].price;
+    if (li === fillStart) ctx.moveTo(lx, sy(lp));
+    else ctx.lineTo(lx, sy(lp));
+  }
+  ctx.stroke();
+
+  // Color the line segments green/red
+  for (var si = fillStart; si < fillEnd - 1; si++) {
+    var x1 = sx(si), x2 = sx(si + 1);
+    var p1 = candles[si].close || candles[si].price;
+    var p2 = candles[si + 1].close || candles[si + 1].price;
+    var above = (p1 + p2) / 2 >= navPerToken;
+    ctx.beginPath();
+    ctx.strokeStyle = above ? '#00e5a0' : '#e84057';
+    ctx.lineWidth = 2.5;
+    ctx.moveTo(x1, sy(p1));
+    ctx.lineTo(x2, sy(p2));
+    ctx.stroke();
+  }
+
+  // Current price dot
+  var last = candles[n - 1];
+  var lastX = sx(n - 1);
+  if (lastX >= mg.left && lastX <= mg.left + w) {
+    var lastAbove = last.price >= navPerToken;
+    ctx.fillStyle = lastAbove ? '#00e5a0' : '#e84057';
+    ctx.beginPath(); ctx.arc(lastX, sy(last.price), 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#0c0c10'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(lastX, sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  ctx.restore(); // end clip
+
+  // X labels
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  ctx.textAlign = 'center'; ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif';
+  var xStep = Math.max(1, Math.floor(_chartVisible / 8));
+  for (var xi = visStart; xi < visEnd; xi += xStep) {
+    var xd = candles[xi].date;
+    var xPos = sx(xi);
+    if (xPos > mg.left && xPos < mg.left + w) {
+      ctx.fillText(mo[xd.getMonth()] + '-' + String(xd.getDate()).padStart(2, '0'), xPos, mg.top + h + 20);
+    }
+  }
+
+  // Y labels
+  var yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
+  ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right';
+  for (var yi = 0; yi <= 6; yi++) {
+    var yv = pMin + (pMax - pMin) * yi / 6;
+    ctx.fillText('$' + yv.toFixed(yd), mg.left - 8, sy(yv) + 3);
+  }
+
+  // NAV + price labels on right
+  ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
+  ctx.fillStyle = '#f0f0f5';
+  ctx.fillText(fmt$(last.price), mg.left + w + 4, sy(last.price) + 4);
+
+  // Tooltip
+  var tt = document.createElement('div');
+  tt.className = 'chart-tooltip';
+  container.appendChild(tt);
+  canvas.addEventListener('mousemove', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    if (mx < mg.left || mx > mg.left + w) { tt.style.display = 'none'; return; }
+    var idx = Math.round((mx - blockX) / candleW - 0.5);
+    idx = Math.max(0, Math.min(n - 1, idx));
+    var dd = candles[idx];
+    var belowNAV = dd.price < navPerToken;
+    var pctNAV = navPerToken > 0 ? Math.abs((dd.price - navPerToken) / navPerToken * 100) : 0;
+    tt.style.display = 'block';
+    tt.style.left = Math.min(sx(idx) + 16, cw - 180) + 'px';
+    tt.style.top = Math.max(sy(dd.price) - 70, 0) + 'px';
+    tt.innerHTML = '<div class="tt-price">' + fmt$(dd.price) + '</div>'
+      + '<div class="tt-line" style="color:#e84057">NAV: ' + fmt$(navPerToken) + '</div>'
+      + '<div class="tt-line" style="color:' + (belowNAV ? '#e84057' : '#00e5a0') + '">' + pctNAV.toFixed(1) + '% ' + (belowNAV ? 'below' : 'above') + ' NAV</div>'
+      + '<div class="tt-date">' + dd.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</div>';
+  });
+  canvas.addEventListener('mouseleave', function() { tt.style.display = 'none'; });
+}
+
+// Dispatcher — calls the right chart based on view mode
+function renderChart(candles, navPerToken) {
+  if (_chartViewMode === 'nav') {
+    drawNAVChart(candles, navPerToken);
+  } else {
+    drawChart(candles, navPerToken);
+  }
+}
+
 function initChart(rawCandles, navPerToken) {
   _allCandles['1D'] = rawCandles;
   _navPerToken = navPerToken;
@@ -832,7 +1046,7 @@ function initChart(rawCandles, navPerToken) {
   _chartVisible = Math.min(60, rawCandles.length);
 
   function currentCandles() { return _allCandles[_chartTF] || rawCandles; }
-  function redraw() { drawChart(currentCandles(), _navPerToken); }
+  function redraw() { renderChart(currentCandles(), _navPerToken); }
 
   redraw();
 
@@ -848,9 +1062,11 @@ function initChart(rawCandles, navPerToken) {
       // Vertical scroll — zoom
       var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
       if (e.deltaY < 0) {
-        _chartVisible = Math.max(5, _chartVisible - zoomAmt);
-      } else {
+        // Scroll up = skinnier = more candles visible
         _chartVisible = Math.min(500, _chartVisible + zoomAmt);
+      } else {
+        // Scroll down = fatter = fewer candles visible
+        _chartVisible = Math.max(5, _chartVisible - zoomAmt);
       }
       redraw();
     }
@@ -861,14 +1077,20 @@ function initChart(rawCandles, navPerToken) {
   container.addEventListener('mousedown', function(e) {
     var rect = container.getBoundingClientRect();
     var mx = e.clientX - rect.left;
-    var cw = Math.min(920, container.clientWidth);
-    var rightZone = cw - 68; // mg.right = 68
+    var my = e.clientY - rect.top;
+    // Find the canvas to get its actual width
+    var cvs = container.querySelector('canvas');
+    var canvasW = cvs ? cvs.offsetWidth : Math.min(920, container.clientWidth);
+    // Y-axis zone: last 80px of canvas area (price labels + some margin)
+    var chartLeft = 62; // mg.left
+    var yZoneStart = canvasW - 80;
 
-    if (mx >= rightZone) {
+    if (mx >= yZoneStart && my >= 24 && my <= 376) {
       // Clicked on Y-axis label area — vertical scale drag
+      e.preventDefault();
       yDragging = true; dragStartY = e.clientY; dragStartYScale = _chartYScale;
       container.style.cursor = 'ns-resize';
-    } else {
+    } else if (mx >= chartLeft && mx < yZoneStart) {
       // Clicked on chart area — horizontal pan
       dragging = true; dragStartX = e.clientX; dragStartScroll = _chartScrollPx;
       container.style.cursor = 'grabbing';
@@ -881,7 +1103,6 @@ function initChart(rawCandles, navPerToken) {
       redraw();
     } else if (yDragging) {
       var dy = e.clientY - dragStartY;
-      // Drag up = stretch (increase scale), drag down = compress (decrease scale)
       _chartYScale = Math.max(0.2, Math.min(10, dragStartYScale * Math.pow(1.01, -dy)));
       redraw();
     }
@@ -895,8 +1116,11 @@ function initChart(rawCandles, navPerToken) {
     if (dragging || yDragging) return;
     var rect = container.getBoundingClientRect();
     var mx = e.clientX - rect.left;
-    var cw = Math.min(920, container.clientWidth);
-    container.style.cursor = (mx >= cw - 68) ? 'ns-resize' : '';
+    var my = e.clientY - rect.top;
+    var cvs = container.querySelector('canvas');
+    var canvasW = cvs ? cvs.offsetWidth : Math.min(920, container.clientWidth);
+    var yZoneStart = canvasW - 80;
+    container.style.cursor = (mx >= yZoneStart && my >= 24 && my <= 376) ? 'ns-resize' : '';
   });
 
   // Timeframe buttons
@@ -904,16 +1128,29 @@ function initChart(rawCandles, navPerToken) {
   if (controls) {
     controls.addEventListener('click', async function(e) {
       var btn = e.target.closest('.chart-btn');
-      if (!btn || !btn.dataset.tf) return;
-      controls.querySelectorAll('.chart-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      _chartTF = btn.dataset.tf;
-      _chartScrollPx = 0;
-      _chartYScale = 1.0;
-      var candles = await fetchCandlesForTF(_chartTF);
-      if (candles.length === 0) candles = rawCandles;
-      _chartVisible = Math.min(60, candles.length);
-      redraw();
+      if (!btn) return;
+
+      // View toggle (Candle / NAV)
+      if (btn.dataset.view) {
+        document.querySelectorAll('#chart-view-toggle .chart-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        _chartViewMode = btn.dataset.view;
+        redraw();
+        return;
+      }
+
+      // Timeframe toggle
+      if (btn.dataset.tf) {
+        controls.querySelectorAll('[data-tf]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        _chartTF = btn.dataset.tf;
+        _chartScrollPx = 0;
+        _chartYScale = 1.0;
+        var candles = await fetchCandlesForTF(_chartTF);
+        if (candles.length === 0) candles = rawCandles;
+        _chartVisible = Math.min(60, candles.length);
+        redraw();
+      }
     });
   }
 
