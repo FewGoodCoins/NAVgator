@@ -193,8 +193,8 @@
     <div class="chart-title" id="chart-label"></div>
     <div class="chart-controls" id="chart-controls">
       <div class="chart-btn-group" id="chart-view-toggle">
-        <button class="chart-btn active" data-view="candle">Candle</button>
-        <button class="chart-btn" data-view="nav">NAV</button>
+        <button class="chart-btn active" data-view="nav">Line</button>
+        <button class="chart-btn" data-view="candle">Candle</button>
       </div>
       <div class="chart-btn-group">
         <button class="chart-btn" data-tf="12H">12H</button>
@@ -391,7 +391,7 @@ const TOKENS = {
     monthlyBurn: 25_000, realizedVol: 120, tradingDays: 130,
     genesisStrike: 0.04, genesisPut: 0.02,
     spot: 0.32, treasuryUSDC: 400_000, ammUSDCFixed: null,
-    tge: '2025-10-02',
+    tge: '2025-07-28',
     draws: [
       { date: '2025-11-02', amount: 25_000, label: 'Draw #1' },
       { date: '2025-12-02', amount: 25_000, label: 'Draw #2' },
@@ -625,9 +625,10 @@ var _navPerToken = 0;
 var _chartTF = '1D';
 var _chartScrollPx = 0;  // pixel offset for panning
 var _chartScrollY = 0;   // vertical pixel offset for panning
-var _chartVisible = 60;  // how many candles fit in view (controls zoom)
+var _chartZoom = 1.0;    // zoom factor: 1.0 = default, >1 = zoomed in (fatter), <1 = zoomed out (skinnier)
+var _chartVisible = 60;  // derived from zoom, kept for compatibility
 var _chartYScale = 1.0;  // vertical zoom multiplier (>1 = stretched, <1 = compressed)
-var _chartViewMode = 'candle'; // 'candle' or 'nav'
+var _chartViewMode = 'nav'; // 'candle' or 'nav'
 
 async function fetchCandlesForTF(tf) {
   if (_allCandles[tf]) return _allCandles[tf];
@@ -674,9 +675,10 @@ function drawChart(candles, navPerToken) {
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  // Fixed-width candles based on zoom level
-  var candleW = Math.max(1, Math.floor(w / _chartVisible));
-  var bodyW = Math.max(1, candleW <= 2 ? candleW : candleW - 2);
+  // Candle width from zoom factor — smooth floating point
+  var baseCandleW = w / 60; // base: 60 candles fills the width
+  var candleW = Math.max(0.5, baseCandleW * _chartZoom);
+  var bodyW = Math.max(0.5, candleW <= 2 ? candleW : candleW - 2);
   var wickW = bodyW < 4 ? 1 : 1.5;
 
   // Total width of all candles as a block
@@ -871,8 +873,9 @@ function drawNAVChart(candles, navPerToken) {
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  // Fixed-width based on zoom
-  var candleW = Math.max(1, Math.floor(w / _chartVisible));
+  // Candle width from zoom factor — smooth floating point
+  var baseCandleW = w / 60;
+  var candleW = Math.max(0.5, baseCandleW * _chartZoom);
   var totalBlockW = n * candleW;
   var defaultOffset = w - totalBlockW;
   var blockX = mg.left + defaultOffset + _chartScrollPx;
@@ -1090,6 +1093,7 @@ function initChart(rawCandles, navPerToken) {
   _navPerToken = navPerToken;
   _chartTF = '1D';
   _chartScrollPx = 0;
+  _chartZoom = 1.0;
   _chartVisible = Math.min(60, rawCandles.length);
 
   function currentCandles() { return _allCandles[_chartTF] || rawCandles; }
@@ -1106,29 +1110,26 @@ function initChart(rawCandles, navPerToken) {
       _chartScrollPx -= e.deltaX;
       redraw();
     } else {
-      // Vertical scroll — zoom, right side (recent) expands slowly, left side (old) expands faster
-      var rect = container.getBoundingClientRect();
-      var mx = e.clientX - rect.left;
+      // Vertical scroll — smooth zoom using float factor
       var cw = Math.min(920, container.clientWidth);
       var mgLeft = 16, mgRight = 72;
       var ww = cw - mgLeft - mgRight;
+      var baseCandleW = ww / 60;
       
-      var oldCandleW = Math.max(1, Math.floor(ww / _chartVisible));
-      // Zoom rate scales up as you zoom out further — 2% of current visible
-      var zoomAmt = Math.max(1, Math.round(_chartVisible * 0.02));
+      var oldCandleW = Math.max(0.5, baseCandleW * _chartZoom);
       
+      // Smooth multiplier — 1.5% per scroll tick
       if (e.deltaY < 0) {
-        // Scroll up = skinnier = more candles
-        _chartVisible = Math.min(5000, _chartVisible + zoomAmt);
+        // Scroll up = skinnier
+        _chartZoom = Math.max(0.01, _chartZoom * 0.985);
       } else {
-        // Scroll down = fatter = fewer candles
-        _chartVisible = Math.max(3, _chartVisible - zoomAmt);
+        // Scroll down = fatter
+        _chartZoom = Math.min(20, _chartZoom * 1.015);
       }
       
-      var newCandleW = Math.max(1, Math.floor(ww / _chartVisible));
+      var newCandleW = Math.max(0.5, baseCandleW * _chartZoom);
       
-      // Asymmetric anchor: anchor point at 7/8 of the way from left
-      // This means right side (recent candles) barely moves, left side expands more
+      // Asymmetric anchor at 7/8 from left
       var anchorPx = ww * (7 / 8);
       var scale = newCandleW / oldCandleW;
       _chartScrollPx = _chartScrollPx * scale + anchorPx * (1 - scale);
@@ -1215,6 +1216,7 @@ function initChart(rawCandles, navPerToken) {
         _chartScrollPx = 0;
         _chartScrollY = 0;
         _chartYScale = 1.0;
+        _chartZoom = 1.0;
         var candles = await fetchCandlesForTF(_chartTF);
         if (candles.length === 0) candles = rawCandles;
         _chartVisible = Math.min(60, candles.length);
