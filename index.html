@@ -605,6 +605,7 @@ var _navPerToken = 0;
 var _chartTF = '1D';
 var _chartScrollPx = 0;  // pixel offset for panning
 var _chartVisible = 60;  // how many candles fit in view (controls zoom)
+var _chartYScale = 1.0;  // vertical zoom multiplier (>1 = stretched, <1 = compressed)
 
 async function fetchCandlesForTF(tf) {
   if (_allCandles[tf]) return _allCandles[tf];
@@ -685,13 +686,13 @@ function drawChart(candles, navPerToken) {
   // sx: x position of candle index i
   var sx = function(i) { return blockX + i * candleW + candleW / 2; };
 
-  // Determine which candles are visible on screen for price range
+  // Determine which candles are visible on screen
   var visStart = Math.max(0, Math.floor((mg.left - blockX) / candleW));
   var visEnd = Math.min(n, Math.ceil((mg.left + w - blockX) / candleW));
 
-  // Price range from visible candles only
+  // Price range from ALL candles so Y axis stays fixed during zoom
   var allHigh = -Infinity, allLow = Infinity;
-  for (var i = visStart; i < visEnd; i++) {
+  for (var i = 0; i < n; i++) {
     var hi = candles[i].high || candles[i].price;
     var lo = candles[i].low || candles[i].price;
     if (hi > allHigh) allHigh = hi;
@@ -700,8 +701,13 @@ function drawChart(candles, navPerToken) {
   if (navPerToken > allHigh) allHigh = navPerToken;
   if (navPerToken < allLow) allLow = navPerToken;
   var pPad = (allHigh - allLow) * 0.08 || allHigh * 0.05;
-  var pMin = allLow - pPad;
-  var pMax = allHigh + pPad;
+  var pMinBase = allLow - pPad;
+  var pMaxBase = allHigh + pPad;
+  // Apply vertical zoom: scale around the midpoint
+  var pMid = (pMinBase + pMaxBase) / 2;
+  var pHalf = (pMaxBase - pMinBase) / 2;
+  var pMin = pMid - pHalf / _chartYScale;
+  var pMax = pMid + pHalf / _chartYScale;
 
   var sy = function(p) { return mg.top + (1 - (p - pMin) / (pMax - pMin)) * h; };
 
@@ -843,20 +849,47 @@ function initChart(rawCandles, navPerToken) {
     redraw();
   }, { passive: false });
 
-  // Pan with click-drag on container
-  var dragging = false, dragStartX = 0, dragStartScroll = 0;
+  // Pan with click-drag on container (chart area = horizontal pan, right edge = Y scale)
+  var dragging = false, yDragging = false, dragStartX = 0, dragStartY = 0, dragStartScroll = 0, dragStartYScale = 1;
   container.addEventListener('mousedown', function(e) {
-    dragging = true; dragStartX = e.clientX; dragStartScroll = _chartScrollPx;
-    container.style.cursor = 'grabbing';
+    var rect = container.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var cw = Math.min(920, container.clientWidth);
+    var rightZone = cw - 68; // mg.right = 68
+
+    if (mx >= rightZone) {
+      // Clicked on Y-axis label area — vertical scale drag
+      yDragging = true; dragStartY = e.clientY; dragStartYScale = _chartYScale;
+      container.style.cursor = 'ns-resize';
+    } else {
+      // Clicked on chart area — horizontal pan
+      dragging = true; dragStartX = e.clientX; dragStartScroll = _chartScrollPx;
+      container.style.cursor = 'grabbing';
+    }
   });
   window.addEventListener('mousemove', function(e) {
-    if (!dragging) return;
-    var dx = e.clientX - dragStartX;
-    _chartScrollPx = dragStartScroll + dx;
-    redraw();
+    if (dragging) {
+      var dx = e.clientX - dragStartX;
+      _chartScrollPx = dragStartScroll + dx;
+      redraw();
+    } else if (yDragging) {
+      var dy = e.clientY - dragStartY;
+      // Drag up = stretch (increase scale), drag down = compress (decrease scale)
+      _chartYScale = Math.max(0.2, Math.min(10, dragStartYScale * Math.pow(1.01, -dy)));
+      redraw();
+    }
   });
   window.addEventListener('mouseup', function() {
-    if (dragging) { dragging = false; container.style.cursor = ''; }
+    if (dragging || yDragging) { dragging = false; yDragging = false; container.style.cursor = ''; }
+  });
+
+  // Cursor hint for Y-axis zone
+  container.addEventListener('mousemove', function(e) {
+    if (dragging || yDragging) return;
+    var rect = container.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var cw = Math.min(920, container.clientWidth);
+    container.style.cursor = (mx >= cw - 68) ? 'ns-resize' : '';
   });
 
   // Timeframe buttons
@@ -869,6 +902,7 @@ function initChart(rawCandles, navPerToken) {
       btn.classList.add('active');
       _chartTF = btn.dataset.tf;
       _chartScrollPx = 0;
+      _chartYScale = 1.0;
       var candles = await fetchCandlesForTF(_chartTF);
       if (candles.length === 0) candles = rawCandles;
       _chartVisible = Math.min(60, candles.length);
