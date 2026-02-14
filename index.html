@@ -612,6 +612,7 @@ var _allCandles = {};  // keyed by timeframe
 var _navPerToken = 0;
 var _chartTF = '1D';
 var _chartScrollPx = 0;  // pixel offset for panning
+var _chartScrollY = 0;   // vertical pixel offset for panning
 var _chartVisible = 60;  // how many candles fit in view (controls zoom)
 var _chartYScale = 1.0;  // vertical zoom multiplier (>1 = stretched, <1 = compressed)
 var _chartViewMode = 'candle'; // 'candle' or 'nav'
@@ -649,7 +650,7 @@ function drawChart(candles, navPerToken) {
   var dpr = window.devicePixelRatio || 1;
   var cw = Math.min(920, container.clientWidth);
   var ch = 400;
-  var mg = { top: 24, right: 68, bottom: 52, left: 62 };
+  var mg = { top: 24, right: 72, bottom: 52, left: 16 };
   var w = cw - mg.left - mg.right;
   var h = ch - mg.top - mg.bottom;
 
@@ -715,6 +716,10 @@ function drawChart(candles, navPerToken) {
   // Apply vertical zoom: scale around the midpoint
   var pMid = (pMinBase + pMaxBase) / 2;
   var pHalf = (pMaxBase - pMinBase) / 2;
+  // Apply vertical pan: shift the midpoint based on scroll
+  var pRange = pHalf * 2 / _chartYScale;
+  var yPanAmount = (_chartScrollY / 300) * pRange; // 300px drag = full range shift
+  pMid += yPanAmount;
   var pMin = pMid - pHalf / _chartYScale;
   var pMax = pMid + pHalf / _chartYScale;
 
@@ -783,17 +788,17 @@ function drawChart(candles, navPerToken) {
     }
   }
 
-  // Y labels
+  // Y labels (right side)
   var yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
-  ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right';
+  ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'left';
   for (var yi = 0; yi <= 6; yi++) {
     var yv = pMin + (pMax - pMin) * yi / 6;
-    ctx.fillText('$' + yv.toFixed(yd), mg.left - 8, sy(yv) + 3);
+    ctx.fillText('$' + yv.toFixed(yd), mg.left + w + 6, sy(yv) + 3);
   }
 
   // NAV label (right side, outside clip)
   ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
+  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 6, navY + 4);
 
   // Current price marker + label (only if last candle is visible)
   var last = candles[n - 1];
@@ -806,7 +811,7 @@ function drawChart(candles, navPerToken) {
     ctx.beginPath(); ctx.arc(lastX, sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
   }
   ctx.fillStyle = '#f0f0f5'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText(fmt$(last.price), mg.left + w + 4, sy(last.price) + 4);
+  ctx.fillText(fmt$(last.price), mg.left + w + 6, sy(last.price) + 4);
 
   // Tooltip
   var tt = document.createElement('div');
@@ -842,7 +847,7 @@ function drawNAVChart(candles, navPerToken) {
   var dpr = window.devicePixelRatio || 1;
   var cw = Math.min(920, container.clientWidth);
   var ch = 400;
-  var mg = { top: 24, right: 68, bottom: 52, left: 62 };
+  var mg = { top: 24, right: 72, bottom: 52, left: 16 };
   var w = cw - mg.left - mg.right;
   var h = ch - mg.top - mg.bottom;
 
@@ -882,6 +887,9 @@ function drawNAVChart(candles, navPerToken) {
   var pMaxBase = allHigh + pPad;
   var pMid = (pMinBase + pMaxBase) / 2;
   var pHalf = (pMaxBase - pMinBase) / 2;
+  var pRange = pHalf * 2 / _chartYScale;
+  var yPanAmount = (_chartScrollY / 300) * pRange;
+  pMid += yPanAmount;
   var pMin = pMid - pHalf / _chartYScale;
   var pMax = pMid + pHalf / _chartYScale;
 
@@ -991,19 +999,19 @@ function drawNAVChart(candles, navPerToken) {
     }
   }
 
-  // Y labels
+  // Y labels (right side)
   var yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
-  ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right';
+  ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'left';
   for (var yi = 0; yi <= 6; yi++) {
     var yv = pMin + (pMax - pMin) * yi / 6;
-    ctx.fillText('$' + yv.toFixed(yd), mg.left - 8, sy(yv) + 3);
+    ctx.fillText('$' + yv.toFixed(yd), mg.left + w + 6, sy(yv) + 3);
   }
 
   // NAV + price labels on right
   ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
+  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 6, navY + 4);
   ctx.fillStyle = '#f0f0f5';
-  ctx.fillText(fmt$(last.price), mg.left + w + 4, sy(last.price) + 4);
+  ctx.fillText(fmt$(last.price), mg.left + w + 6, sy(last.price) + 4);
 
   // Tooltip
   var tt = document.createElement('div');
@@ -1063,14 +1071,14 @@ function initChart(rawCandles, navPerToken) {
       var rect = container.getBoundingClientRect();
       var mx = e.clientX - rect.left;
       var cw = Math.min(920, container.clientWidth);
-      var mgLeft = 62, mgRight = 68;
+      var mgLeft = 16, mgRight = 72;
       var ww = cw - mgLeft - mgRight;
       
       // Where is the cursor as a fraction of the chart width? (0=left, 1=right)
       var cursorFrac = Math.max(0, Math.min(1, (mx - mgLeft) / ww));
       
       var oldCandleW = Math.max(2, Math.floor(ww / _chartVisible));
-      var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
+      var zoomAmt = Math.max(1, Math.round(_chartVisible * 0.04));
       var oldVisible = _chartVisible;
       
       if (e.deltaY < 0) {
@@ -1092,7 +1100,7 @@ function initChart(rawCandles, navPerToken) {
   }, { passive: false });
 
   // Pan with click-drag on container (chart area = horizontal pan, right edge = Y scale)
-  var dragging = false, yDragging = false, dragStartX = 0, dragStartY = 0, dragStartScroll = 0, dragStartYScale = 1;
+  var dragging = false, yDragging = false, dragStartX = 0, dragStartY = 0, dragStartScroll = 0, dragStartScrollY = 0, dragStartYScale = 1;
   container.addEventListener('mousedown', function(e) {
     var rect = container.getBoundingClientRect();
     var mx = e.clientX - rect.left;
@@ -1100,8 +1108,8 @@ function initChart(rawCandles, navPerToken) {
     // Find the canvas to get its actual width
     var cvs = container.querySelector('canvas');
     var canvasW = cvs ? cvs.offsetWidth : Math.min(920, container.clientWidth);
-    // Y-axis zone: last 80px of canvas area (price labels + some margin)
-    var chartLeft = 62; // mg.left
+    // Y-axis zone: right 80px of canvas area (price labels + drag zone)
+    var chartLeft = 16; // mg.left
     var yZoneStart = canvasW - 80;
 
     if (mx >= yZoneStart && my >= 24 && my <= 376) {
@@ -1110,15 +1118,18 @@ function initChart(rawCandles, navPerToken) {
       yDragging = true; dragStartY = e.clientY; dragStartYScale = _chartYScale;
       container.style.cursor = 'ns-resize';
     } else if (mx >= chartLeft && mx < yZoneStart) {
-      // Clicked on chart area — horizontal pan
-      dragging = true; dragStartX = e.clientX; dragStartScroll = _chartScrollPx;
+      // Clicked on chart area — horizontal + vertical pan
+      dragging = true; dragStartX = e.clientX; dragStartY = e.clientY;
+      dragStartScroll = _chartScrollPx; dragStartScrollY = _chartScrollY;
       container.style.cursor = 'grabbing';
     }
   });
   window.addEventListener('mousemove', function(e) {
     if (dragging) {
       var dx = e.clientX - dragStartX;
+      var dy = e.clientY - dragStartY;
       _chartScrollPx = dragStartScroll + dx;
+      _chartScrollY = dragStartScrollY + dy;
       redraw();
     } else if (yDragging) {
       var dy = e.clientY - dragStartY;
@@ -1164,6 +1175,7 @@ function initChart(rawCandles, navPerToken) {
         btn.classList.add('active');
         _chartTF = btn.dataset.tf;
         _chartScrollPx = 0;
+        _chartScrollY = 0;
         _chartYScale = 1.0;
         var candles = await fetchCandlesForTF(_chartTF);
         if (candles.length === 0) candles = rawCandles;
