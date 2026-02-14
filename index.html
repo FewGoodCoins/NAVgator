@@ -179,6 +179,7 @@
   <div class="chart-section">
     <div class="chart-title" id="chart-label"></div>
     <div class="chart-controls" id="chart-controls">
+      <button class="chart-btn" data-tf="12H">12H</button>
       <button class="chart-btn active" data-tf="1D">1D</button>
       <button class="chart-btn" data-tf="1W">1W</button>
       <button class="chart-btn" data-tf="1M">1M</button>
@@ -548,36 +549,8 @@ const fmtBurn = n => n>=1e6?'$'+(n/1e6).toFixed(1)+'M':n>=1e3?'$'+(n/1e3).toFixe
 // LIVE DATA FETCHERS
 // ═══════════════════════════════════════════════════════════════════════
 async function fetchOHLCV() {
-  if (!CFG.mint) return null;
-  try {
-    var tge = new Date(CFG.tge);
-    var now = new Date();
-    var timeFrom = Math.floor(tge.getTime() / 1000);
-    var timeTo = Math.floor(now.getTime() / 1000);
-    var url = 'https://public-api.birdeye.so/defi/ohlcv?address=' + CFG.mint + '&type=1D&time_from=' + timeFrom + '&time_to=' + timeTo;
-    var res = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'X-API-KEY': 'f570879c3c51419fb0c7e75e38793434'
-      }
-    });
-    if (!res.ok) { console.warn('Birdeye OHLCV failed:', res.status); return null; }
-    var json = await res.json();
-    var items = json.data && json.data.items ? json.data.items : [];
-    if (items.length === 0) return null;
-    var candles = items.map(function(c) {
-      return {
-        date: new Date(c.unixTime * 1000),
-        open: c.o,
-        high: c.h,
-        low: c.l,
-        close: c.c,
-        price: c.c
-      };
-    }).filter(function(d) { return d.price > 0; });
-    candles.sort(function(a, b) { return a.date - b.date; });
-    return candles.length > 0 ? candles : null;
-  } catch (e) { console.warn('Birdeye OHLCV failed:', e.message); return null; }
+  var candles = await fetchCandlesForTF('1D');
+  return candles.length > 0 ? candles : null;
 }
 
 async function fetchFromAPI() {
@@ -625,45 +598,53 @@ function genFallback() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// CHART — Interactive Candlesticks + NAV line
+// CHART — DexScreener-style Candlesticks + NAV line
 // ═══════════════════════════════════════════════════════════════════════
-var _rawCandles = [];
+var _allCandles = {};  // keyed by timeframe
 var _navPerToken = 0;
 var _chartTF = '1D';
-var _chartViewStart = 0;  // index into aggregated data
-var _chartViewEnd = 0;
+var _chartOffset = 0;  // how many candles scrolled from the right
+var _chartVisible = 60; // how many candles visible
 
-function aggregateCandles(candles, tf) {
-  if (tf === '1D') return candles;
-  var grouped = {};
-  for (var i = 0; i < candles.length; i++) {
-    var d = candles[i].date;
-    var key;
-    if (tf === '1W') {
-      var day = new Date(d); day.setDate(day.getDate() - day.getDay());
-      key = day.toISOString().slice(0, 10);
-    } else {
-      key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    }
-    if (!grouped[key]) grouped[key] = { date: new Date(d), open: candles[i].open || candles[i].price, high: -Infinity, low: Infinity, close: 0, price: 0 };
-    var g = grouped[key];
-    var hi = candles[i].high || candles[i].price;
-    var lo = candles[i].low || candles[i].price;
-    if (hi > g.high) g.high = hi;
-    if (lo < g.low) g.low = lo;
-    g.close = candles[i].close || candles[i].price;
-    g.price = g.close;
-  }
-  var keys = Object.keys(grouped).sort();
-  return keys.map(function(k) { return grouped[k]; });
+async function fetchCandlesForTF(tf) {
+  if (_allCandles[tf]) return _allCandles[tf];
+  if (!CFG.mint) return [];
+  try {
+    var tge = new Date(CFG.tge);
+    var now = new Date();
+    var timeFrom = Math.floor(tge.getTime() / 1000);
+    var timeTo = Math.floor(now.getTime() / 1000);
+    var url = 'https://public-api.birdeye.so/defi/ohlcv?address=' + CFG.mint + '&type=' + tf + '&time_from=' + timeFrom + '&time_to=' + timeTo;
+    var res = await fetch(url, {
+      headers: { 'Accept': 'application/json', 'X-API-KEY': 'f570879c3c51419fb0c7e75e38793434' }
+    });
+    if (!res.ok) return [];
+    var json = await res.json();
+    var items = json.data && json.data.items ? json.data.items : [];
+    var candles = items.map(function(c) {
+      return { date: new Date(c.unixTime * 1000), open: c.o, high: c.h, low: c.l, close: c.c, price: c.c };
+    }).filter(function(d) { return d.price > 0; });
+    candles.sort(function(a, b) { return a.date - b.date; });
+    _allCandles[tf] = candles;
+    return candles;
+  } catch (e) { return []; }
 }
 
-function drawChart(history, navPerToken) {
+function drawChart(candles, navPerToken) {
   var container = document.getElementById('chart-container');
   container.innerHTML = '';
+  var n = candles.length;
+  if (n === 0) { container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:#555560">No chart data available</div>'; return; }
 
-  var n = history.length;
-  if (n === 0) return;
+  // Clamp visible range
+  var total = n;
+  _chartVisible = Math.max(10, Math.min(total, _chartVisible));
+  _chartOffset = Math.max(0, Math.min(total - _chartVisible, _chartOffset));
+  var startIdx = total - _chartVisible - _chartOffset;
+  var endIdx = startIdx + _chartVisible;
+  var visible = candles.slice(startIdx, endIdx);
+  var vn = visible.length;
+  if (vn === 0) return;
 
   var dpr = window.devicePixelRatio || 1;
   var cw = Math.min(920, container.clientWidth);
@@ -680,13 +661,16 @@ function drawChart(history, navPerToken) {
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  var tMin = history[0].date.getTime();
-  var tMax = history[n - 1].date.getTime();
+  // Fixed-width candles, always touching
+  var candleW = Math.max(2, Math.floor(w / vn));
+  var bodyW = Math.max(1, candleW - 2);
+  var wickW = bodyW < 4 ? 1 : 1.5;
 
+  // Price range from visible candles
   var allHigh = -Infinity, allLow = Infinity;
-  for (var i = 0; i < n; i++) {
-    var hi = history[i].high || history[i].price;
-    var lo = history[i].low || history[i].price;
+  for (var i = 0; i < vn; i++) {
+    var hi = visible[i].high || visible[i].price;
+    var lo = visible[i].low || visible[i].price;
     if (hi > allHigh) allHigh = hi;
     if (lo < allLow) allLow = lo;
   }
@@ -696,7 +680,7 @@ function drawChart(history, navPerToken) {
   var pMin = allLow - pPad;
   var pMax = allHigh + pPad;
 
-  var sx = function(t) { return mg.left + (t - tMin) / (tMax - tMin) * w; };
+  var sx = function(idx) { return mg.left + idx * candleW + candleW / 2; };
   var sy = function(p) { return mg.top + (1 - (p - pMin) / (pMax - pMin)) * h; };
 
   // Grid
@@ -717,11 +701,10 @@ function drawChart(history, navPerToken) {
   // X labels
   var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   ctx.textAlign = 'center'; ctx.fillStyle = '#555560';
-  var xTicks = Math.min(8, n);
-  for (var xi = 0; xi <= xTicks; xi++) {
-    var t = tMin + (tMax - tMin) * xi / xTicks;
-    var xd = new Date(t);
-    ctx.fillText(mo[xd.getMonth()] + '-' + String(xd.getDate()).padStart(2, '0'), sx(t), mg.top + h + 20);
+  var xStep = Math.max(1, Math.floor(vn / 8));
+  for (var xi = 0; xi < vn; xi += xStep) {
+    var xd = visible[xi].date;
+    ctx.fillText(mo[xd.getMonth()] + '-' + String(xd.getDate()).padStart(2, '0'), sx(xi), mg.top + h + 20);
   }
 
   // NAV flat line
@@ -736,14 +719,10 @@ function drawChart(history, navPerToken) {
   ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
   ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
 
-  // Candlesticks
-  var candleSpacing = w / Math.max(n, 1);
-  var candleW = Math.max(1, Math.min(candleSpacing * 0.65, 14));
-  var wickW = candleW < 4 ? 1 : 1.5;
-
-  for (var ci = 0; ci < n; ci++) {
-    var d = history[ci];
-    var x = sx(d.date.getTime());
+  // Draw candles
+  for (var ci = 0; ci < vn; ci++) {
+    var d = visible[ci];
+    var x = sx(ci);
     var hasOHLC = d.open != null && d.high != null && d.low != null;
 
     if (hasOHLC) {
@@ -759,25 +738,20 @@ function drawChart(history, navPerToken) {
       ctx.beginPath(); ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
 
       ctx.fillStyle = bodyCol;
-      if (candleW >= 3) {
-        ctx.fillRect(x - candleW / 2, bTop, candleW, bH);
-      } else {
-        ctx.strokeStyle = bodyCol; ctx.lineWidth = Math.max(1.5, candleW);
-        ctx.beginPath(); ctx.moveTo(x, bTop); ctx.lineTo(x, bBot); ctx.stroke();
-      }
+      ctx.fillRect(x - bodyW / 2, bTop, bodyW, bH);
     } else {
       ctx.fillStyle = '#f0f0f5';
       ctx.beginPath(); ctx.arc(x, sy(d.price), 1.5, 0, Math.PI * 2); ctx.fill();
     }
   }
 
-  // Current price marker
-  var last = history[n - 1];
+  // Current price marker (last visible candle)
+  var last = visible[vn - 1];
   var lastBull = (last.close || last.price) >= (last.open || last.price);
   ctx.fillStyle = lastBull ? '#00e5a0' : '#e84057';
-  ctx.beginPath(); ctx.arc(sx(last.date.getTime()), sy(last.price), 5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(sx(vn - 1), sy(last.price), 5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#0c0c10'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(sx(last.date.getTime()), sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sx(vn - 1), sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
   ctx.fillStyle = '#f0f0f5'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
   ctx.fillText(fmt$(last.price), mg.left + w + 4, sy(last.price) + 4);
 
@@ -789,17 +763,13 @@ function drawChart(history, navPerToken) {
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
     if (mx < mg.left || mx > mg.left + w) { tt.style.display = 'none'; return; }
-    var t2 = tMin + (mx - mg.left) / w * (tMax - tMin);
-    var ci2 = 0, md = Infinity;
-    for (var i2 = 0; i2 < n; i2++) {
-      var dist = Math.abs(history[i2].date.getTime() - t2);
-      if (dist < md) { md = dist; ci2 = i2; }
-    }
-    var dd = history[ci2];
+    var idx = Math.round((mx - mg.left) / candleW - 0.5);
+    idx = Math.max(0, Math.min(vn - 1, idx));
+    var dd = visible[idx];
     var belowNAV = dd.price < navPerToken;
     var pctNAV = navPerToken > 0 ? Math.abs((dd.price - navPerToken) / navPerToken * 100) : 0;
     tt.style.display = 'block';
-    tt.style.left = Math.min(sx(dd.date.getTime()) + 16, cw - 180) + 'px';
+    tt.style.left = Math.min(sx(idx) + 16, cw - 180) + 'px';
     tt.style.top = Math.max(sy(dd.high || dd.price) - 90, 0) + 'px';
     tt.innerHTML = '<div class="tt-price">' + fmt$(dd.price) + '</div>'
       + (dd.open != null ? '<div class="tt-line" style="color:var(--dim)">O ' + fmt$(dd.open) + ' · H ' + fmt$(dd.high) + ' · L ' + fmt$(dd.low) + '</div>' : '')
@@ -809,85 +779,73 @@ function drawChart(history, navPerToken) {
   });
   canvas.addEventListener('mouseleave', function() { tt.style.display = 'none'; });
 
-  // Zoom with mouse wheel
+  // Zoom with mouse wheel — changes visible count
   canvas.addEventListener('wheel', function(e) {
     e.preventDefault();
-    var agg = aggregateCandles(_rawCandles, _chartTF);
-    var total = agg.length;
-    var range = _chartViewEnd - _chartViewStart;
-    var zoomAmount = Math.max(1, Math.round(range * 0.15));
+    var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
     if (e.deltaY < 0) {
-      // Zoom in
-      if (range <= 5) return;
-      _chartViewStart = Math.min(_chartViewStart + zoomAmount, _chartViewEnd - 5);
-      _chartViewEnd = Math.max(_chartViewEnd - zoomAmount, _chartViewStart + 5);
+      _chartVisible = Math.max(10, _chartVisible - zoomAmt);
     } else {
-      // Zoom out
-      _chartViewStart = Math.max(0, _chartViewStart - zoomAmount);
-      _chartViewEnd = Math.min(total, _chartViewEnd + zoomAmount);
+      _chartVisible = Math.min(total, _chartVisible + zoomAmt);
     }
-    drawChart(agg.slice(_chartViewStart, _chartViewEnd), _navPerToken);
+    drawChart(candles, navPerToken);
   }, { passive: false });
 
   // Pan with click-drag
-  var dragging = false, dragStartX = 0, dragStartViewStart = 0, dragStartViewEnd = 0;
+  var dragging = false, dragStartX = 0, dragStartOffset = 0;
   canvas.addEventListener('mousedown', function(e) {
-    dragging = true; dragStartX = e.clientX;
-    dragStartViewStart = _chartViewStart; dragStartViewEnd = _chartViewEnd;
+    dragging = true; dragStartX = e.clientX; dragStartOffset = _chartOffset;
     canvas.style.cursor = 'grabbing';
   });
-  window.addEventListener('mousemove', function(e) {
+  var onMouseMove = function(e) {
     if (!dragging) return;
     var dx = e.clientX - dragStartX;
-    var agg = aggregateCandles(_rawCandles, _chartTF);
-    var total = agg.length;
-    var range = dragStartViewEnd - dragStartViewStart;
-    var shift = Math.round(-dx / (w / range));
-    var newStart = Math.max(0, Math.min(total - range, dragStartViewStart + shift));
-    var newEnd = newStart + range;
-    if (newEnd > total) { newEnd = total; newStart = total - range; }
-    _chartViewStart = newStart; _chartViewEnd = newEnd;
-    drawChart(agg.slice(_chartViewStart, _chartViewEnd), _navPerToken);
-  });
-  window.addEventListener('mouseup', function() {
+    var candlesShifted = Math.round(dx / candleW);
+    _chartOffset = Math.max(0, Math.min(total - _chartVisible, dragStartOffset + candlesShifted));
+    drawChart(candles, navPerToken);
+  };
+  var onMouseUp = function() {
     if (dragging) { dragging = false; canvas.style.cursor = 'crosshair'; }
-  });
+  };
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+}
+
+function initChart(rawCandles, navPerToken) {
+  _allCandles['1D'] = rawCandles;
+  _navPerToken = navPerToken;
+  _chartTF = '1D';
+  _chartOffset = 0;
+  _chartVisible = Math.min(60, rawCandles.length);
+  drawChart(rawCandles, navPerToken);
+
+  // Timeframe buttons
+  var controls = document.getElementById('chart-controls');
+  if (controls) {
+    controls.addEventListener('click', async function(e) {
+      var btn = e.target.closest('.chart-btn');
+      if (!btn || !btn.dataset.tf) return;
+      controls.querySelectorAll('.chart-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      _chartTF = btn.dataset.tf;
+      _chartOffset = 0;
+      var tfMap = { '12H': '12H', '1D': '1D', '1W': '1W', '1M': '1M' };
+      var candles = await fetchCandlesForTF(tfMap[_chartTF] || '1D');
+      if (candles.length === 0) candles = rawCandles;
+      _chartVisible = Math.min(60, candles.length);
+      drawChart(candles, _navPerToken);
+    });
+  }
 
   // Resize
   var resizeTimer;
   window.addEventListener('resize', function() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
-      var agg = aggregateCandles(_rawCandles, _chartTF);
-      drawChart(agg.slice(_chartViewStart, _chartViewEnd), _navPerToken);
+      var candles = _allCandles[_chartTF] || rawCandles;
+      drawChart(candles, _navPerToken);
     }, 400);
   });
-}
-
-function initChart(rawCandles, navPerToken) {
-  _rawCandles = rawCandles;
-  _navPerToken = navPerToken;
-  _chartTF = '1D';
-  var agg = aggregateCandles(rawCandles, _chartTF);
-  _chartViewStart = 0;
-  _chartViewEnd = agg.length;
-  drawChart(agg, navPerToken);
-
-  // Timeframe buttons
-  var controls = document.getElementById('chart-controls');
-  if (controls) {
-    controls.addEventListener('click', function(e) {
-      var btn = e.target.closest('.chart-btn');
-      if (!btn || !btn.dataset.tf) return;
-      controls.querySelectorAll('.chart-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      _chartTF = btn.dataset.tf;
-      var agg2 = aggregateCandles(_rawCandles, _chartTF);
-      _chartViewStart = 0;
-      _chartViewEnd = agg2.length;
-      drawChart(agg2, _navPerToken);
-    });
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
