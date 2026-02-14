@@ -84,16 +84,6 @@
   .legend-dash { display: inline-block; width: 16px; height: 0; border-top: 2px dashed; }
 
   /* Address section */
-  .nav-hero { display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; padding: 20px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-  .nav-hero-main { display: flex; align-items: baseline; gap: 12px; }
-  .nav-hero-label { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
-  .nav-hero-value { font-family: 'DM Serif Display', serif; font-size: 48px; font-weight: 400; color: var(--green); line-height: 1; }
-  .nav-hero-detail { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--dim); }
-  .nav-hero-detail b { color: var(--text); font-weight: 600; }
-  .nav-hero-detail .hl { color: var(--green); font-weight: 600; }
-  .nav-hero-detail .spot-col { color: var(--red); font-weight: 600; }
-
-  /* Address section */
   .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
   .addr-title { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
   .addr-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; }
@@ -183,17 +173,15 @@
   <h1 id="title">Loading Dashboard…</h1>
   <div class="desc" id="desc">Fetching data…</div>
 
-  <!-- Big NAV display -->
-  <div class="nav-hero" id="nav-hero"></div>
-
   <div class="cards" id="cards"></div>
   <div class="params" id="params"></div>
 
   <div class="chart-section">
     <div class="chart-title" id="chart-label"></div>
-    <div class="chart-controls" style="display:none">
-      <button class="chart-btn active" data-view="full">Full</button>
-      <button class="chart-btn" data-view="strike">Focus NAV</button>
+    <div class="chart-controls" id="chart-controls">
+      <button class="chart-btn active" data-tf="1D">1D</button>
+      <button class="chart-btn" data-tf="1W">1W</button>
+      <button class="chart-btn" data-tf="1M">1M</button>
     </div>
     <div id="chart-container">
       <div class="chart-loading" id="chart-loading">⏳ Fetching price history…</div>
@@ -637,104 +625,135 @@ function genFallback() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// CHART — Candlesticks + flat NAV line
+// CHART — Interactive Candlesticks + NAV line
 // ═══════════════════════════════════════════════════════════════════════
+var _rawCandles = [];
+var _navPerToken = 0;
+var _chartTF = '1D';
+var _chartViewStart = 0;  // index into aggregated data
+var _chartViewEnd = 0;
+
+function aggregateCandles(candles, tf) {
+  if (tf === '1D') return candles;
+  var grouped = {};
+  for (var i = 0; i < candles.length; i++) {
+    var d = candles[i].date;
+    var key;
+    if (tf === '1W') {
+      var day = new Date(d); day.setDate(day.getDate() - day.getDay());
+      key = day.toISOString().slice(0, 10);
+    } else {
+      key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    if (!grouped[key]) grouped[key] = { date: new Date(d), open: candles[i].open || candles[i].price, high: -Infinity, low: Infinity, close: 0, price: 0 };
+    var g = grouped[key];
+    var hi = candles[i].high || candles[i].price;
+    var lo = candles[i].low || candles[i].price;
+    if (hi > g.high) g.high = hi;
+    if (lo < g.low) g.low = lo;
+    g.close = candles[i].close || candles[i].price;
+    g.price = g.close;
+  }
+  var keys = Object.keys(grouped).sort();
+  return keys.map(function(k) { return grouped[k]; });
+}
+
 function drawChart(history, navPerToken) {
-  const container = document.getElementById('chart-container');
+  var container = document.getElementById('chart-container');
   container.innerHTML = '';
 
-  const dpr = window.devicePixelRatio || 1;
-  const cw = Math.min(920, container.clientWidth);
-  const ch = 400;
-  const mg = { top: 24, right: 68, bottom: 52, left: 62 };
-  const w = cw - mg.left - mg.right;
-  const h = ch - mg.top - mg.bottom;
+  var n = history.length;
+  if (n === 0) return;
 
-  const canvas = document.createElement('canvas');
+  var dpr = window.devicePixelRatio || 1;
+  var cw = Math.min(920, container.clientWidth);
+  var ch = 400;
+  var mg = { top: 24, right: 68, bottom: 52, left: 62 };
+  var w = cw - mg.left - mg.right;
+  var h = ch - mg.top - mg.bottom;
+
+  var canvas = document.createElement('canvas');
   canvas.width = cw * dpr; canvas.height = ch * dpr;
   canvas.style.width = cw + 'px'; canvas.style.height = ch + 'px';
+  canvas.style.cursor = 'crosshair';
   container.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const tMin = history[0].date.getTime();
-  const tMax = history[history.length - 1].date.getTime();
+  var tMin = history[0].date.getTime();
+  var tMax = history[n - 1].date.getTime();
 
-  let allHigh = -Infinity, allLow = Infinity;
-  for (const d of history) {
-    const hi = d.high || d.price;
-    const lo = d.low || d.price;
+  var allHigh = -Infinity, allLow = Infinity;
+  for (var i = 0; i < n; i++) {
+    var hi = history[i].high || history[i].price;
+    var lo = history[i].low || history[i].price;
     if (hi > allHigh) allHigh = hi;
     if (lo < allLow) allLow = lo;
   }
   if (navPerToken > allHigh) allHigh = navPerToken;
   if (navPerToken < allLow) allLow = navPerToken;
-  const pPad = (allHigh - allLow) * 0.08 || allHigh * 0.05;
-  const pMin = allLow - pPad;
-  const pMax = allHigh + pPad;
+  var pPad = (allHigh - allLow) * 0.08 || allHigh * 0.05;
+  var pMin = allLow - pPad;
+  var pMax = allHigh + pPad;
 
-  const sx = t => mg.left + (t - tMin) / (tMax - tMin) * w;
-  const sy = p => mg.top + (1 - (p - pMin) / (pMax - pMin)) * h;
+  var sx = function(t) { return mg.left + (t - tMin) / (tMax - tMin) * w; };
+  var sy = function(p) { return mg.top + (1 - (p - pMin) / (pMax - pMin)) * h; };
 
   // Grid
   ctx.strokeStyle = '#222228'; ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 6; i++) {
-    const v = pMin + (pMax - pMin) * i / 6;
+  for (var gi = 0; gi <= 6; gi++) {
+    var v = pMin + (pMax - pMin) * gi / 6;
     ctx.beginPath(); ctx.moveTo(mg.left, sy(v)); ctx.lineTo(mg.left + w, sy(v)); ctx.stroke();
   }
 
   // Y labels
-  const yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
+  var yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
   ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right';
-  for (let i = 0; i <= 6; i++) {
-    const v = pMin + (pMax - pMin) * i / 6;
-    ctx.fillText('$' + v.toFixed(yd), mg.left - 8, sy(v) + 3);
+  for (var yi = 0; yi <= 6; yi++) {
+    var yv = pMin + (pMax - pMin) * yi / 6;
+    ctx.fillText('$' + yv.toFixed(yd), mg.left - 8, sy(yv) + 3);
   }
 
   // X labels
-  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   ctx.textAlign = 'center'; ctx.fillStyle = '#555560';
-  const xTicks = Math.min(8, history.length);
-  for (let i = 0; i <= xTicks; i++) {
-    const t = tMin + (tMax - tMin) * i / xTicks;
-    const d = new Date(t);
-    ctx.fillText(mo[d.getMonth()] + '-' + String(d.getDate()).padStart(2, '0'), sx(t), mg.top + h + 20);
+  var xTicks = Math.min(8, n);
+  for (var xi = 0; xi <= xTicks; xi++) {
+    var t = tMin + (tMax - tMin) * xi / xTicks;
+    var xd = new Date(t);
+    ctx.fillText(mo[xd.getMonth()] + '-' + String(xd.getDate()).padStart(2, '0'), sx(t), mg.top + h + 20);
   }
 
   // NAV flat line
-  const navY = sy(navPerToken);
-  // Shading
+  var navY = sy(navPerToken);
   ctx.fillStyle = 'rgba(232,64,87,0.06)';
   ctx.fillRect(mg.left, navY, w, mg.top + h - navY);
   ctx.fillStyle = 'rgba(0,229,160,0.04)';
   ctx.fillRect(mg.left, mg.top, w, navY - mg.top);
-  // Line
   ctx.strokeStyle = '#e84057'; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
   ctx.beginPath(); ctx.moveTo(mg.left, navY); ctx.lineTo(mg.left + w, navY); ctx.stroke();
   ctx.setLineDash([]);
-  // Label
   ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
   ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
 
   // Candlesticks
-  const n = history.length;
-  const candleSpacing = w / Math.max(n, 1);
-  const candleW = Math.max(1, Math.min(candleSpacing * 0.65, 14));
-  const wickW = candleW < 4 ? 1 : 1.5;
+  var candleSpacing = w / Math.max(n, 1);
+  var candleW = Math.max(1, Math.min(candleSpacing * 0.65, 14));
+  var wickW = candleW < 4 ? 1 : 1.5;
 
-  for (let i = 0; i < n; i++) {
-    const d = history[i];
-    const x = sx(d.date.getTime());
-    const hasOHLC = d.open != null && d.high != null && d.low != null;
+  for (var ci = 0; ci < n; ci++) {
+    var d = history[ci];
+    var x = sx(d.date.getTime());
+    var hasOHLC = d.open != null && d.high != null && d.low != null;
 
     if (hasOHLC) {
-      const bull = d.close >= d.open;
-      const bodyCol = bull ? '#00e5a0' : '#e84057';
-      const wickCol = bull ? 'rgba(0,229,160,0.5)' : 'rgba(232,64,87,0.5)';
-      const yH = sy(d.high), yL = sy(d.low);
-      const yO = sy(d.open), yC = sy(d.close);
-      const bTop = Math.min(yO, yC), bBot = Math.max(yO, yC);
-      const bH = Math.max(1, bBot - bTop);
+      var bull = d.close >= d.open;
+      var bodyCol = bull ? '#00e5a0' : '#e84057';
+      var wickCol = bull ? 'rgba(0,229,160,0.5)' : 'rgba(232,64,87,0.5)';
+      var yH = sy(d.high), yL = sy(d.low);
+      var yO = sy(d.open), yC = sy(d.close);
+      var bTop = Math.min(yO, yC), bBot = Math.max(yO, yC);
+      var bH = Math.max(1, bBot - bTop);
 
       ctx.strokeStyle = wickCol; ctx.lineWidth = wickW;
       ctx.beginPath(); ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
@@ -753,48 +772,122 @@ function drawChart(history, navPerToken) {
   }
 
   // Current price marker
-  const last = history[n - 1];
-  const lastBull = (last.close || last.price) >= (last.open || last.price);
+  var last = history[n - 1];
+  var lastBull = (last.close || last.price) >= (last.open || last.price);
   ctx.fillStyle = lastBull ? '#00e5a0' : '#e84057';
   ctx.beginPath(); ctx.arc(sx(last.date.getTime()), sy(last.price), 5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#0c0c10'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(sx(last.date.getTime()), sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
-  // Spot label
   ctx.fillStyle = '#f0f0f5'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
   ctx.fillText(fmt$(last.price), mg.left + w + 4, sy(last.price) + 4);
 
   // Tooltip
-  const tt = document.createElement('div');
+  var tt = document.createElement('div');
   tt.className = 'chart-tooltip';
   container.appendChild(tt);
   canvas.addEventListener('mousemove', function(e) {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
+    var rect = canvas.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
     if (mx < mg.left || mx > mg.left + w) { tt.style.display = 'none'; return; }
-    const t = tMin + (mx - mg.left) / w * (tMax - tMin);
-    let ci = 0, md = Infinity;
-    for (let i = 0; i < n; i++) {
-      const dist = Math.abs(history[i].date.getTime() - t);
-      if (dist < md) { md = dist; ci = i; }
+    var t2 = tMin + (mx - mg.left) / w * (tMax - tMin);
+    var ci2 = 0, md = Infinity;
+    for (var i2 = 0; i2 < n; i2++) {
+      var dist = Math.abs(history[i2].date.getTime() - t2);
+      if (dist < md) { md = dist; ci2 = i2; }
     }
-    const d = history[ci];
-    const belowNAV = d.price < navPerToken;
-    const pctNAV = navPerToken > 0 ? Math.abs((d.price - navPerToken) / navPerToken * 100) : 0;
+    var dd = history[ci2];
+    var belowNAV = dd.price < navPerToken;
+    var pctNAV = navPerToken > 0 ? Math.abs((dd.price - navPerToken) / navPerToken * 100) : 0;
     tt.style.display = 'block';
-    tt.style.left = Math.min(sx(d.date.getTime()) + 16, cw - 180) + 'px';
-    tt.style.top = Math.max(sy(d.high || d.price) - 90, 0) + 'px';
-    tt.innerHTML = '<div class="tt-price">' + fmt$(d.price) + '</div>'
-      + (d.open != null ? '<div class="tt-line" style="color:var(--dim)">O ' + fmt$(d.open) + ' · H ' + fmt$(d.high) + ' · L ' + fmt$(d.low) + '</div>' : '')
+    tt.style.left = Math.min(sx(dd.date.getTime()) + 16, cw - 180) + 'px';
+    tt.style.top = Math.max(sy(dd.high || dd.price) - 90, 0) + 'px';
+    tt.innerHTML = '<div class="tt-price">' + fmt$(dd.price) + '</div>'
+      + (dd.open != null ? '<div class="tt-line" style="color:var(--dim)">O ' + fmt$(dd.open) + ' · H ' + fmt$(dd.high) + ' · L ' + fmt$(dd.low) + '</div>' : '')
       + '<div class="tt-line" style="color:#e84057">NAV: ' + fmt$(navPerToken) + '</div>'
       + '<div class="tt-line" style="color:' + (belowNAV ? '#e84057' : '#00e5a0') + '">' + pctNAV.toFixed(1) + '% ' + (belowNAV ? 'below' : 'above') + ' NAV</div>'
-      + '<div class="tt-date">' + d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</div>';
+      + '<div class="tt-date">' + dd.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</div>';
   });
   canvas.addEventListener('mouseleave', function() { tt.style.display = 'none'; });
 
+  // Zoom with mouse wheel
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var agg = aggregateCandles(_rawCandles, _chartTF);
+    var total = agg.length;
+    var range = _chartViewEnd - _chartViewStart;
+    var zoomAmount = Math.max(1, Math.round(range * 0.15));
+    if (e.deltaY < 0) {
+      // Zoom in
+      if (range <= 5) return;
+      _chartViewStart = Math.min(_chartViewStart + zoomAmount, _chartViewEnd - 5);
+      _chartViewEnd = Math.max(_chartViewEnd - zoomAmount, _chartViewStart + 5);
+    } else {
+      // Zoom out
+      _chartViewStart = Math.max(0, _chartViewStart - zoomAmount);
+      _chartViewEnd = Math.min(total, _chartViewEnd + zoomAmount);
+    }
+    drawChart(agg.slice(_chartViewStart, _chartViewEnd), _navPerToken);
+  }, { passive: false });
+
+  // Pan with click-drag
+  var dragging = false, dragStartX = 0, dragStartViewStart = 0, dragStartViewEnd = 0;
+  canvas.addEventListener('mousedown', function(e) {
+    dragging = true; dragStartX = e.clientX;
+    dragStartViewStart = _chartViewStart; dragStartViewEnd = _chartViewEnd;
+    canvas.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    var dx = e.clientX - dragStartX;
+    var agg = aggregateCandles(_rawCandles, _chartTF);
+    var total = agg.length;
+    var range = dragStartViewEnd - dragStartViewStart;
+    var shift = Math.round(-dx / (w / range));
+    var newStart = Math.max(0, Math.min(total - range, dragStartViewStart + shift));
+    var newEnd = newStart + range;
+    if (newEnd > total) { newEnd = total; newStart = total - range; }
+    _chartViewStart = newStart; _chartViewEnd = newEnd;
+    drawChart(agg.slice(_chartViewStart, _chartViewEnd), _navPerToken);
+  });
+  window.addEventListener('mouseup', function() {
+    if (dragging) { dragging = false; canvas.style.cursor = 'crosshair'; }
+  });
+
   // Resize
-  let rt;
-  window._chartArgs = [history, navPerToken];
-  window.addEventListener('resize', function() { clearTimeout(rt); rt = setTimeout(function() { drawChart(history, navPerToken); }, 400); });
+  var resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      var agg = aggregateCandles(_rawCandles, _chartTF);
+      drawChart(agg.slice(_chartViewStart, _chartViewEnd), _navPerToken);
+    }, 400);
+  });
+}
+
+function initChart(rawCandles, navPerToken) {
+  _rawCandles = rawCandles;
+  _navPerToken = navPerToken;
+  _chartTF = '1D';
+  var agg = aggregateCandles(rawCandles, _chartTF);
+  _chartViewStart = 0;
+  _chartViewEnd = agg.length;
+  drawChart(agg, navPerToken);
+
+  // Timeframe buttons
+  var controls = document.getElementById('chart-controls');
+  if (controls) {
+    controls.addEventListener('click', function(e) {
+      var btn = e.target.closest('.chart-btn');
+      if (!btn || !btn.dataset.tf) return;
+      controls.querySelectorAll('.chart-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      _chartTF = btn.dataset.tf;
+      var agg2 = aggregateCandles(_rawCandles, _chartTF);
+      _chartViewStart = 0;
+      _chartViewEnd = agg2.length;
+      drawChart(agg2, _navPerToken);
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -814,14 +907,6 @@ function renderUI(isLive) {
     CFG.ticker + ' is trading at <b>' + fmt$(CFG.spot) + '</b>, ' + (itm ? 'below' : 'above') + ' the <b>' + fmt$(strike) + '</b> treasury floor (treasury/token). ' +
     'Token holders can vote for dissolution and claim their pro-rata share of the treasury. ' +
     (itm ? 'Currently trading at a <span class="hl-orange">' + Math.abs(discPct).toFixed(1) + '%</span> discount \u2014 each token is backed by more than its market price.' : '');
-
-  // Big NAV hero
-  document.getElementById('nav-hero').innerHTML =
-    '<div><div class="nav-hero-label">NAV per Token</div><div class="nav-hero-main"><div class="nav-hero-value">' + fmt$(strike) + '</div></div></div>' +
-    '<div class="nav-hero-detail">Total Treasury <b>' + fmtM(CFG.treasuryUSDC) + '</b> \u00f7 Effective Supply <b>' + (supplyForNAV / 1e6).toFixed(2) + 'M</b><br>' +
-    'Spot <span class="spot-col">' + fmt$(CFG.spot) + '</span> \u2014 ' +
-    (isDiscount ? '<span class="spot-col">' + Math.abs(discPct).toFixed(1) + '% discount</span>' : '<span class="hl">+' + discPct.toFixed(0) + '% premium</span>') +
-    '</div>';
 
   document.getElementById('cards').innerHTML =
     '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">' + fmtM(CFG.monthlyBurn) + '/mo burn</div></div>' +
@@ -899,7 +984,7 @@ function renderAddresses() {
 
     var loadEl = document.getElementById('chart-loading');
     if (loadEl) loadEl.remove();
-    drawChart(chartData, navPerToken);
+    initChart(chartData, navPerToken);
 
     if (!ohlcv) {
       var notice = document.createElement('div');
@@ -913,7 +998,7 @@ function renderAddresses() {
     console.error('NAVgator init error:', err);
     var loadEl2 = document.getElementById('chart-loading');
     if (loadEl2) loadEl2.remove();
-    drawChart(genFallback(), navPerToken);
+    initChart(genFallback(), navPerToken);
     var notice2 = document.createElement('div');
     notice2.style.cssText = 'text-align:center;font-size:9px;color:#e84057;font-family:Inter,sans-serif;padding:6px 0';
     notice2.textContent = '\u26a0 Error loading data \u2014 showing simulated chart.';
