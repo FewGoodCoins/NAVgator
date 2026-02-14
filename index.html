@@ -160,7 +160,7 @@
         <div class="how-item"><div class="how-num" style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">03</div><div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:5px">Dissolution right</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Any holder can propose dissolution via futarchy. If passed, treasury distributes pro-rata. This creates a soft price floor enforced by rational arbitrage.</div></div>
       </div>
     </div>
-    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · Data via NAVgator API + GeckoTerminal + Solana RPC · Not financial advice</div>
+    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · Data via NAVgator API + Birdeye + Solana RPC · Not financial advice</div>
   </div>
 
   <!-- ══ DASHBOARD VIEW ══ -->
@@ -407,8 +407,8 @@ const TOKENS = {
     ammWallet2: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
     buybackWallet: '33AEddb7BxoA7Y65BzybFCV5WyGy7LfBdjiL2anCDEkr',
     lockWallet: 'F35JE1HZMtZXXWdy3koSPRe1gGFQyqd5kpbPw2xNcjR8',
-  gtPool: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
-    gtPoolLegacy: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
+    gtPool: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
+    gtPoolLegacy: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
     raise: 8_000_000, supply: 10_000_000, icoPrice: 0.60, ath: 0.865,
     monthlyBurn: 250_000, realizedVol: 90, tradingDays: 32,
     genesisStrike: 0.47, genesisPut: 0.18,
@@ -547,30 +547,36 @@ const fmtBurn = n => n>=1e6?'$'+(n/1e6).toFixed(1)+'M':n>=1e3?'$'+(n/1e3).toFixe
 // LIVE DATA FETCHERS
 // ═══════════════════════════════════════════════════════════════════════
 async function fetchOHLCV() {
-  if (!CFG.gtPool) return null;
-  const fetchPool = async (pool) => {
-    try {
-      const url = `https://api.geckoterminal.com/api/v2/networks/solana/pools/${pool}/ohlcv/day?aggregate=1&limit=1000&currency=usd`;
-      const res = await fetch(url, { headers: { Accept: 'application/json' } });
-      if (!res.ok) return [];
-      const json = await res.json();
-      const candles = json?.data?.attributes?.ohlcv_list;
-      if (!candles) return [];
-      return candles.map(c => ({ date: new Date(c[0] * 1000), open: parseFloat(c[1]), high: parseFloat(c[2]), low: parseFloat(c[3]), close: parseFloat(c[4]), price: parseFloat(c[4]) })).filter(d => d.price > 0).reverse();
-    } catch (e) { return []; }
-  };
+  if (!CFG.mint) return null;
   try {
-    const [current, legacy] = await Promise.all([
-      fetchPool(CFG.gtPool),
-      CFG.gtPoolLegacy ? fetchPool(CFG.gtPoolLegacy) : [],
-    ]);
-    if (current.length === 0 && legacy.length === 0) return null;
-    const merged = [...legacy];
-    const existingDates = new Set(merged.map(d => d.date.toDateString()));
-    for (const c of current) { if (!existingDates.has(c.date.toDateString())) merged.push(c); }
-    merged.sort((a, b) => a.date - b.date);
-    return merged.length > 0 ? merged : null;
-  } catch (e) { console.warn('GeckoTerminal OHLCV failed:', e.message); return null; }
+    var tge = new Date(CFG.tge);
+    var now = new Date();
+    var timeFrom = Math.floor(tge.getTime() / 1000);
+    var timeTo = Math.floor(now.getTime() / 1000);
+    var url = 'https://public-api.birdeye.so/defi/ohlcv?address=' + CFG.mint + '&type=1D&time_from=' + timeFrom + '&time_to=' + timeTo;
+    var res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'X-API-KEY': 'f570879c3c51419fb0c7e75e38793434'
+      }
+    });
+    if (!res.ok) { console.warn('Birdeye OHLCV failed:', res.status); return null; }
+    var json = await res.json();
+    var items = json.data && json.data.items ? json.data.items : [];
+    if (items.length === 0) return null;
+    var candles = items.map(function(c) {
+      return {
+        date: new Date(c.unixTime * 1000),
+        open: c.o,
+        high: c.h,
+        low: c.l,
+        close: c.c,
+        price: c.c
+      };
+    }).filter(function(d) { return d.price > 0; });
+    candles.sort(function(a, b) { return a.date - b.date; });
+    return candles.length > 0 ? candles : null;
+  } catch (e) { console.warn('Birdeye OHLCV failed:', e.message); return null; }
 }
 
 async function fetchFromAPI() {
@@ -877,7 +883,7 @@ function renderAddresses() {
     if (!ohlcv) {
       var notice = document.createElement('div');
       notice.style.cssText = 'text-align:center;font-size:9px;color:#ff8c42;font-family:Inter,sans-serif;padding:6px 0';
-      notice.textContent = '\u26a0 GeckoTerminal API unreachable \u2014 showing simulated data.';
+      notice.textContent = '\u26a0 Chart API unreachable \u2014 showing simulated data.';
       document.getElementById('chart-container').appendChild(notice);
     }
 
