@@ -637,14 +637,29 @@ function drawChart(candles, navPerToken) {
   if (n === 0) { container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:#555560">No chart data available</div>'; return; }
 
   // Clamp visible range
+  // offset=0 means latest candle at right edge
+  // max offset = total-1 so oldest candle can reach right edge
   var total = n;
-  _chartVisible = Math.max(10, Math.min(total, _chartVisible));
-  _chartOffset = Math.max(0, Math.min(total - _chartVisible, _chartOffset));
-  var startIdx = total - _chartVisible - _chartOffset;
-  var endIdx = startIdx + _chartVisible;
+  _chartVisible = Math.max(5, Math.min(total, _chartVisible));
+  var maxOffset = total - 1;  // oldest candle at right edge
+  _chartOffset = Math.max(-((_chartVisible) - 1), Math.min(maxOffset, _chartOffset));
+  var startIdx = Math.max(0, total - _chartVisible - _chartOffset);
+  var endIdx = Math.min(total, startIdx + _chartVisible);
   var visible = candles.slice(startIdx, endIdx);
   var vn = visible.length;
   if (vn === 0) return;
+
+  // Calculate where candles sit within the chart area
+  // When scrolled far right (viewing old data), candles align to right
+  // When scrolled far left (viewing new data), candles align to left
+  var slotOffset = 0;
+  if (_chartOffset < 0) {
+    // Scrolled past newest — candles shift right, newest at left edge
+    slotOffset = -_chartOffset;
+  } else if (total - _chartOffset < _chartVisible) {
+    // Scrolled past oldest — candles shift left, oldest at right edge
+    slotOffset = 0;
+  }
 
   var dpr = window.devicePixelRatio || 1;
   var cw = Math.min(920, container.clientWidth);
@@ -661,10 +676,12 @@ function drawChart(candles, navPerToken) {
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  // Fixed-width candles, always touching
-  var candleW = Math.max(2, Math.floor(w / vn));
+  // Fixed-width candles, always touching — width based on visible slot count
+  var candleW = Math.max(2, Math.floor(w / _chartVisible));
   var bodyW = Math.max(1, candleW - 2);
   var wickW = bodyW < 4 ? 1 : 1.5;
+
+  var sx = function(idx) { return mg.left + (idx + slotOffset) * candleW + candleW / 2; };
 
   // Price range from visible candles
   var allHigh = -Infinity, allLow = Infinity;
@@ -680,7 +697,6 @@ function drawChart(candles, navPerToken) {
   var pMin = allLow - pPad;
   var pMax = allHigh + pPad;
 
-  var sx = function(idx) { return mg.left + idx * candleW + candleW / 2; };
   var sy = function(p) { return mg.top + (1 - (p - pMin) / (pMax - pMin)) * h; };
 
   // Grid
@@ -784,7 +800,7 @@ function drawChart(candles, navPerToken) {
     e.preventDefault();
     var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
     if (e.deltaY < 0) {
-      _chartVisible = Math.max(10, _chartVisible - zoomAmt);
+      _chartVisible = Math.max(5, _chartVisible - zoomAmt);
     } else {
       _chartVisible = Math.min(total, _chartVisible + zoomAmt);
     }
@@ -801,7 +817,9 @@ function drawChart(candles, navPerToken) {
     if (!dragging) return;
     var dx = e.clientX - dragStartX;
     var candlesShifted = Math.round(dx / candleW);
-    _chartOffset = Math.max(0, Math.min(total - _chartVisible, dragStartOffset + candlesShifted));
+    var maxOff = total - 1;
+    var minOff = -((_chartVisible) - 1);
+    _chartOffset = Math.max(minOff, Math.min(maxOff, dragStartOffset + candlesShifted));
     drawChart(candles, navPerToken);
   };
   var onMouseUp = function() {
