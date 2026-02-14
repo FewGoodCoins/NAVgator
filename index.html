@@ -603,8 +603,8 @@ function genFallback() {
 var _allCandles = {};  // keyed by timeframe
 var _navPerToken = 0;
 var _chartTF = '1D';
-var _chartOffset = 0;  // how many candles scrolled from the right
-var _chartVisible = 60; // how many candles visible
+var _chartScrollPx = 0;  // pixel offset for panning
+var _chartVisible = 60;  // how many candles fit in view (controls zoom)
 
 async function fetchCandlesForTF(tf) {
   if (_allCandles[tf]) return _allCandles[tf];
@@ -636,31 +636,6 @@ function drawChart(candles, navPerToken) {
   var n = candles.length;
   if (n === 0) { container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;color:#555560">No chart data available</div>'; return; }
 
-  // Clamp visible range
-  // offset=0 means latest candle at right edge
-  // max offset = total-1 so oldest candle can reach right edge
-  var total = n;
-  _chartVisible = Math.max(5, Math.min(total, _chartVisible));
-  var maxOffset = total - 1;  // oldest candle at right edge
-  _chartOffset = Math.max(-((_chartVisible) - 1), Math.min(maxOffset, _chartOffset));
-  var startIdx = Math.max(0, total - _chartVisible - _chartOffset);
-  var endIdx = Math.min(total, startIdx + _chartVisible);
-  var visible = candles.slice(startIdx, endIdx);
-  var vn = visible.length;
-  if (vn === 0) return;
-
-  // Calculate where candles sit within the chart area
-  // When scrolled far right (viewing old data), candles align to right
-  // When scrolled far left (viewing new data), candles align to left
-  var slotOffset = 0;
-  if (_chartOffset < 0) {
-    // Scrolled past newest — candles shift right, newest at left edge
-    slotOffset = -_chartOffset;
-  } else if (total - _chartOffset < _chartVisible) {
-    // Scrolled past oldest — candles shift left, oldest at right edge
-    slotOffset = 0;
-  }
-
   var dpr = window.devicePixelRatio || 1;
   var cw = Math.min(920, container.clientWidth);
   var ch = 400;
@@ -676,18 +651,49 @@ function drawChart(candles, navPerToken) {
   var ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  // Fixed-width candles, always touching — width based on visible slot count
+  // Fixed-width candles based on zoom level
   var candleW = Math.max(2, Math.floor(w / _chartVisible));
   var bodyW = Math.max(1, candleW - 2);
   var wickW = bodyW < 4 ? 1 : 1.5;
 
-  var sx = function(idx) { return mg.left + (idx + slotOffset) * candleW + candleW / 2; };
+  // Total width of all candles as a block
+  var totalBlockW = n * candleW;
 
-  // Price range from visible candles
+  // _chartScrollPx: 0 = default (latest candle at right edge)
+  // positive = scrolled right (viewing older), negative = scrolled left
+  // Default position: right-align the block so last candle is at right edge
+  var defaultOffset = w - totalBlockW;
+  var blockX = mg.left + defaultOffset + _chartScrollPx;
+
+  // Clamp: latest candle can go to left edge, oldest candle can go to right edge
+  var minBlockX = mg.left + w - totalBlockW;  // normal: right-aligned (offset=0 default)
+  var maxBlockX = mg.left + w - candleW;       // oldest candle at right edge
+  var minScrollLeft = mg.left - (blockX - _chartScrollPx) + candleW - w;  // latest at left edge
+  // Actually let's just compute limits on _chartScrollPx:
+  // blockX = mg.left + defaultOffset + scrollPx
+  // Latest candle at left edge: blockX + (n-1)*candleW + candleW/2 = mg.left + candleW/2
+  //   => mg.left + defaultOffset + scrollPx + (n-1)*candleW = mg.left
+  //   => scrollPx = -(defaultOffset + (n-1)*candleW) = -(w - totalBlockW + (n-1)*candleW) = -(w - candleW)
+  // Oldest candle at right edge: blockX + candleW/2 = mg.left + w - candleW/2
+  //   => mg.left + defaultOffset + scrollPx = mg.left + w - candleW
+  //   => scrollPx = w - candleW - defaultOffset = w - candleW - w + totalBlockW = totalBlockW - candleW = (n-1)*candleW
+  var minScroll = -(w - candleW);
+  var maxScroll = Math.max(0, (n - 1) * candleW);
+  _chartScrollPx = Math.max(minScroll, Math.min(maxScroll, _chartScrollPx));
+  blockX = mg.left + defaultOffset + _chartScrollPx;
+
+  // sx: x position of candle index i
+  var sx = function(i) { return blockX + i * candleW + candleW / 2; };
+
+  // Determine which candles are visible on screen for price range
+  var visStart = Math.max(0, Math.floor((mg.left - blockX) / candleW));
+  var visEnd = Math.min(n, Math.ceil((mg.left + w - blockX) / candleW));
+
+  // Price range from visible candles only
   var allHigh = -Infinity, allLow = Infinity;
-  for (var i = 0; i < vn; i++) {
-    var hi = visible[i].high || visible[i].price;
-    var lo = visible[i].low || visible[i].price;
+  for (var i = visStart; i < visEnd; i++) {
+    var hi = candles[i].high || candles[i].price;
+    var lo = candles[i].low || candles[i].price;
     if (hi > allHigh) allHigh = hi;
     if (lo < allLow) allLow = lo;
   }
@@ -699,28 +705,17 @@ function drawChart(candles, navPerToken) {
 
   var sy = function(p) { return mg.top + (1 - (p - pMin) / (pMax - pMin)) * h; };
 
+  // Clip to chart area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(mg.left, 0, w, ch);
+  ctx.clip();
+
   // Grid
   ctx.strokeStyle = '#222228'; ctx.lineWidth = 0.5;
   for (var gi = 0; gi <= 6; gi++) {
     var v = pMin + (pMax - pMin) * gi / 6;
     ctx.beginPath(); ctx.moveTo(mg.left, sy(v)); ctx.lineTo(mg.left + w, sy(v)); ctx.stroke();
-  }
-
-  // Y labels
-  var yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
-  ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right';
-  for (var yi = 0; yi <= 6; yi++) {
-    var yv = pMin + (pMax - pMin) * yi / 6;
-    ctx.fillText('$' + yv.toFixed(yd), mg.left - 8, sy(yv) + 3);
-  }
-
-  // X labels
-  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  ctx.textAlign = 'center'; ctx.fillStyle = '#555560';
-  var xStep = Math.max(1, Math.floor(vn / 8));
-  for (var xi = 0; xi < vn; xi += xStep) {
-    var xd = visible[xi].date;
-    ctx.fillText(mo[xd.getMonth()] + '-' + String(xd.getDate()).padStart(2, '0'), sx(xi), mg.top + h + 20);
   }
 
   // NAV flat line
@@ -732,12 +727,10 @@ function drawChart(candles, navPerToken) {
   ctx.strokeStyle = '#e84057'; ctx.lineWidth = 2; ctx.setLineDash([8, 4]);
   ctx.beginPath(); ctx.moveTo(mg.left, navY); ctx.lineTo(mg.left + w, navY); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
 
-  // Draw candles
-  for (var ci = 0; ci < vn; ci++) {
-    var d = visible[ci];
+  // Draw only visible candles (skip off-screen ones for performance)
+  for (var ci = visStart; ci < visEnd; ci++) {
+    var d = candles[ci];
     var x = sx(ci);
     var hasOHLC = d.open != null && d.high != null && d.low != null;
 
@@ -761,13 +754,42 @@ function drawChart(candles, navPerToken) {
     }
   }
 
-  // Current price marker (last visible candle)
-  var last = visible[vn - 1];
-  var lastBull = (last.close || last.price) >= (last.open || last.price);
-  ctx.fillStyle = lastBull ? '#00e5a0' : '#e84057';
-  ctx.beginPath(); ctx.arc(sx(vn - 1), sy(last.price), 5, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = '#0c0c10'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(sx(vn - 1), sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore(); // end clip
+
+  // X labels (below chart, outside clip)
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  ctx.textAlign = 'center'; ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif';
+  var xStep = Math.max(1, Math.floor(_chartVisible / 8));
+  for (var xi = visStart; xi < visEnd; xi += xStep) {
+    var xd = candles[xi].date;
+    var xPos = sx(xi);
+    if (xPos > mg.left && xPos < mg.left + w) {
+      ctx.fillText(mo[xd.getMonth()] + '-' + String(xd.getDate()).padStart(2, '0'), xPos, mg.top + h + 20);
+    }
+  }
+
+  // Y labels
+  var yd = pMax >= 1 ? 2 : pMax >= 0.01 ? 4 : 6;
+  ctx.fillStyle = '#555560'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'right';
+  for (var yi = 0; yi <= 6; yi++) {
+    var yv = pMin + (pMax - pMin) * yi / 6;
+    ctx.fillText('$' + yv.toFixed(yd), mg.left - 8, sy(yv) + 3);
+  }
+
+  // NAV label (right side, outside clip)
+  ctx.fillStyle = '#e84057'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('NAV ' + fmt$(navPerToken), mg.left + w + 4, navY + 4);
+
+  // Current price marker + label (only if last candle is visible)
+  var last = candles[n - 1];
+  var lastX = sx(n - 1);
+  if (lastX >= mg.left && lastX <= mg.left + w) {
+    var lastBull = (last.close || last.price) >= (last.open || last.price);
+    ctx.fillStyle = lastBull ? '#00e5a0' : '#e84057';
+    ctx.beginPath(); ctx.arc(lastX, sy(last.price), 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#0c0c10'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(lastX, sy(last.price), 5, 0, Math.PI * 2); ctx.stroke();
+  }
   ctx.fillStyle = '#f0f0f5'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left';
   ctx.fillText(fmt$(last.price), mg.left + w + 4, sy(last.price) + 4);
 
@@ -779,9 +801,9 @@ function drawChart(candles, navPerToken) {
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
     if (mx < mg.left || mx > mg.left + w) { tt.style.display = 'none'; return; }
-    var idx = Math.round((mx - mg.left) / candleW - 0.5);
-    idx = Math.max(0, Math.min(vn - 1, idx));
-    var dd = visible[idx];
+    var idx = Math.round((mx - blockX) / candleW - 0.5);
+    idx = Math.max(0, Math.min(n - 1, idx));
+    var dd = candles[idx];
     var belowNAV = dd.price < navPerToken;
     var pctNAV = navPerToken > 0 ? Math.abs((dd.price - navPerToken) / navPerToken * 100) : 0;
     tt.style.display = 'block';
@@ -794,48 +816,48 @@ function drawChart(candles, navPerToken) {
       + '<div class="tt-date">' + dd.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</div>';
   });
   canvas.addEventListener('mouseleave', function() { tt.style.display = 'none'; });
-
-  // Zoom with mouse wheel — changes visible count
-  canvas.addEventListener('wheel', function(e) {
-    e.preventDefault();
-    var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
-    if (e.deltaY < 0) {
-      _chartVisible = Math.max(5, _chartVisible - zoomAmt);
-    } else {
-      _chartVisible = Math.min(total, _chartVisible + zoomAmt);
-    }
-    drawChart(candles, navPerToken);
-  }, { passive: false });
-
-  // Pan with click-drag
-  var dragging = false, dragStartX = 0, dragStartOffset = 0;
-  canvas.addEventListener('mousedown', function(e) {
-    dragging = true; dragStartX = e.clientX; dragStartOffset = _chartOffset;
-    canvas.style.cursor = 'grabbing';
-  });
-  var onMouseMove = function(e) {
-    if (!dragging) return;
-    var dx = e.clientX - dragStartX;
-    var candlesShifted = Math.round(dx / candleW);
-    var maxOff = total - 1;
-    var minOff = -((_chartVisible) - 1);
-    _chartOffset = Math.max(minOff, Math.min(maxOff, dragStartOffset + candlesShifted));
-    drawChart(candles, navPerToken);
-  };
-  var onMouseUp = function() {
-    if (dragging) { dragging = false; canvas.style.cursor = 'crosshair'; }
-  };
-  window.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('mouseup', onMouseUp);
 }
 
 function initChart(rawCandles, navPerToken) {
   _allCandles['1D'] = rawCandles;
   _navPerToken = navPerToken;
   _chartTF = '1D';
-  _chartOffset = 0;
+  _chartScrollPx = 0;
   _chartVisible = Math.min(60, rawCandles.length);
-  drawChart(rawCandles, navPerToken);
+
+  function currentCandles() { return _allCandles[_chartTF] || rawCandles; }
+  function redraw() { drawChart(currentCandles(), _navPerToken); }
+
+  redraw();
+
+  // Zoom with mouse wheel on container
+  var container = document.getElementById('chart-container');
+  container.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
+    if (e.deltaY < 0) {
+      _chartVisible = Math.max(5, _chartVisible - zoomAmt);
+    } else {
+      _chartVisible = Math.min(500, _chartVisible + zoomAmt);
+    }
+    redraw();
+  }, { passive: false });
+
+  // Pan with click-drag on container
+  var dragging = false, dragStartX = 0, dragStartScroll = 0;
+  container.addEventListener('mousedown', function(e) {
+    dragging = true; dragStartX = e.clientX; dragStartScroll = _chartScrollPx;
+    container.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    var dx = e.clientX - dragStartX;
+    _chartScrollPx = dragStartScroll + dx;
+    redraw();
+  });
+  window.addEventListener('mouseup', function() {
+    if (dragging) { dragging = false; container.style.cursor = ''; }
+  });
 
   // Timeframe buttons
   var controls = document.getElementById('chart-controls');
@@ -846,12 +868,11 @@ function initChart(rawCandles, navPerToken) {
       controls.querySelectorAll('.chart-btn').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       _chartTF = btn.dataset.tf;
-      _chartOffset = 0;
-      var tfMap = { '12H': '12H', '1D': '1D', '1W': '1W', '1M': '1M' };
-      var candles = await fetchCandlesForTF(tfMap[_chartTF] || '1D');
+      _chartScrollPx = 0;
+      var candles = await fetchCandlesForTF(_chartTF);
       if (candles.length === 0) candles = rawCandles;
       _chartVisible = Math.min(60, candles.length);
-      drawChart(candles, _navPerToken);
+      redraw();
     });
   }
 
@@ -859,10 +880,7 @@ function initChart(rawCandles, navPerToken) {
   var resizeTimer;
   window.addEventListener('resize', function() {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function() {
-      var candles = _allCandles[_chartTF] || rawCandles;
-      drawChart(candles, _navPerToken);
-    }, 400);
+    resizeTimer = setTimeout(redraw, 400);
   });
 }
 
