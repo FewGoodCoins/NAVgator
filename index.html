@@ -836,17 +836,24 @@ function initChart(rawCandles, navPerToken) {
 
   redraw();
 
-  // Zoom with mouse wheel on container
+  // Wheel: deltaX = horizontal pan (two-finger swipe), deltaY = zoom (pinch/scroll)
   var container = document.getElementById('chart-container');
   container.addEventListener('wheel', function(e) {
     e.preventDefault();
-    var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
-    if (e.deltaY < 0) {
-      _chartVisible = Math.max(5, _chartVisible - zoomAmt);
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      // Horizontal swipe — pan the chart
+      _chartScrollPx -= e.deltaX;
+      redraw();
     } else {
-      _chartVisible = Math.min(500, _chartVisible + zoomAmt);
+      // Vertical scroll — zoom
+      var zoomAmt = Math.max(2, Math.round(_chartVisible * 0.15));
+      if (e.deltaY < 0) {
+        _chartVisible = Math.max(5, _chartVisible - zoomAmt);
+      } else {
+        _chartVisible = Math.min(500, _chartVisible + zoomAmt);
+      }
+      redraw();
     }
-    redraw();
   }, { passive: false });
 
   // Pan with click-drag on container (chart area = horizontal pan, right edge = Y scale)
