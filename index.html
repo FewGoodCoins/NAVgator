@@ -265,10 +265,7 @@
       <div class="chart-loading" id="chart-loading">Loading chart…</div>
     </div>
     <div class="legend">
-      <span class="legend-item"><span class="legend-line" style="background:#00e5a0"></span> <span id="leg-spot-label">Price</span></span>
       <span class="legend-item"><span class="legend-line" style="background:#ffffff"></span> NAV <span id="leg-strike">…</span></span>
-      <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
-      <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
     </div>
     <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
@@ -918,7 +915,20 @@ function buildChart(candles, navPerToken) {
   }
 
   _chart.priceData = priceData;
-  _chart.navData = _navHistory;
+
+  // Cap NAV history with current live NAV to avoid stale backfill at the end
+  var navData = _navHistory.slice();
+  if (navPerToken > 0 && navData.length > 0) {
+    var nowTs = Math.floor(Date.now() / 1000);
+    // Remove any points after the current live NAV that are higher (stale backfill)
+    var lastLiveNav = navPerToken;
+    while (navData.length > 1 && navData[navData.length - 1].value > lastLiveNav * 1.01) {
+      navData.pop();
+    }
+    // Add current live NAV as the final point
+    navData.push({ time: nowTs, value: lastLiveNav });
+  }
+  _chart.navData = navData;
   _chart.viewStart = 0;
   _chart.viewEnd = 1;
 
@@ -963,11 +973,8 @@ function drawChart() {
   var tMin = tr.min, tMax = tr.max;
   var tRange = tMax - tMin || 1;
 
-  // Collect visible values for Y range
+  // Collect visible values for Y range (NAV only for now)
   var allVals = [];
-  _chart.priceData.forEach(function(d) {
-    if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
-  });
   _chart.navData.forEach(function(d) {
     if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
   });
@@ -1028,33 +1035,20 @@ function drawChart() {
   var pricePts = toPixels(_chart.priceData);
   var navPts = toPixels(_chart.navData);
 
-  // Draw fill between price and NAV (opacity based on distance from NAV)
-  if (pricePts.length > 1 && navPts.length > 1) {
-    for (var i = 0; i < pricePts.length - 1; i++) {
-      var p0 = pricePts[i], p1 = pricePts[i + 1];
-      var n0y = interpolateNav(navPts, p0.x);
-      var n1y = interpolateNav(navPts, p1.x);
-      if (n0y === null || n1y === null) continue;
-
-      var aboveNav = p0.y <= n0y;
-      // Calculate opacity based on avg distance between price and NAV
-      var dist0 = Math.abs(p0.y - n0y);
-      var dist1 = Math.abs(p1.y - n1y);
-      var avgDist = (dist0 + dist1) / 2;
-      var plotH = _chart.height - _chart.padding.top - _chart.padding.bottom;
-      var opacity = Math.min(0.3, (avgDist / plotH) * 0.8);
-
-      ctx.beginPath();
-      ctx.moveTo(p0.x, p0.y);
-      ctx.lineTo(p1.x, p1.y);
-      ctx.lineTo(p1.x, n1y);
-      ctx.lineTo(p0.x, n0y);
-      ctx.closePath();
-      ctx.fillStyle = aboveNav
-        ? 'rgba(0,229,160,' + opacity.toFixed(3) + ')'
-        : 'rgba(232,64,87,' + opacity.toFixed(3) + ')';
-      ctx.fill();
+  // Draw fill between NAV and bottom of chart (subtle)
+  if (navPts.length > 1) {
+    var bottomY = pad.top + plotH;
+    ctx.beginPath();
+    ctx.moveTo(navPts[0].x, navPts[0].y);
+    for (var i = 1; i < navPts.length; i++) {
+      ctx.lineTo(navPts[i].x, navPts[i - 1].y);
+      ctx.lineTo(navPts[i].x, navPts[i].y);
     }
+    ctx.lineTo(navPts[navPts.length - 1].x, bottomY);
+    ctx.lineTo(navPts[0].x, bottomY);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fill();
   }
 
   // Draw NAV line (white)
@@ -1062,23 +1056,10 @@ function drawChart() {
     ctx.beginPath();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
-    // Step-style: horizontal then vertical
     ctx.moveTo(navPts[0].x, navPts[0].y);
     for (var i = 1; i < navPts.length; i++) {
-      ctx.lineTo(navPts[i].x, navPts[i - 1].y); // horizontal to new x at old y
-      ctx.lineTo(navPts[i].x, navPts[i].y); // vertical to new y
-    }
-    ctx.stroke();
-  }
-
-  // Draw price line (green)
-  if (pricePts.length > 1) {
-    ctx.beginPath();
-    ctx.strokeStyle = '#00e5a0';
-    ctx.lineWidth = 2;
-    ctx.moveTo(pricePts[0].x, pricePts[0].y);
-    for (var i = 1; i < pricePts.length; i++) {
-      ctx.lineTo(pricePts[i].x, pricePts[i].y);
+      ctx.lineTo(navPts[i].x, navPts[i - 1].y);
+      ctx.lineTo(navPts[i].x, navPts[i].y);
     }
     ctx.stroke();
   }
@@ -1146,6 +1127,50 @@ function attachChartEvents(container) {
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
   });
 
+  // Zoom with scroll
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var rect = canvas.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) / _chart.width;
+    var zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+    var range = _chart.viewEnd - _chart.viewStart;
+    var newRange = Math.min(1, Math.max(0.05, range * zoomFactor));
+    var center = _chart.viewStart + mx * range;
+    _chart.viewStart = Math.max(0, center - mx * newRange);
+    _chart.viewEnd = Math.min(1, _chart.viewStart + newRange);
+    if (_chart.viewEnd > 1) { _chart.viewEnd = 1; _chart.viewStart = Math.max(0, 1 - newRange); }
+    drawChart();
+  }, { passive: false });
+
+  // Pan with drag
+  canvas.addEventListener('mousedown', function(e) {
+    _chart.isDragging = true;
+    _chart.dragStartX = e.clientX;
+    _chart.dragStartView = _chart.viewStart;
+    _chart.dragRange = _chart.viewEnd - _chart.viewStart;
+  });
+
+  window.addEventListener('mousemove', function(e) {
+    if (!_chart.isDragging) return;
+    var dx = e.clientX - _chart.dragStartX;
+    var shift = -(dx / _chart.width) * _chart.dragRange;
+    var newStart = Math.max(0, Math.min(1 - _chart.dragRange, _chart.dragStartView + shift));
+    _chart.viewStart = newStart;
+    _chart.viewEnd = newStart + _chart.dragRange;
+    drawChart();
+  });
+
+  window.addEventListener('mouseup', function() {
+    _chart.isDragging = false;
+  });
+
+  // Double click to reset zoom
+  canvas.addEventListener('dblclick', function() {
+    _chart.viewStart = 0;
+    _chart.viewEnd = 1;
+    drawChart();
+  });
+
   // Resize
   if (!container._resizeObserver) {
     container._resizeObserver = new ResizeObserver(function() {
@@ -1186,54 +1211,50 @@ function drawCrosshair(mx, my) {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Find closest price point
+  // Find closest NAV point
   var closest = null, closestDist = Infinity;
-  var pricePts = _chart._pricePts || [];
-  for (var i = 0; i < pricePts.length; i++) {
-    var d = Math.abs(pricePts[i].x - mx);
-    if (d < closestDist) { closestDist = d; closest = pricePts[i]; }
+  var navPts = _chart._navPts || [];
+  for (var i = 0; i < navPts.length; i++) {
+    var d = Math.abs(navPts[i].x - mx);
+    if (d < closestDist) { closestDist = d; closest = navPts[i]; }
   }
 
-  // Find NAV at this point
+  // For step-style, use the interpolated NAV value at cursor position
+  var navY = interpolateNav(_chart._navPts || [], mx);
   var navVal = null;
-  if (_chart._navPts && _chart._navPts.length > 0) {
-    var navY = interpolateNav(_chart._navPts, mx);
-    if (navY !== null && _chart._vMin !== undefined) {
-      var plotH = h - pad.top - pad.bottom;
-      var vRange = _chart._vMax - _chart._vMin;
-      navVal = _chart._vMax - ((navY - pad.top) / plotH) * vRange;
-    }
+  if (navY !== null && _chart._vMin !== undefined) {
+    var plotH = h - pad.top - pad.bottom;
+    var vRange = _chart._vMax - _chart._vMin;
+    navVal = _chart._vMax - ((navY - pad.top) / plotH) * vRange;
   }
 
-  // Dot on price line
-  if (closest && closestDist < 30) {
+  if (closest && closestDist < 50 && navVal !== null) {
+    // Dot on NAV line
     ctx.beginPath();
-    ctx.arc(closest.x, closest.y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#00e5a0';
+    ctx.arc(mx, navY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
     ctx.fill();
 
     // Tooltip
     var tooltip = _chart.tooltip;
     if (tooltip) {
-      var date = new Date(closest.time * 1000);
+      // Find the time at cursor
+      var tRange = _chart._tMax - _chart._tMin || 1;
+      var plotW = w - pad.left - pad.right;
+      var cursorTime = _chart._tMin + ((mx - pad.left) / plotW) * tRange;
+      var date = new Date(cursorTime * 1000);
       var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var dateStr = months[date.getUTCMonth()] + ' ' + date.getUTCDate() + ', ' + date.getUTCFullYear();
       var fmt = function(v) { return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(4)); };
-      var html = '<div class="tt-price">' + fmt(closest.value) + '</div>';
-      if (navVal !== null) {
-        var vsNav = ((closest.value - navVal) / navVal * 100);
-        var vsColor = vsNav >= 0 ? '#00e5a0' : '#e84057';
-        var vsSign = vsNav >= 0 ? '+' : '';
-        html += '<div class="tt-line" style="color:#ffffff">NAV: ' + fmt(navVal) + '</div>';
-        html += '<div class="tt-line" style="color:' + vsColor + '">vs NAV: ' + vsSign + vsNav.toFixed(1) + '%</div>';
-      }
+      var html = '<div class="tt-price">' + fmt(navVal) + '</div>';
+      html += '<div class="tt-line" style="color:#ffffff">NAV per token</div>';
       html += '<div class="tt-date">' + dateStr + '</div>';
       tooltip.innerHTML = html;
       tooltip.style.display = 'block';
-      var ttLeft = closest.x + 16;
-      if (ttLeft + 170 > w) ttLeft = closest.x - 170;
+      var ttLeft = mx + 16;
+      if (ttLeft + 170 > w) ttLeft = mx - 170;
       tooltip.style.left = ttLeft + 'px';
-      tooltip.style.top = (closest.y - 30) + 'px';
+      tooltip.style.top = (navY - 30) + 'px';
     }
   }
 }
