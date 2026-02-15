@@ -129,34 +129,54 @@
   .landing.active { display: block; }
   .dashboard { display: none; }
   .dashboard.active { display: block; }
-  .hero { padding: 80px 0 48px; text-align: center; }
+  .hero { padding: 48px 0 32px; text-align: center; }
   .logo-mark { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, var(--green), #00b880); font-family: 'DM Serif Display', serif; font-size: 30px; font-weight: 400; color: #0c0c10; margin-bottom: 24px; box-shadow: 0 0 60px rgba(0,229,160,0.15), 0 0 120px rgba(0,229,160,0.05); animation: float 6s ease-in-out infinite; position: relative; }
   .logo-mark::after { content: ''; position: absolute; inset: -1px; border-radius: 17px; background: linear-gradient(135deg, rgba(0,229,160,0.4), rgba(0,184,128,0.1)); z-index: -1; filter: blur(1px); }
   @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-  .hero h1 { font-family: 'DM Serif Display', serif; font-size: 52px; font-weight: 400; color: var(--white); line-height: 1.1; margin-bottom: 14px; letter-spacing: -1px; }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: 44px; font-weight: 400; color: var(--white); line-height: 1.1; margin-bottom: 10px; letter-spacing: -1px; }
   .hero h1 span { color: var(--green); }
-  .tagline { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 400; color: var(--muted); line-height: 1.7; max-width: 540px; margin: 0 auto 40px; }
-  .sort-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-  .sort-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
-  .sort-btn { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border2); color: var(--muted); background: transparent; cursor: pointer; transition: all 0.2s; }
-  .sort-btn:hover { border-color: var(--green); color: var(--white); background: rgba(255,255,255,0.03); }
-  .sort-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
-  .tokens { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; margin-bottom: 48px; }
-  .token-card { border: 1px solid var(--card-border); border-radius: 14px; padding: 24px 22px; background: var(--card-bg); text-decoration: none; color: inherit; transition: all 0.25s ease; position: relative; overflow: hidden; }
-  .token-card:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(0,229,160,0.06); border-color: var(--border2); }
-  .tc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; position: relative; }
-  .tc-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 16px; font-weight: 400; color: #0c0c10; flex-shrink: 0; }
-  .tc-name { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; color: var(--white); }
-  .tc-pair { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; color: var(--dim); margin-top: 2px; }
-  .tc-arrow { position: absolute; top: 0; right: 0; font-size: 16px; color: var(--dim); transition: all 0.25s; }
-  .token-card:hover .tc-arrow { color: var(--green); transform: translateX(3px); }
-  .tc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: relative; }
-  .tc-stat-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; color: var(--muted); }
-  .tc-stat-val { font-family: 'DM Serif Display', serif; font-size: 16px; font-weight: 400; margin-top: 2px; }
+  .tagline { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 400; color: var(--muted); line-height: 1.7; max-width: 540px; margin: 0 auto 0; }
+
+  /* Table layout */
+  .token-table-wrap { margin: 24px 0 40px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg2); }
+  .token-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; }
+  .token-table thead th { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 14px 16px; text-align: right; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
+  .token-table thead th:nth-child(1) { width: 32px; text-align: center; }
+  .token-table thead th:nth-child(2) { text-align: left; }
+  .token-table thead th:hover { color: var(--green); }
+  .token-table thead th.sorted { color: var(--green); }
+  .token-table tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+  .token-table tbody tr:last-child { border-bottom: none; }
+  .token-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .token-table td { padding: 16px 16px; font-size: 13px; color: var(--text); text-align: right; white-space: nowrap; }
+  .token-table td:nth-child(1) { text-align: center; color: var(--dim); font-size: 12px; font-weight: 500; width: 32px; }
+  .token-table td:nth-child(2) { text-align: left; }
+  .tt-name-cell { display: flex; align-items: center; gap: 12px; }
+  .tt-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 14px; font-weight: 400; color: #0c0c10; flex-shrink: 0; }
+  .tt-name { font-weight: 600; color: var(--white); font-size: 14px; }
+  .tt-ticker { color: var(--dim); font-size: 11px; margin-top: 1px; }
+  .tt-price { font-weight: 600; color: var(--white); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .tt-change { font-size: 11px; font-weight: 500; margin-top: 2px; }
+  .tt-change.up { color: var(--green); }
+  .tt-change.down { color: #e84057; }
+  .tt-sparkline { width: 100px; height: 32px; }
+  .tt-coming { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; opacity: 0.6; }
+
+  @media (max-width: 768px) {
+    .token-table td:nth-child(5), .token-table th:nth-child(5),
+    .token-table td:nth-child(6), .token-table th:nth-child(6),
+    .token-table td:nth-child(7), .token-table th:nth-child(7) { display: none; }
+    .tt-sparkline { width: 60px; }
+  }
+  @media (max-width: 500px) {
+    .token-table td:nth-child(4), .token-table th:nth-child(4) { display: none; }
+    .hero h1 { font-size: 32px; }
+  }
+
   .how { padding: 36px 0 48px; border-top: 1px solid var(--border); }
   .how h2 { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin-bottom: 24px; }
   .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  @media (max-width: 600px) { .how-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } }
+  @media (max-width: 600px) { .how-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -170,13 +190,25 @@
       <h1>NAV<span>gator</span></h1>
       <p class="tagline">Real-time NAV analytics for MetaDAO ownership tokens. Treasury tracking, discount/premium metrics, and live on-chain data.</p>
     </div>
-    <div class="sort-bar" id="sort-bar">
-      <span class="sort-label">Sort by</span>
-      <button class="sort-btn active" data-sort="mcap">MCap</button>
-      <button class="sort-btn" data-sort="treasury">Treasury</button>
-      <button class="sort-btn" data-sort="discount">Discount</button>
+
+    <div class="token-table-wrap">
+      <table class="token-table" id="token-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th style="text-align:left">Name</th>
+            <th>Price</th>
+            <th>NAV</th>
+            <th>Treasury</th>
+            <th>vs NAV</th>
+            <th>Allowance</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody id="token-tbody"></tbody>
+      </table>
     </div>
-    <div class="tokens" id="tokens"></div>
+
     <div class="how">
       <h2>How Treasury Backing Works</h2>
       <div class="how-grid">
@@ -185,7 +217,7 @@
         <div class="how-item"><div class="how-num" style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">03</div><div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:5px">Dissolution right</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Any holder can propose dissolution via futarchy. If passed, treasury distributes pro-rata. This creates a soft price floor enforced by rational arbitrage.</div></div>
       </div>
     </div>
-    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · Data via NAVgator API + Birdeye + Solana RPC · Not financial advice</div>
+    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · Data via NAVgator API + Solana RPC · Not financial advice</div>
   </div>
 
   <!-- ══ DASHBOARD VIEW ══ -->
@@ -274,7 +306,7 @@ const TOKENS = {
     lockWallet: 'Bo24B7DDVtpa9VxZ4LN8FrAT7TM3cgkri41a5GjFg5Dk',
     gtPool: 'o5rJFXSKTsuws58rBMNPG8jdKdnY4Z7ouU29dyohE4g',
     raise: 8_000_000, supply: 10_000_000, icoPrice: 0.80, ath: 1.09,
-    monthlyBurn: 100_000, realizedVol: 99, tradingDays: 85,
+    monthlyBurn: 100_000, monthlyAllowance: 100_000, realizedVol: 99, tradingDays: 85,
     genesisStrike: 0.62, genesisPut: 0.300,
     spot: 0.55, treasuryUSDC: 7_420_000, ammUSDCFixed: null,
     tge: '2025-11-18',
@@ -315,7 +347,7 @@ const TOKENS = {
     gtPool: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
     gtPoolLegacy: 'BLkBSE96kQys7SrMioKxeMiVbeo4Ckk2Y4n1JphKxYnv',
     raise: 3_000_000, supply: 10_000_000, icoPrice: 0.30, ath: 2.43,
-    monthlyBurn: 34_000, realizedVol: 110, tradingDays: 122,
+    monthlyBurn: 34_000, monthlyAllowance: 100_000, realizedVol: 110, tradingDays: 122,
     genesisStrike: 0.24, genesisPut: 0.12,
     spot: 0.76, treasuryUSDC: 3_360_000, ammUSDCFixed: null,
     tge: '2025-10-10',
@@ -337,7 +369,7 @@ const TOKENS = {
     gtPool: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     gtPoolLegacy: '3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn',
     raise: 3_500_000, supply: 12_900_000, icoPrice: 0.35, ath: 7.57,
-    monthlyBurn: 45_000, realizedVol: 130, tradingDays: 114,
+    monthlyBurn: 45_000, monthlyAllowance: 100_000, realizedVol: 130, tradingDays: 114,
     genesisStrike: 0.22, genesisPut: 0.11,
     spot: 1.08, treasuryUSDC: 3_300_000, ammUSDCFixed: null,
     tge: '2025-10-18',
@@ -402,7 +434,7 @@ const TOKENS = {
     gtPool: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
     gtPoolLegacy: '2WNhaB6TPyZ3ynJjAUM4ZZ1Hdeep8FJ3A76FjGjTVjjS',
     raise: 500_000, supply: 10_000_000, icoPrice: 0.05, ath: 0.83,
-    monthlyBurn: 25_000, realizedVol: 120, tradingDays: 130,
+    monthlyBurn: 25_000, monthlyAllowance: 50_000, realizedVol: 120, tradingDays: 130,
     genesisStrike: 0.04, genesisPut: 0.02,
     spot: 0.32, treasuryUSDC: 400_000, ammUSDCFixed: null,
     tge: '2025-07-28',
@@ -444,7 +476,7 @@ const TOKENS = {
     gtPool: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
     gtPoolLegacy: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
     raise: 8_000_000, supply: 10_000_000, icoPrice: 0.60, ath: 0.865,
-    monthlyBurn: 250_000, realizedVol: 90, tradingDays: 32,
+    monthlyBurn: 250_000, monthlyAllowance: 250_000, realizedVol: 90, tradingDays: 32,
     genesisStrike: 0.47, genesisPut: 0.18,
     spot: 0.54, treasuryUSDC: 5_750_000, ammUSDCFixed: null,
     tge: '2026-01-10',
@@ -458,60 +490,93 @@ const TOKENS = {
 // ═══════════════════════════════════════════════════════════════════════
 if (!_hasToken) {
   const landingTokens = Object.entries(TOKENS).map(([key, t]) => ({
-    key, name: t.ticker, desc: t.name + (t.pair ? ' · ' + t.pair.split('/')[0] : ''),
-    color: t.color, spot: t.spot, strike: t.raise > 0 ? t.treasuryUSDC / t.supply : 0,
+    key, ticker: t.ticker, name: t.name, color: t.color,
+    spot: t.spot, strike: t.raise > 0 ? t.treasuryUSDC / t.supply : 0,
     treasury: t.treasuryUSDC, mcap: t.spot * t.supply, live: t.live,
+    supply: t.supply, effectiveSupply: t.supply,
+    monthlyAllowance: t.monthlyAllowance || 0,
   }));
-  const lfmt$ = (n) => '$' + (n >= 1 ? n.toFixed(2) : n >= 0.01 ? n.toFixed(4) : n.toFixed(6));
-  const lfmtM = n => n>=1e6?'$'+(n/1e6).toFixed(1)+'M':'$'+(n/1e3).toFixed(0)+'K';
 
-  function renderTokens(sortKey) {
+  const lfmt$ = (n) => n >= 1 ? '$' + n.toFixed(2) : n >= 0.01 ? '$' + n.toFixed(4) : '$' + n.toFixed(6);
+  const lfmtK = n => n >= 1e6 ? '$' + (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n / 1e3).toFixed(0) + 'K' : '$' + n.toFixed(0);
+
+  function drawSparkline(canvas, data, color) {
+    if (!data || data.length < 2) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width = canvas.offsetWidth * 2;
+    var h = canvas.height = canvas.offsetHeight * 2;
+    ctx.clearRect(0, 0, w, h);
+    var min = Math.min(...data), max = Math.max(...data);
+    var range = max - min || 1;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    for (var i = 0; i < data.length; i++) {
+      var x = (i / (data.length - 1)) * w;
+      var y = h - ((data[i] - min) / range) * (h - 4) - 2;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+
+  let currentSort = 'treasury';
+
+  function renderTable() {
     const sorted = [...landingTokens].sort((a, b) => {
-      if (sortKey === 'treasury') return b.treasury - a.treasury;
-      if (sortKey === 'discount') {
+      if (currentSort === 'treasury') return b.treasury - a.treasury;
+      if (currentSort === 'discount') {
         const da = a.strike > 0 ? (a.strike - a.spot) / a.strike : -999;
         const db = b.strike > 0 ? (b.strike - b.spot) / b.strike : -999;
         return db - da;
       }
       return b.mcap - a.mcap;
     });
-    document.getElementById('tokens').innerHTML = sorted.map(t => {
-      const noStrike = t.strike === 0;
-      const discPct = t.strike > 0 ? ((t.spot - t.strike) / t.strike * 100) : 0;
-      const isDiscount = discPct < 0;
-      const fmtMcap = t.mcap >= 1e6 ? '$'+(t.mcap/1e6).toFixed(1)+'M' : '$'+(t.mcap/1e3).toFixed(0)+'K';
-      const discLabel = noStrike ? 'N/A' : isDiscount ? Math.abs(discPct).toFixed(1) + '% discount' : '+' + discPct.toFixed(0) + '% premium';
-      const comingSoon = !t.live;
-      const overlay = comingSoon ? '<div style="position:absolute;inset:0;background:rgba(12,12,16,0.82);border-radius:14px;display:flex;align-items:center;justify-content:center;z-index:2"><span style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Coming Soon</span></div>' : '';
-      return `<a class="token-card" ${comingSoon?'style="pointer-events:none"':'href="index.html?token='+t.key+'"'} onmouseover="this.style.borderColor='${t.color}'" onmouseout="this.style.borderColor=''">
-        ${overlay}
-        <div class="tc-header">
-          <div class="tc-icon" style="background:${t.color}">${t.name[0]}</div>
-          <div><div class="tc-name">${t.name}</div><div class="tc-pair">${t.desc}</div></div>
-          <span class="tc-arrow">→</span>
-        </div>
-        <div class="tc-stats">
-          <div><div class="tc-stat-label">Spot</div><div class="tc-stat-val" style="color:var(--white)">${lfmt$(t.spot)}</div></div>
-          <div><div class="tc-stat-label">MCap</div><div class="tc-stat-val" style="color:var(--text)">${fmtMcap}</div></div>
-          <div><div class="tc-stat-label">${noStrike?'—':'Backing'}</div><div class="tc-stat-val" style="color:#e84057">${noStrike?'N/A':lfmt$(t.strike)}</div></div>
-          <div><div class="tc-stat-label">vs NAV</div><div class="tc-stat-val" style="color:${isDiscount?'var(--red)':'var(--green)'}">${discLabel}</div></div>
-        </div>
-      </a>`;
+
+    const tbody = document.getElementById('token-tbody');
+    tbody.innerHTML = sorted.map((t, i) => {
+      if (!t.live) {
+        return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4">' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.ticker + '</div><div class="tt-ticker">' + t.name + '</div></div></div></td>' +
+          '<td colspan="6"><span class="tt-coming">Coming Soon</span></td></tr>';
+      }
+      var discPct = t.strike > 0 ? ((t.spot - t.strike) / t.strike * 100) : 0;
+      var isDiscount = discPct < 0;
+      var discLabel = t.strike === 0 ? '—' : (isDiscount ? Math.abs(discPct).toFixed(1) + '% disc' : '+' + discPct.toFixed(1) + '% prem');
+      var discColor = t.strike === 0 ? 'var(--dim)' : (isDiscount ? '#e84057' : 'var(--green)');
+      var allowLabel = t.monthlyAllowance > 0 ? lfmtK(t.monthlyAllowance) + '/mo' : '—';
+
+      return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
+        '<td>' + (i + 1) + '</td>' +
+        '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.ticker + '</div><div class="tt-ticker">' + t.name + '</div></div></div></td>' +
+        '<td><div class="tt-price">' + lfmt$(t.spot) + '</div></td>' +
+        '<td style="color:var(--text)">' + (t.strike > 0 ? lfmt$(t.strike) : '—') + '</td>' +
+        '<td style="color:var(--text)">' + lfmtK(t.treasury) + '</td>' +
+        '<td style="color:' + discColor + ';font-weight:500">' + discLabel + '</td>' +
+        '<td style="color:var(--dim);font-size:11px">' + allowLabel + '</td>' +
+        '<td><canvas class="tt-sparkline" data-token="' + t.key + '"></canvas></td>' +
+        '</tr>';
     }).join('');
+
+    // Sort header highlights
+    document.querySelectorAll('.token-table thead th').forEach(th => th.classList.remove('sorted'));
   }
 
-  renderTokens('mcap');
-  document.getElementById('sort-bar').addEventListener('click', e => {
-    const btn = e.target.closest('.sort-btn');
-    if (!btn) return;
-    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderTokens(btn.dataset.sort);
+  renderTable();
+
+  // Column sort click handlers
+  document.querySelectorAll('.token-table thead th').forEach((th, idx) => {
+    th.addEventListener('click', function() {
+      if (idx === 4) currentSort = 'treasury';
+      else if (idx === 5) currentSort = 'discount';
+      else currentSort = 'mcap';
+      renderTable();
+      loadSparklines();
+    });
   });
 
   // Fetch live data from backend API
   const API_BASE = 'https://navgator-api.vercel.app';
-  const currentSort = () => document.querySelector('.sort-btn.active')?.dataset.sort || 'mcap';
 
   async function fetchLandingData() {
     try {
@@ -523,14 +588,36 @@ if (!_hasToken) {
         const lt = landingTokens.find(x => x.key === t.token);
         if (!lt) continue;
         if (t.spot > 0) { lt.spot = t.spot; lt.mcap = t.spot * (t.effectiveSupply || TOKENS[t.token].supply); }
-        if (t.treasuryUSDC > 0 && t.effectiveSupply > 0) { lt.treasury = t.treasuryUSDC; lt.strike = t.treasuryUSDC / t.effectiveSupply; }
+        if (t.treasuryUSDC > 0 && t.effectiveSupply > 0) { lt.treasury = t.treasuryUSDC; lt.strike = t.treasuryUSDC / t.effectiveSupply; lt.effectiveSupply = t.effectiveSupply; }
       }
-      renderTokens(currentSort());
+      renderTable();
+      loadSparklines();
       console.log('NAVgator landing: live data loaded from API');
     } catch (e) { console.warn('API fetch failed:', e.message); }
   }
 
+  // Load sparklines from NAV history
+  async function loadSparklines() {
+    for (const t of landingTokens) {
+      if (!t.live) continue;
+      try {
+        const res = await fetch(API_BASE + '/api/history?token=' + t.key + '&days=30');
+        const data = await res.json();
+        if (data.history && data.history.length > 1) {
+          const values = data.history.map(h => h.nav);
+          const canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
+          if (canvas) {
+            var last = values[values.length - 1], first = values[0];
+            var color = last >= first ? '#00e5a0' : '#e84057';
+            drawSparkline(canvas, values, color);
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
   fetchLandingData();
+  setTimeout(loadSparklines, 500);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
