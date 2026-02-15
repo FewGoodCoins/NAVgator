@@ -98,6 +98,18 @@
   .nav-stats-bar .ns-progress-fill { height: 100%; border-radius: 2px; }
 
   .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
+  .allowance-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
+  .allowance-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .allowance-card .ac-label { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; font-family: Inter, sans-serif; margin-bottom: 4px; }
+  .allowance-card .ac-value { font-size: 16px; font-weight: 600; color: var(--bright); font-family: 'JetBrains Mono', monospace; }
+  .allowance-card .ac-sub { font-size: 9px; color: var(--muted); font-family: Inter, sans-serif; margin-top: 3px; }
+  .util-bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 6px; overflow: hidden; }
+  .util-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+  .allowance-month { display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; margin-right: 16px; }
+  .allowance-month .am-label { color: var(--muted); }
+  .allowance-month .am-bar { width: 60px; height: 4px; border-radius: 2px; background: var(--border); display: inline-block; position: relative; }
+  .allowance-month .am-fill { height: 100%; border-radius: 2px; position: absolute; left: 0; top: 0; }
+  .allowance-month .am-pct { color: var(--text); min-width: 32px; text-align: right; }
   .addr-title { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
   .addr-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; }
   .addr-row:last-child { border-bottom: none; }
@@ -216,6 +228,13 @@
 
   <!-- Address section -->
   <div class="addr-section" id="addr-section"></div>
+
+  <!-- Allowance section -->
+  <div class="allowance-section" id="allowance-section" style="display:none">
+    <div class="section-title" style="font-size:13px;font-weight:600;color:var(--bright);margin-bottom:12px;font-family:Inter,sans-serif">Allowance Schedule</div>
+    <div class="allowance-cards" id="allowance-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px"></div>
+    <div class="allowance-history" id="allowance-history" style="font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace"></div>
+  </div>
 
   <div class="footer">
     <a href="index.html">← NAVgator Home</a> · Treasury analytics for ownership tokens · Chart by <a href="https://www.tradingview.com/" target="_blank">TradingView</a> · Not financial advice
@@ -1001,6 +1020,100 @@ function renderAddresses() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// ALLOWANCE SCHEDULE
+// ═══════════════════════════════════════════════════════════════════════
+async function fetchAllowance() {
+  try {
+    var res = await fetch(API_BASE_DASH + '/api/allowance?token=' + tokenKey);
+    var data = await res.json();
+    if (data && !data.message) renderAllowance(data);
+    else if (data && data.utilization && data.utilization.length > 0) renderAllowance(data);
+  } catch (e) { console.error('Allowance fetch error:', e); }
+}
+
+function renderAllowance(data) {
+  var section = document.getElementById('allowance-section');
+  var cards = document.getElementById('allowance-cards');
+  var history = document.getElementById('allowance-history');
+  if (!section || !cards) return;
+
+  section.style.display = 'block';
+
+  var fmtK = function(v) {
+    if (v >= 1000000) return '$' + (v / 1000000).toFixed(1) + 'M';
+    if (v >= 1000) return '$' + (v / 1000).toFixed(0) + 'K';
+    return '$' + v.toLocaleString();
+  };
+
+  var fmtDate = function(d) {
+    var parts = d.split('-');
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[parseInt(parts[1]) - 1] + ' ' + parseInt(parts[2]);
+  };
+
+  // Build cards
+  var html = '';
+
+  // Card 1: Monthly Allowance Cap
+  if (data.monthlyAllowance) {
+    html += '<div class="allowance-card"><div class="ac-label">Monthly Allowance</div><div class="ac-value">' + fmtK(data.monthlyAllowance) + '</div><div class="ac-sub">' + (data.schedule ? data.schedule.frequency : '') + ' schedule</div></div>';
+  }
+
+  // Card 2: Avg Utilization
+  if (data.avgUtilization !== null && data.avgUtilization !== undefined) {
+    var utilColor = data.avgUtilization > 100 ? '#e84057' : data.avgUtilization > 80 ? '#ff8c42' : '#00e5a0';
+    html += '<div class="allowance-card"><div class="ac-label">Avg Utilization</div><div class="ac-value" style="color:' + utilColor + '">' + data.avgUtilization + '%</div>';
+    html += '<div class="util-bar"><div class="util-fill" style="width:' + Math.min(100, data.avgUtilization) + '%;background:' + utilColor + '"></div></div></div>';
+  }
+
+  // Card 3: Total Paid Out
+  if (data.summary) {
+    html += '<div class="allowance-card"><div class="ac-label">Total Paid Out</div><div class="ac-value">' + fmtK(data.summary.totalPaidOut) + '</div><div class="ac-sub">' + data.summary.monthsLive + ' months live</div></div>';
+  }
+
+  // Card 4: Next Payment
+  if (data.nextPredicted) {
+    var np = data.nextPredicted;
+    var statusText = np.overdue ? '<span style="color:#e84057">' + Math.abs(np.daysUntil) + 'd overdue</span>' : '<span style="color:#00e5a0">in ' + np.daysUntil + ' days</span>';
+    html += '<div class="allowance-card"><div class="ac-label">Next Predicted</div><div class="ac-value">' + fmtDate(np.date) + '</div><div class="ac-sub">' + statusText + ' · ~' + fmtK(np.estimatedAmount) + '</div></div>';
+  }
+
+  // Card 5: Last Payment
+  if (data.lastPayment) {
+    var lp = data.lastPayment;
+    html += '<div class="allowance-card"><div class="ac-label">Last Payment</div><div class="ac-value">' + fmtDate(lp.date) + '</div><div class="ac-sub">' + lp.daysAgo + ' days ago · ' + fmtK(lp.amount) + '</div></div>';
+  }
+
+  cards.innerHTML = html;
+
+  // Monthly utilization bars
+  if (data.utilization && data.utilization.length > 0 && data.monthlyAllowance) {
+    var utilHtml = '<div style="margin-top:8px;font-size:9px;color:var(--dim);font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Monthly Breakdown</div>';
+    data.utilization.forEach(function(u) {
+      var pct = u.utilization || 0;
+      var barColor = pct > 100 ? '#e84057' : pct > 80 ? '#ff8c42' : '#00e5a0';
+      var barWidth = Math.min(100, pct);
+      utilHtml += '<div class="allowance-month">';
+      utilHtml += '<span class="am-label" style="min-width:48px">' + u.month + '</span>';
+      utilHtml += '<span class="am-bar"><span class="am-fill" style="width:' + barWidth + '%;background:' + barColor + '"></span></span>';
+      utilHtml += '<span class="am-pct">' + pct + '%</span>';
+      utilHtml += '<span style="color:var(--muted);margin-left:4px">' + fmtK(u.spent) + '</span>';
+      utilHtml += '</div>';
+    });
+    history.innerHTML = utilHtml;
+  }
+
+  // Show special payments if any
+  if (data.specialPayments && data.specialPayments.length > 0) {
+    var spHtml = '<div style="margin-top:10px;font-size:9px;color:var(--dim);font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Special Payments (governance)</div>';
+    data.specialPayments.forEach(function(sp) {
+      spHtml += '<div style="font-size:10px;color:var(--muted);padding:2px 0">' + fmtDate(sp.date) + ' — ' + fmtK(sp.amount) + '</div>';
+    });
+    history.innerHTML += spHtml;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════
 (async function main() {
@@ -1038,6 +1151,9 @@ function renderAddresses() {
     }
 
     console.log('NAVgator ' + CFG.ticker + ' | Live: ' + isLive + ' | OHLCV: ' + (ohlcv ? ohlcv.length + ' candles' : 'none') + ' | Spot: $' + CFG.spot + ' | Treasury: $' + CFG.treasuryUSDC.toLocaleString() + ' | EffSupply: ' + (CFG.effectiveSupply || CFG.supply).toLocaleString() + ' | NAV: $' + navPerToken.toFixed(6));
+
+    // Fetch and render allowance data
+    fetchAllowance();
   } catch (err) {
     console.error('NAVgator init error:', err);
     var loadEl2 = document.getElementById('chart-loading');
