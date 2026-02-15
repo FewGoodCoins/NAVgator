@@ -624,12 +624,39 @@ function genFallback() {
 // ═══════════════════════════════════════════════════════════════════════
 var _allCandles = {};
 var _navPerToken = 0;
+var _navHistory = []; // historical NAV data from Supabase
 var _chartTF = '1D';
 var _chartViewMode = 'nav'; // 'nav' (line) or 'candle'
 var _tvChart = null;
 var _tvSeries = null;
+var _tvNavSeries = null; // historical NAV line series
 var _tvNavLine = null;
 var _tvPctLines = [];
+
+// Fetch historical NAV data from backend
+async function fetchNAVHistory() {
+  try {
+    var res = await fetch(API_BASE_DASH + '/api/history?token=' + tokenKey + '&days=365');
+    var json = await res.json();
+    if (json.history && json.history.length > 0) {
+      _navHistory = json.history.map(function(h) {
+        return {
+          time: Math.floor(new Date(h.date).getTime() / 1000),
+          value: h.nav
+        };
+      });
+      // Deduplicate by time (keep last per timestamp)
+      var seen = {};
+      _navHistory = _navHistory.filter(function(h) {
+        if (seen[h.time]) return false;
+        seen[h.time] = true;
+        return true;
+      });
+      // Sort by time ascending
+      _navHistory.sort(function(a, b) { return a.time - b.time; });
+    }
+  } catch (e) { console.error('NAV history fetch error:', e); }
+}
 
 async function fetchCandlesForTF(tf) {
   if (_allCandles[tf]) return _allCandles[tf];
@@ -680,22 +707,38 @@ function removeNAVOverlays() {
     try { _tvSeries.removePriceLine(pl); } catch(e) {}
   });
   _tvPctLines = [];
+  // NAV series is removed when chart is destroyed, no need to remove here
 }
 
 function addNAVOverlays(navPerToken) {
   if (!_tvSeries || !navPerToken) return;
 
-  // NAV price line
-  _tvNavLine = _tvSeries.createPriceLine({
-    price: navPerToken,
-    color: '#e84057',
-    lineWidth: 2,
-    lineStyle: 2, // dashed
-    axisLabelVisible: true,
-    title: 'NAV',
-  });
+  // Add historical NAV as a line series (step-style, declining over time)
+  if (_navHistory.length > 1 && _tvChart) {
+    _tvNavSeries = _tvChart.addLineSeries({
+      color: '#e84057',
+      lineWidth: 2,
+      lineStyle: 2, // dashed
+      crosshairMarkerVisible: false,
+      lastValueVisible: true,
+      priceLineVisible: false,
+      title: 'NAV',
+    });
+    // Use step interpolation: for each day, carry forward the last known NAV
+    _tvNavSeries.setData(_navHistory);
+  } else {
+    // Fallback: flat NAV line if no history available
+    _tvNavLine = _tvSeries.createPriceLine({
+      price: navPerToken,
+      color: '#e84057',
+      lineWidth: 2,
+      lineStyle: 2, // dashed
+      axisLabelVisible: true,
+      title: 'NAV',
+    });
+  }
 
-  // Percentage reference lines (only in line mode)
+  // Percentage reference lines (only in line mode, based on current NAV)
   if (_chartViewMode === 'nav') {
     var pctSteps = [10, 20, 30, 40, 50, 60, 70, 80, 90];
     pctSteps.forEach(function(pct) {
@@ -729,6 +772,7 @@ function buildChart(candles, navPerToken) {
     try { _tvChart.remove(); } catch(e) {}
     _tvChart = null;
     _tvSeries = null;
+    _tvNavSeries = null;
     _tvNavLine = null;
     _tvPctLines = [];
   }
@@ -999,7 +1043,7 @@ function renderAddresses() {
   renderAddresses();
 
   try {
-    var results = await Promise.all([fetchOHLCV(), fetchFromAPI()]);
+    var results = await Promise.all([fetchOHLCV(), fetchFromAPI(), fetchNAVHistory()]);
     var ohlcv = results[0], apiOk = results[1];
     var isLive = !!(ohlcv || apiOk);
     navPerToken = renderUI(isLive);
