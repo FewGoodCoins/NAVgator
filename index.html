@@ -1028,16 +1028,33 @@ function drawChart() {
   var pricePts = toPixels(_chart.priceData);
   var navPts = toPixels(_chart.navData);
 
-  // Draw fill between price and NAV (green above, red below)
+  // Draw fill between price and NAV with gradient (fades toward NAV line)
   if (pricePts.length > 1 && navPts.length > 1) {
-    // For each price point, find interpolated NAV value
     for (var i = 0; i < pricePts.length - 1; i++) {
       var p0 = pricePts[i], p1 = pricePts[i + 1];
       var n0y = interpolateNav(navPts, p0.x);
       var n1y = interpolateNav(navPts, p1.x);
       if (n0y === null || n1y === null) continue;
 
-      var aboveNav = p0.y <= n0y; // y is inverted (lower y = higher price)
+      var aboveNav = p0.y <= n0y;
+      var gradTop, gradBot;
+      if (aboveNav) {
+        // Price above NAV: green at price, transparent at NAV
+        gradTop = Math.min(p0.y, p1.y);
+        gradBot = Math.max(n0y, n1y);
+        var grad = ctx.createLinearGradient(0, gradTop, 0, gradBot);
+        grad.addColorStop(0, 'rgba(0,229,160,0.25)');
+        grad.addColorStop(1, 'rgba(0,229,160,0.0)');
+        ctx.fillStyle = grad;
+      } else {
+        // Price below NAV: red at price, transparent at NAV
+        gradTop = Math.min(n0y, n1y);
+        gradBot = Math.max(p0.y, p1.y);
+        var grad = ctx.createLinearGradient(0, gradTop, 0, gradBot);
+        grad.addColorStop(0, 'rgba(232,64,87,0.0)');
+        grad.addColorStop(1, 'rgba(232,64,87,0.25)');
+        ctx.fillStyle = grad;
+      }
 
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
@@ -1045,7 +1062,6 @@ function drawChart() {
       ctx.lineTo(p1.x, n1y);
       ctx.lineTo(p0.x, n0y);
       ctx.closePath();
-      ctx.fillStyle = aboveNav ? 'rgba(0,229,160,0.12)' : 'rgba(232,64,87,0.12)';
       ctx.fill();
     }
   }
@@ -1137,44 +1153,6 @@ function attachChartEvents(container) {
   canvas.addEventListener('mouseleave', function() {
     drawChart();
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
-  });
-
-  // Zoom with scroll
-  canvas.addEventListener('wheel', function(e) {
-    e.preventDefault();
-    var rect = canvas.getBoundingClientRect();
-    var mx = (e.clientX - rect.left) / _chart.width;
-    var zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
-    var range = _chart.viewEnd - _chart.viewStart;
-    var newRange = Math.min(1, Math.max(0.02, range * zoomFactor));
-    var center = _chart.viewStart + mx * range;
-    _chart.viewStart = Math.max(0, center - mx * newRange);
-    _chart.viewEnd = Math.min(1, _chart.viewStart + newRange);
-    if (_chart.viewEnd > 1) { _chart.viewEnd = 1; _chart.viewStart = Math.max(0, 1 - newRange); }
-    drawChart();
-  }, { passive: false });
-
-  // Pan with drag
-  canvas.addEventListener('mousedown', function(e) {
-    _chart.isDragging = true;
-    _chart.dragStartX = e.clientX;
-    _chart.dragStartView = _chart.viewStart;
-    _chart.dragRange = _chart.viewEnd - _chart.viewStart;
-  });
-
-  window.addEventListener('mousemove', function(e) {
-    if (!_chart.isDragging) return;
-    var dx = e.clientX - _chart.dragStartX;
-    var pxRange = _chart.width;
-    var shift = -(dx / pxRange) * _chart.dragRange;
-    var newStart = Math.max(0, Math.min(1 - _chart.dragRange, _chart.dragStartView + shift));
-    _chart.viewStart = newStart;
-    _chart.viewEnd = newStart + _chart.dragRange;
-    drawChart();
-  });
-
-  window.addEventListener('mouseup', function() {
-    _chart.isDragging = false;
   });
 
   // Resize
