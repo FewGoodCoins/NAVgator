@@ -1049,11 +1049,22 @@ function buildChart(candles, navPerToken) {
   // Inject TGE starting point so price line emerges from the same circle as NAV
   if (CFG.tge && CFG.icoPrice > 0) {
     var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
-    // Only inject if we have data and TGE is before the first candle
-    if (tvLineData.length > 0 && tgeTs < tvLineData[0].time) {
-      tvLineData.unshift({ time: tgeTs, value: CFG.icoPrice });
-      tvData.unshift({ time: tgeTs, open: CFG.icoPrice, high: CFG.icoPrice, low: CFG.icoPrice, close: CFG.icoPrice });
-    } else if (tvLineData.length === 0) {
+    var tgeDay = CFG.tge; // YYYY-MM-DD
+
+    if (tvLineData.length > 0) {
+      // Check if first candle is on TGE day
+      var firstDate = new Date(tvLineData[0].time * 1000).toISOString().split('T')[0];
+      if (firstDate === tgeDay || tvLineData[0].time === tgeTs) {
+        // Same day — insert ICO price point just before it so line starts there
+        // Use a timestamp 1 second earlier so TradingView orders it first
+        tvLineData.unshift({ time: tgeTs - 1, value: CFG.icoPrice });
+        tvData.unshift({ time: tgeTs - 1, open: CFG.icoPrice, high: CFG.icoPrice, low: CFG.icoPrice, close: CFG.icoPrice });
+      } else if (tgeTs < tvLineData[0].time) {
+        // TGE is before first candle — prepend
+        tvLineData.unshift({ time: tgeTs, value: CFG.icoPrice });
+        tvData.unshift({ time: tgeTs, open: CFG.icoPrice, high: CFG.icoPrice, low: CFG.icoPrice, close: CFG.icoPrice });
+      }
+    } else {
       tvLineData.push({ time: tgeTs, value: CFG.icoPrice });
       tvData.push({ time: tgeTs, open: CFG.icoPrice, high: CFG.icoPrice, low: CFG.icoPrice, close: CFG.icoPrice });
     }
