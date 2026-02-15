@@ -262,7 +262,7 @@
     <div class="legend">
       <span class="legend-item"><span class="legend-fill" style="background:#00e5a0"></span> <span id="leg-spot-label">Bullish</span></span>
       <span class="legend-item"><span class="legend-fill" style="background:#e84057"></span> Bearish</span>
-      <span class="legend-item"><span class="legend-line" style="background:#e84057"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-line" style="background:#ffffff"></span> NAV <span id="leg-strike">…</span></span>
     </div>
     <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
@@ -898,29 +898,58 @@ function removeNAVOverlays() {
   // NAV series is removed when chart is destroyed, no need to remove here
 }
 
+var _allowancePayments = []; // treasury withdrawal data for markers
+
 function addNAVOverlays(navPerToken) {
   if (!_tvSeries || !navPerToken) return;
 
   // Add historical NAV as a line series (step-style, declining over time)
   if (_navHistory.length > 1 && _tvChart) {
     _tvNavSeries = _tvChart.addLineSeries({
-      color: '#e84057',
+      color: '#ffffff',
       lineWidth: 2,
-      lineStyle: 2, // dashed
-      crosshairMarkerVisible: false,
+      lineStyle: 0, // solid
+      crosshairMarkerVisible: true,
       lastValueVisible: true,
       priceLineVisible: false,
       title: 'NAV',
     });
-    // Use step interpolation: for each day, carry forward the last known NAV
     _tvNavSeries.setData(_navHistory);
+
+    // Add treasury withdrawal markers on NAV line
+    if (_allowancePayments.length > 0) {
+      var fmtK = function(n) {
+        if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+        return '$' + Math.round(n);
+      };
+      var markers = [];
+      for (var i = 0; i < _allowancePayments.length; i++) {
+        var p = _allowancePayments[i];
+        var ts = Math.floor(new Date(p.date + 'T12:00:00Z').getTime() / 1000);
+        // Only show payments >= $1000
+        if (p.amount >= 1000) {
+          markers.push({
+            time: ts,
+            position: 'aboveBar',
+            color: '#e84057',
+            shape: 'circle',
+            text: '-' + fmtK(p.amount),
+          });
+        }
+      }
+      if (markers.length > 0) {
+        markers.sort(function(a, b) { return a.time - b.time; });
+        _tvNavSeries.setMarkers(markers);
+      }
+    }
   } else {
     // Fallback: flat NAV line if no history available
     _tvNavLine = _tvSeries.createPriceLine({
       price: navPerToken,
-      color: '#e84057',
+      color: '#ffffff',
       lineWidth: 2,
-      lineStyle: 2, // dashed
+      lineStyle: 0,
       axisLabelVisible: true,
       title: 'NAV',
     });
@@ -1119,7 +1148,7 @@ function renderUI(isLive) {
     '<span>ATH <b>' + fmt$(CFG.ath) + '</b></span>' +
     '<span>Burn <b>' + fmtBurn(CFG.monthlyBurn) + '/mo</b></span>';
 
-  document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price History \u2014 <span style="color:#e84057">dashed line = NAV (treasury \u00f7 holder supply)</span>';
+  document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price History \u2014 <span style="color:#ffffff">white line = NAV (treasury \u00f7 holder supply)</span>';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' bullish';
   document.getElementById('leg-strike').textContent = fmt$(strike);
 
@@ -1395,7 +1424,16 @@ function renderAllowance(data) {
   renderAddresses();
 
   try {
-    var results = await Promise.all([fetchOHLCV(), fetchFromAPI(), fetchNAVHistory()]);
+    // Fetch allowance data for chart markers
+    var allowancePromise = fetch(API_BASE_DASH + '/api/allowance?token=' + tokenKey)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && d.cycles) {
+          _allowancePayments = d.cycles.map(function(c) { return { date: c.startDate, amount: c.amount }; });
+        }
+      }).catch(function() {});
+
+    var results = await Promise.all([fetchOHLCV(), fetchFromAPI(), fetchNAVHistory(), allowancePromise]);
     var ohlcv = results[0], apiOk = results[1];
     var isLive = !!(ohlcv || apiOk);
     navPerToken = renderUI(isLive);
