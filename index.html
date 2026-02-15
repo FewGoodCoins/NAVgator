@@ -164,9 +164,8 @@
 
   @media (max-width: 768px) {
     .token-table td:nth-child(5), .token-table th:nth-child(5),
-    .token-table td:nth-child(6), .token-table th:nth-child(6),
-    .token-table td:nth-child(7), .token-table th:nth-child(7) { display: none; }
-    .tt-sparkline { width: 60px; }
+    .token-table td:nth-child(6), .token-table th:nth-child(6) { display: none; }
+    .tt-sparkline { width: 80px; }
   }
   @media (max-width: 500px) {
     .token-table td:nth-child(4), .token-table th:nth-child(4) { display: none; }
@@ -199,9 +198,8 @@
             <th style="text-align:left">Name</th>
             <th>Price</th>
             <th>NAV</th>
-            <th>Treasury</th>
             <th>vs NAV</th>
-            <th>Allowance</th>
+            <th>MCap</th>
             <th>30D Trend</th>
           </tr>
         </thead>
@@ -556,7 +554,7 @@ if (!_hasToken) {
       if (!t.live) {
         return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4">' +
           '<td>' + (i + 1) + '</td>' +
-          '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.ticker + '</div><div class="tt-ticker">' + t.name + '</div></div></div></td>' +
+          '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
           '<td colspan="6"><span class="tt-coming">Coming Soon</span></td></tr>';
       }
       var discPct = t.strike > 0 ? ((t.spot - t.strike) / t.strike * 100) : 0;
@@ -567,12 +565,11 @@ if (!_hasToken) {
 
       return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
         '<td>' + (i + 1) + '</td>' +
-        '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.ticker + '</div><div class="tt-ticker">' + t.name + '</div></div></div></td>' +
+        '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
         '<td><div class="tt-price">' + lfmt$(t.spot) + '</div></td>' +
         '<td style="color:var(--text)">' + (t.strike > 0 ? lfmt$(t.strike) : '—') + '</td>' +
-        '<td style="color:var(--text)">' + lfmtK(t.treasury) + '</td>' +
         '<td style="color:' + discColor + ';font-weight:500">' + discLabel + '</td>' +
-        '<td style="color:var(--dim);font-size:11px">' + allowLabel + '</td>' +
+        '<td style="color:var(--text)">' + lfmtK(t.mcap) + '</td>' +
         '<td><canvas class="tt-sparkline" data-token="' + t.key + '"></canvas></td>' +
         '</tr>';
     }).join('');
