@@ -98,14 +98,21 @@
   .nav-stats-bar .ns-progress-fill { height: 100%; border-radius: 2px; }
 
   .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
-  .addr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  @media (max-width: 700px) { .addr-grid { grid-template-columns: 1fr; } }
-  .bal-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; }
-  .bal-row:last-child { border-bottom: none; }
-  .bal-label { color: var(--muted); font-weight: 500; font-size: 11px; }
-  .bal-vals { text-align: right; }
-  .bal-usdc { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--green); }
-  .bal-token { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--dim); }
+  .addr-title { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+  .addr-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; gap: 12px; flex-wrap: wrap; }
+  .addr-row:last-child { border-bottom: none; }
+  .addr-label { color: var(--muted); font-weight: 500; min-width: 100px; font-size: 11px; }
+  .addr-val { display: flex; align-items: center; gap: 6px; }
+  .addr-val a { color: var(--green); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .addr-val a:hover { text-decoration: underline; }
+  .addr-copy { background: none; border: 1px solid var(--border2); border-radius: 4px; color: var(--dim); font-size: 9px; padding: 2px 5px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+  .addr-copy:hover { border-color: var(--green); color: var(--green); }
+  .addr-copy.copied { border-color: var(--green); color: var(--green); }
+  .addr-bals { margin-left: auto; display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .bal-usdc { color: var(--green); }
+  .bal-sep { color: var(--border2); }
+  .bal-token { color: var(--dim); }
+  .bal-loading { color: var(--dim); }
   .allowance-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
   .allowance-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
   .allowance-card .ac-label { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; font-family: Inter, sans-serif; margin-bottom: 4px; }
@@ -1248,90 +1255,60 @@ function renderAddresses() {
   const copyBtn = (addr) => '<button class="addr-copy" onclick="navigator.clipboard.writeText(\'' + addr + '\');this.textContent=\'Copied!\';this.classList.add(\'copied\');setTimeout(function(){this.textContent=\'Copy\';this.classList.remove(\'copied\')}.bind(this),1500)">Copy</button>';
 
   const addrs = [];
-  if (CFG.mint) addrs.push(['Token CA', CFG.mint, 'token']);
-  if (CFG.daoWallet) addrs.push(['DAO Treasury', CFG.daoWallet, 'account']);
-  if (CFG.ammWallet) addrs.push(['AMM Pool 1', CFG.ammWallet, 'account']);
-  if (CFG.ammWallet2) addrs.push(['AMM Pool 2', CFG.ammWallet2, 'account']);
-  if (CFG.lockWallet) addrs.push(['Lock Contract', CFG.lockWallet, 'account']);
-  if (CFG.buybackWallet) addrs.push(['Buyback Wallet', CFG.buybackWallet, 'account']);
+  if (CFG.mint) addrs.push({ label: 'Token CA', addr: CFG.mint, type: 'token', balKey: null });
+  if (CFG.daoWallet) addrs.push({ label: 'DAO Treasury', addr: CFG.daoWallet, type: 'account', balKey: 'dao' });
+  if (CFG.ammWallet) addrs.push({ label: 'AMM Pool 1', addr: CFG.ammWallet, type: 'account', balKey: 'amm1' });
+  if (CFG.ammWallet2) addrs.push({ label: 'AMM Pool 2', addr: CFG.ammWallet2, type: 'account', balKey: 'amm2' });
+  if (CFG.lockWallet) addrs.push({ label: 'Lock Contract', addr: CFG.lockWallet, type: 'account', balKey: 'lock' });
+  if (CFG.buybackWallet) addrs.push({ label: 'Buyback Wallet', addr: CFG.buybackWallet, type: 'account', balKey: 'buyback' });
 
-  // Left column: addresses
-  var leftHtml = '<div class="addr-title">On-Chain Addresses</div>' +
+  section.innerHTML = '<div class="addr-title">On-Chain Addresses</div>' +
+    '<div id="addr-table">' +
     addrs.map(function(a) {
-      return '<div class="addr-row"><span class="addr-label">' + a[0] + '</span><div class="addr-val">' +
-        '<a href="' + solscanUrl(a[1], a[2]) + '" target="_blank" title="View on Solscan">' + truncAddr(a[1]) + '</a>' +
-        copyBtn(a[1]) +
-        '</div></div>';
-    }).join('');
-
-  // Right column: wallet balances (populated after API data loads)
-  var rightHtml = '<div class="addr-title">Wallet Balances</div><div id="wallet-balances"><div style="font-size:11px;color:var(--dim);padding:8px 0">Loading balances…</div></div>';
-
-  section.innerHTML = '<div class="addr-grid"><div>' + leftHtml + '</div><div>' + rightHtml + '</div></div>';
-
-  // Populate balances from CFG data (already fetched from API)
-  setTimeout(function() { renderBalances(); }, 100);
+      return '<div class="addr-row">' +
+        '<span class="addr-label">' + a.label + '</span>' +
+        '<div class="addr-val">' +
+          '<a href="' + solscanUrl(a.addr, a.type) + '" target="_blank" title="View on Solscan">' + truncAddr(a.addr) + '</a>' +
+          copyBtn(a.addr) +
+        '</div>' +
+        '<div class="addr-bals" data-bal="' + (a.balKey || '') + '"><span class="bal-loading">—</span></div>' +
+      '</div>';
+    }).join('') +
+    '</div>';
 }
 
 function renderBalances() {
-  var el = document.getElementById('wallet-balances');
-  if (!el) return;
-
-  var fmtBal = function(n) {
-    if (n === undefined || n === null) return '—';
-    if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
-    if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
-    return '$' + n.toFixed(2);
+  var ticker = CFG.ticker || '';
+  var fmtUsdc = function(n) {
+    if (n === undefined || n === null) return '0 USDC';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M USDC';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K USDC';
+    return n.toFixed(0) + ' USDC';
   };
-  var fmtTokens = function(n, ticker) {
-    if (n === undefined || n === null || n === 0) return '';
+  var fmtTokens = function(n) {
+    if (n === undefined || n === null || n === 0) return '0 ' + ticker;
     if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M ' + ticker;
     if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K ' + ticker;
     return n.toLocaleString() + ' ' + ticker;
   };
 
-  var rows = [];
+  // Map balance keys to actual data
+  var balData = {
+    dao: { usdc: CFG.treasuryUSDC || 0, tokens: CFG.daoTokenBalance || 0 },
+    amm1: { usdc: CFG.meteoraPoolUSDC || 0, tokens: CFG.meteoraPoolTokens || 0 },
+    amm2: { usdc: 0, tokens: 0 },
+    lock: { usdc: 0, tokens: CFG.lockTokenBalance || 0 },
+    buyback: { usdc: 0, tokens: CFG.buybackTokenBalance || 0 },
+  };
 
-  // DAO Treasury
-  if (CFG.treasuryUSDC > 0) {
-    rows.push({ label: 'DAO Treasury', usdc: CFG.treasuryUSDC, tokens: CFG.daoTokenBalance, ticker: CFG.ticker });
-  }
-
-  // Meteora pool
-  if (CFG.meteoraPoolUSDC > 0 || CFG.meteoraPoolTokens > 0) {
-    rows.push({ label: 'Meteora Pool', usdc: CFG.meteoraPoolUSDC, tokens: CFG.meteoraPoolTokens, ticker: CFG.ticker });
-  }
-
-  // AMM / effective supply info
-  if (CFG.ammTokens > 0) {
-    rows.push({ label: 'AMM Tokens', usdc: CFG.ammUSDC, tokens: CFG.ammTokens, ticker: CFG.ticker });
-  }
-
-  // Lock wallet
-  if (CFG.lockTokenBalance > 0) {
-    rows.push({ label: 'Locked Tokens', usdc: null, tokens: CFG.lockTokenBalance, ticker: CFG.ticker });
-  }
-
-  // Buyback wallet
-  if (CFG.buybackTokenBalance > 0) {
-    rows.push({ label: 'Buyback Wallet', usdc: null, tokens: CFG.buybackTokenBalance, ticker: CFG.ticker });
-  }
-
-  // Summary
-  rows.push({ label: 'Effective Supply', usdc: null, tokens: CFG.effectiveSupply, ticker: CFG.ticker, isSummary: true });
-
-  if (rows.length === 0) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--dim);padding:8px 0">No balance data available</div>';
-    return;
-  }
-
-  el.innerHTML = rows.map(function(r) {
-    var usdcStr = r.usdc ? '<span class="bal-usdc">' + fmtBal(r.usdc) + ' USDC</span>' : '';
-    var tokenStr = r.tokens ? '<span class="bal-token">' + fmtTokens(r.tokens, r.ticker) + '</span>' : '';
-    var sep = usdcStr && tokenStr ? '<br>' : '';
-    var labelStyle = r.isSummary ? 'color:var(--white);font-weight:600' : '';
-    return '<div class="bal-row"><span class="bal-label" style="' + labelStyle + '">' + r.label + '</span><div class="bal-vals">' + usdcStr + sep + tokenStr + '</div></div>';
-  }).join('');
+  document.querySelectorAll('.addr-bals').forEach(function(el) {
+    var key = el.dataset.bal;
+    if (!key) { el.innerHTML = '<span class="bal-token">—</span>'; return; }
+    var d = balData[key] || { usdc: 0, tokens: 0 };
+    el.innerHTML = '<span class="bal-usdc">' + fmtUsdc(d.usdc) + '</span>' +
+      '<span class="bal-sep">·</span>' +
+      '<span class="bal-token">' + fmtTokens(d.tokens) + '</span>';
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════
