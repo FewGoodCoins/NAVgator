@@ -665,8 +665,8 @@ async function fetchCandlesForTF(tf) {
     var tge = new Date(CFG.tge || '2025-01-01');
     var now = new Date();
     var birdeyeTF = { '12H': '12H', '1D': '1D', '1W': '1W', '1M': '1M' }[tf] || '1D';
-    var url = 'https://public-api.birdeye.so/defi/ohlcv?address=' + CFG.mint + '&type=' + birdeyeTF + '&time_from=' + Math.floor(tge.getTime() / 1000) + '&time_to=' + Math.floor(now.getTime() / 1000);
-    var resp = await fetch(url, { headers: { 'X-API-KEY': 'f570879c3c51419fb0c7e75e38793434' } });
+    var url = API_BASE_DASH + '/api/ohlcv?token=' + tokenKey + '&tf=' + birdeyeTF + '&time_from=' + Math.floor(tge.getTime() / 1000) + '&time_to=' + Math.floor(now.getTime() / 1000);
+    var resp = await fetch(url);
     var json = await resp.json();
     if (!json.data || !json.data.items) return [];
     var candles = json.data.items.map(function(c) {
