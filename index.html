@@ -843,10 +843,10 @@ async function fetchNAVHistory() {
       // Sort by time ascending
       _navHistory.sort(function(a, b) { return a.time - b.time; });
 
-      // Insert TGE starting point if we have the data
-      if (CFG.tge && CFG.raise > 0 && CFG.supply > 0) {
+      // Insert TGE starting point — at TGE, price = NAV = ICO price
+      if (CFG.tge && CFG.icoPrice > 0) {
         var tgeTime = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
-        var tgeNav = CFG.raise / CFG.supply; // initial NAV = total raise / supply
+        var tgeNav = CFG.icoPrice; // at TGE, NAV = ICO price (raise / circulating supply)
         // Only add if TGE is before our first data point
         if (_navHistory.length === 0 || tgeTime < _navHistory[0].time) {
           _navHistory.unshift({ time: tgeTime, value: tgeNav });
