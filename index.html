@@ -851,8 +851,9 @@ async function fetchNAVHistory() {
       _navHistory.sort(function(a, b) { return a.time - b.time; });
 
       // Insert TGE starting point — at TGE, price = NAV = ICO price
+      // Use tge - 1 second to match price line injection (ensures exact same x position)
       if (CFG.tge && CFG.icoPrice > 0) {
-        var tgeTime = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
+        var tgeTime = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000) - 1;
         var tgeNav = CFG.icoPrice; // at TGE, NAV = ICO price (raise / circulating supply)
         // Only add if TGE is before our first data point
         if (_navHistory.length === 0 || tgeTime < _navHistory[0].time) {
@@ -938,7 +939,7 @@ function addNAVOverlays(navPerToken) {
 
     // TGE marker — both price and NAV start here
     if (CFG.tge) {
-      var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
+      var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000) - 1;
       markers.push({
         time: tgeTs,
         position: 'inBar',
