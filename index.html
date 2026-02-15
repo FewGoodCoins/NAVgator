@@ -920,15 +920,32 @@ function buildChart(candles, navPerToken) {
   var navData = _navHistory.slice();
   if (navPerToken > 0 && navData.length > 0) {
     var nowTs = Math.floor(Date.now() / 1000);
-    // Remove any points after the current live NAV that are higher (stale backfill)
     var lastLiveNav = navPerToken;
     while (navData.length > 1 && navData[navData.length - 1].value > lastLiveNav * 1.01) {
       navData.pop();
     }
-    // Add current live NAV as the final point
     navData.push({ time: nowTs, value: lastLiveNav });
   }
-  _chart.navData = navData;
+
+  // Deduplicate NAV to only keep points where value changes (clean staircase)
+  var cleanNav = [];
+  for (var i = 0; i < navData.length; i++) {
+    if (i === 0) { cleanNav.push(navData[i]); continue; }
+    // Keep if value changed from previous
+    if (Math.abs(navData[i].value - navData[i - 1].value) > 0.000001) {
+      // Add the last point before the change (end of flat line)
+      if (cleanNav[cleanNav.length - 1].time !== navData[i - 1].time) {
+        cleanNav.push(navData[i - 1]);
+      }
+      cleanNav.push(navData[i]);
+    }
+  }
+  // Always include the last point
+  if (navData.length > 0 && (cleanNav.length === 0 || cleanNav[cleanNav.length - 1].time !== navData[navData.length - 1].time)) {
+    cleanNav.push(navData[navData.length - 1]);
+  }
+
+  _chart.navData = cleanNav;
   _chart.viewStart = 0;
   _chart.viewEnd = 1;
 
@@ -973,8 +990,11 @@ function drawChart() {
   var tMin = tr.min, tMax = tr.max;
   var tRange = tMax - tMin || 1;
 
-  // Collect visible values for Y range (NAV only for now)
+  // Collect visible values for Y range
   var allVals = [];
+  _chart.priceData.forEach(function(d) {
+    if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
+  });
   _chart.navData.forEach(function(d) {
     if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
   });
@@ -1018,7 +1038,7 @@ function drawChart() {
   ctx.fillStyle = '#555560';
   ctx.font = '10px Inter, sans-serif';
   ctx.textAlign = 'center';
-  var tSteps = Math.min(6, Math.floor(plotW / 100));
+  var tSteps = Math.max(1, Math.min(6, Math.floor(plotW / 100)));
   for (var i = 0; i <= tSteps; i++) {
     var tVal = tMin + (i / tSteps) * tRange;
     var date = new Date(tVal * 1000);
@@ -1594,8 +1614,12 @@ function renderAllowance(data) {
     }
 
     var loadEl = document.getElementById('chart-loading');
-    if (loadEl) loadEl.remove();
-    initChart(chartData, navPerToken);
+    if (loadEl) loadEl.style.display = 'none';
+    try {
+      initChart(chartData, navPerToken);
+    } catch(chartErr) {
+      console.error('Chart init error:', chartErr);
+    }
     renderNAVStats(chartData, navPerToken);
 
     if (!ohlcv) {
