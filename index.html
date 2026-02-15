@@ -929,15 +929,15 @@ function addNAVOverlays(navPerToken) {
     // Add treasury withdrawal markers on NAV line
     var markers = [];
 
-    // TGE marker
+    // TGE marker — both price and NAV start here
     if (CFG.tge) {
       var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
       markers.push({
         time: tgeTs,
-        position: 'belowBar',
-        color: '#00e5a0',
-        shape: 'arrowUp',
-        text: 'TGE',
+        position: 'inBar',
+        color: '#ffffff',
+        shape: 'circle',
+        text: 'TGE ' + (CFG.icoPrice > 0 ? '$' + CFG.icoPrice : ''),
       });
     }
 
