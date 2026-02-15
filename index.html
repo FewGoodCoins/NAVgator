@@ -152,7 +152,8 @@
   .token-table td:nth-child(1) { text-align: center; color: var(--dim); font-size: 13px; font-weight: 500; width: 36px; }
   .token-table td:nth-child(2) { text-align: left; }
   .tt-name-cell { display: flex; align-items: center; gap: 14px; }
-  .tt-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 15px; font-weight: 400; color: #0c0c10; flex-shrink: 0; }
+  .tt-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 15px; font-weight: 400; color: #0c0c10; flex-shrink: 0; overflow: hidden; }
+  .tt-icon img { width: 100%; height: 100%; object-fit: cover; }
   .tt-name { font-weight: 600; color: var(--white); font-size: 15px; }
   .tt-ticker { color: var(--dim); font-size: 11px; margin-top: 1px; }
   .tt-price { font-weight: 600; color: var(--white); font-family: 'JetBrains Mono', monospace; font-size: 14px; }
@@ -163,12 +164,13 @@
   .tt-coming { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; opacity: 0.6; }
 
   @media (max-width: 768px) {
-    .token-table td:nth-child(5), .token-table th:nth-child(5),
-    .token-table td:nth-child(6), .token-table th:nth-child(6) { display: none; }
+    .token-table td:nth-child(6), .token-table th:nth-child(6),
+    .token-table td:nth-child(7), .token-table th:nth-child(7) { display: none; }
     .tt-sparkline { width: 80px; }
   }
   @media (max-width: 500px) {
-    .token-table td:nth-child(4), .token-table th:nth-child(4) { display: none; }
+    .token-table td:nth-child(4), .token-table th:nth-child(4),
+    .token-table td:nth-child(5), .token-table th:nth-child(5) { display: none; }
     .hero h1 { font-size: 32px; }
   }
 
@@ -199,6 +201,7 @@
             <th>Price</th>
             <th>NAV</th>
             <th>vs NAV</th>
+            <th>Treasury</th>
             <th>MCap</th>
             <th>30D Trend</th>
           </tr>
@@ -295,7 +298,7 @@ if (_hasToken) {
 const TOKENS = {
   solo: { live: true,
     name: 'Solomon', ticker: 'SOLO', pair: 'SOLO/USDC',
-    color: '#00e5a0',
+    color: '#00e5a0', logo: 'logos/solo.jpg',
     mint: 'SoLo9oxzLDpcq1dpqAgMwgce5WqkRDtNXK7EPnbmeta',
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: '98SPcyUZ2rqM2dgjCqqSXS4gJrNTLSNUAAVCF38xYj9u',
@@ -335,7 +338,7 @@ const TOKENS = {
   },
   umbra: { live: true,
     name: 'Umbra', ticker: 'UMBRA', pair: 'UMBRA/USDC',
-    color: '#00c2ff',
+    color: '#00c2ff', logo: 'logos/umbra.jpg',
     mint: 'PRVT6TB7uss3FrUd2D9xs2zqDBsa3GbMJMwCQsgmeta',
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: '6VsC8PuKkXm5xo54c2vbrAaSfQipkpGHqNuKTxXFySx6',
@@ -358,7 +361,7 @@ const TOKENS = {
   },
   avici: { live: true,
     name: 'Avici', ticker: 'AVICI', pair: 'AVICI/USDC',
-    color: '#ff6b9d',
+    color: '#ff6b9d', logo: 'logos/avici.jpg',
     mint: 'BANKJmvhT8tiJRsBSS1n2HryMBPvT5Ze4HU95DUAmeta',
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: 'DGgYoUcu1aDZt4GEL5NQiducwHRGbkMWsUzsXh2j622G',
@@ -423,7 +426,7 @@ const TOKENS = {
   },
   omfg: { live: true,
     name: 'Omnipair', ticker: 'OMFG', pair: 'OMFG/USDC',
-    color: '#ff8855',
+    color: '#ff8855', logo: 'logos/omfg.png',
     mint: 'omfgRBnxHsNJh6YeGbGAmWenNkenzsXyBXm3WDhmeta',
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: '34rned2SLUcYjUrM9meQkuyJY4QDBcKhkcUPXCgGuXD9',
@@ -463,7 +466,7 @@ const TOKENS = {
   },
   rngr: { live: true,
     name: 'Ranger', ticker: 'RNGR', pair: 'RNGR/USDC',
-    color: '#22dd88',
+    color: '#22dd88', logo: 'logos/rngr.jpg',
     mint: 'RNGRtJMbCveqCp7AC6U95KmrdKecFckaJZiWbPGmeta',
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: '55H1Q1YrHJQ93uhG4jqrBBHx3a8H7TCM8kvf2UM2g5q3',
@@ -488,7 +491,7 @@ const TOKENS = {
 // ═══════════════════════════════════════════════════════════════════════
 if (!_hasToken) {
   const landingTokens = Object.entries(TOKENS).map(([key, t]) => ({
-    key, ticker: t.ticker, name: t.name, color: t.color,
+    key, ticker: t.ticker, name: t.name, color: t.color, logo: t.logo || null,
     spot: t.spot, strike: t.raise > 0 ? t.treasuryUSDC / t.supply : 0,
     treasury: t.treasuryUSDC, mcap: t.spot * t.supply, live: t.live,
     supply: t.supply, effectiveSupply: t.supply,
@@ -497,6 +500,7 @@ if (!_hasToken) {
 
   const lfmt$ = (n) => n >= 1 ? '$' + n.toFixed(2) : n >= 0.01 ? '$' + n.toFixed(4) : '$' + n.toFixed(6);
   const lfmtK = n => n >= 1e6 ? '$' + (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n / 1e3).toFixed(0) + 'K' : '$' + n.toFixed(0);
+  const iconHtml = (t) => t.logo ? '<div class="tt-icon"><img src="' + t.logo + '" alt="' + t.ticker + '"></div>' : '<div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div>';
 
   function drawSparkline(canvas, priceData, navData) {
     if ((!priceData || priceData.length < 2) && (!navData || navData.length < 2)) return;
@@ -510,29 +514,85 @@ if (!_hasToken) {
     var min = Math.min(...allVals), max = Math.max(...allVals);
     var range = max - min || 1;
 
-    function drawLine(data, color, width) {
-      if (!data || data.length < 2) return;
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width;
+    // Calculate price change % for glow intensity
+    var mainData = priceData && priceData.length >= 2 ? priceData : navData;
+    var first = mainData[0], last = mainData[mainData.length - 1];
+    var changePct = Math.abs((last - first) / first * 100);
+    // Glow intensity: 0 at 0% change, max at 30%+ change
+    var glowIntensity = Math.min(changePct / 30, 1);
+    var isUp = last >= first;
+    var lineColor = isUp ? '#00e5a0' : '#e84057';
+    var glowBlur = 4 + glowIntensity * 12; // 4px to 16px blur
+    var glowAlpha = 0.2 + glowIntensity * 0.6; // 0.2 to 0.8 opacity
+
+    function getPath(data) {
+      var pts = [];
       for (var i = 0; i < data.length; i++) {
         var x = (i / (data.length - 1)) * w;
         var y = h - ((data[i] - min) / range) * (h - 4) - 2;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        pts.push([x, y]);
       }
-      ctx.stroke();
+      return pts;
     }
 
-    // NAV line first (behind), dashed red
-    if (navData && navData.length >= 2) {
-      ctx.setLineDash([4, 3]);
-      drawLine(navData, '#e84057', 1.5);
+    function strokePath(pts, color, width, dash) {
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      if (dash) ctx.setLineDash(dash);
+      else ctx.setLineDash([]);
+      for (var i = 0; i < pts.length; i++) {
+        i === 0 ? ctx.moveTo(pts[i][0], pts[i][1]) : ctx.lineTo(pts[i][0], pts[i][1]);
+      }
+      ctx.stroke();
       ctx.setLineDash([]);
     }
-    // Price line on top, solid
+
+    // NAV line (behind), dashed, dimmer
+    if (navData && navData.length >= 2) {
+      var navPts = getPath(navData);
+      strokePath(navPts, 'rgba(232,64,87,0.5)', 1.5, [4, 3]);
+    }
+
+    // Price line with glow
     if (priceData && priceData.length >= 2) {
-      var last = priceData[priceData.length - 1], first = priceData[0];
-      drawLine(priceData, last >= first ? '#00e5a0' : '#e84057', 2);
+      var pricePts = getPath(priceData);
+      // Glow layer
+      if (glowIntensity > 0.05) {
+        ctx.save();
+        ctx.shadowColor = lineColor;
+        ctx.shadowBlur = glowBlur;
+        ctx.globalAlpha = glowAlpha;
+        strokePath(pricePts, lineColor, 2.5, null);
+        // Double pass for stronger glow
+        if (glowIntensity > 0.4) strokePath(pricePts, lineColor, 2, null);
+        ctx.restore();
+      }
+      // Crisp line on top
+      strokePath(pricePts, lineColor, 2, null);
+
+      // Fill under the line with faint gradient
+      if (glowIntensity > 0.1) {
+        ctx.beginPath();
+        for (var i = 0; i < pricePts.length; i++) {
+          i === 0 ? ctx.moveTo(pricePts[i][0], pricePts[i][1]) : ctx.lineTo(pricePts[i][0], pricePts[i][1]);
+        }
+        ctx.lineTo(pricePts[pricePts.length - 1][0], h);
+        ctx.lineTo(pricePts[0][0], h);
+        ctx.closePath();
+        var grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, lineColor.replace(')', ',' + (glowAlpha * 0.3) + ')').replace('rgb', 'rgba').replace('#00e5a0', 'rgba(0,229,160,' + (glowAlpha * 0.3) + ')').replace('#e84057', 'rgba(232,64,87,' + (glowAlpha * 0.3) + ')'));
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        // Simpler fill approach
+        ctx.fillStyle = isUp ? 'rgba(0,229,160,' + (glowIntensity * 0.15) + ')' : 'rgba(232,64,87,' + (glowIntensity * 0.15) + ')';
+        ctx.fill();
+      }
+    } else if (navData && navData.length >= 2) {
+      // Only NAV data — draw plain line, no glow
+      var navPts2 = getPath(navData);
+      var navFirst = navData[0], navLast = navData[navData.length - 1];
+      var navColor = navLast >= navFirst ? '#00e5a0' : '#e84057';
+      strokePath(navPts2, navColor, 2, null);
     }
   }
 
@@ -554,7 +614,7 @@ if (!_hasToken) {
       if (!t.live) {
         return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4">' +
           '<td>' + (i + 1) + '</td>' +
-          '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
+          '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
           '<td colspan="6"><span class="tt-coming">Coming Soon</span></td></tr>';
       }
       var discPct = t.strike > 0 ? ((t.spot - t.strike) / t.strike * 100) : 0;
@@ -565,10 +625,11 @@ if (!_hasToken) {
 
       return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
         '<td>' + (i + 1) + '</td>' +
-        '<td><div class="tt-name-cell"><div class="tt-icon" style="background:' + t.color + '">' + t.ticker[0] + '</div><div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
+        '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
         '<td><div class="tt-price">' + lfmt$(t.spot) + '</div></td>' +
         '<td style="color:var(--text)">' + (t.strike > 0 ? lfmt$(t.strike) : '—') + '</td>' +
         '<td style="color:' + discColor + ';font-weight:500">' + discLabel + '</td>' +
+        '<td style="color:var(--text)">' + lfmtK(t.treasury) + '</td>' +
         '<td style="color:var(--text)">' + lfmtK(t.mcap) + '</td>' +
         '<td><canvas class="tt-sparkline" data-token="' + t.key + '"></canvas></td>' +
         '</tr>';
