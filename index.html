@@ -265,7 +265,10 @@
       <div class="chart-loading" id="chart-loading">Loading chart…</div>
     </div>
     <div class="legend">
+      <span class="legend-item"><span class="legend-line" style="background:#00e5a0"></span> <span id="leg-spot-label">Price</span></span>
       <span class="legend-item"><span class="legend-line" style="background:#ffffff"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
+      <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
     </div>
     <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
@@ -916,14 +919,23 @@ function buildChart(candles, navPerToken) {
 
   _chart.priceData = priceData;
 
-  // Cap NAV history with current live NAV to avoid stale backfill at the end
+  // Cap NAV history with current live NAV
   var navData = _navHistory.slice();
   if (navPerToken > 0 && navData.length > 0) {
     var nowTs = Math.floor(Date.now() / 1000);
     var lastLiveNav = navPerToken;
-    while (navData.length > 1 && navData[navData.length - 1].value > lastLiveNav * 1.01) {
-      navData.pop();
+    // Remove trailing backfill points that tick UP (stale data)
+    // Only trim from the end if the last point is higher than the one before it
+    while (navData.length > 2) {
+      var last = navData[navData.length - 1];
+      var prev = navData[navData.length - 2];
+      if (last.value > prev.value) {
+        navData.pop(); // remove stale uptick
+      } else {
+        break;
+      }
     }
+    // Add current live NAV as the final point
     navData.push({ time: nowTs, value: lastLiveNav });
   }
 
