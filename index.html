@@ -1028,7 +1028,7 @@ function drawChart() {
   var pricePts = toPixels(_chart.priceData);
   var navPts = toPixels(_chart.navData);
 
-  // Draw fill between price and NAV with gradient (fades toward NAV line)
+  // Draw fill between price and NAV (opacity based on distance from NAV)
   if (pricePts.length > 1 && navPts.length > 1) {
     for (var i = 0; i < pricePts.length - 1; i++) {
       var p0 = pricePts[i], p1 = pricePts[i + 1];
@@ -1037,24 +1037,12 @@ function drawChart() {
       if (n0y === null || n1y === null) continue;
 
       var aboveNav = p0.y <= n0y;
-      var gradTop, gradBot;
-      if (aboveNav) {
-        // Price above NAV: green at price, transparent at NAV
-        gradTop = Math.min(p0.y, p1.y);
-        gradBot = Math.max(n0y, n1y);
-        var grad = ctx.createLinearGradient(0, gradTop, 0, gradBot);
-        grad.addColorStop(0, 'rgba(0,229,160,0.25)');
-        grad.addColorStop(1, 'rgba(0,229,160,0.0)');
-        ctx.fillStyle = grad;
-      } else {
-        // Price below NAV: red at price, transparent at NAV
-        gradTop = Math.min(n0y, n1y);
-        gradBot = Math.max(p0.y, p1.y);
-        var grad = ctx.createLinearGradient(0, gradTop, 0, gradBot);
-        grad.addColorStop(0, 'rgba(232,64,87,0.0)');
-        grad.addColorStop(1, 'rgba(232,64,87,0.25)');
-        ctx.fillStyle = grad;
-      }
+      // Calculate opacity based on avg distance between price and NAV
+      var dist0 = Math.abs(p0.y - n0y);
+      var dist1 = Math.abs(p1.y - n1y);
+      var avgDist = (dist0 + dist1) / 2;
+      var plotH = _chart.height - _chart.padding.top - _chart.padding.bottom;
+      var opacity = Math.min(0.3, (avgDist / plotH) * 0.8);
 
       ctx.beginPath();
       ctx.moveTo(p0.x, p0.y);
@@ -1062,6 +1050,9 @@ function drawChart() {
       ctx.lineTo(p1.x, n1y);
       ctx.lineTo(p0.x, n0y);
       ctx.closePath();
+      ctx.fillStyle = aboveNav
+        ? 'rgba(0,229,160,' + opacity.toFixed(3) + ')'
+        : 'rgba(232,64,87,' + opacity.toFixed(3) + ')';
       ctx.fill();
     }
   }
