@@ -879,10 +879,10 @@ function buildChart(candles, navPerToken) {
   var container = document.getElementById('chart-container');
   var canvas = document.getElementById('chart-canvas');
   var tooltip = document.getElementById('chart-tooltip');
-  if (!canvas || !container) return;
+  if (!canvas || !container) { console.error('Chart: no canvas or container'); return; }
 
   var dpr = window.devicePixelRatio || 1;
-  var w = container.clientWidth;
+  var w = container.clientWidth || 800;
   var h = _chart.height;
 
   canvas.width = w * dpr;
@@ -978,7 +978,13 @@ function drawChart() {
   _chart.navData.forEach(function(d) {
     if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
   });
-  if (allVals.length === 0) return;
+  if (allVals.length === 0) {
+    ctx.fillStyle = '#555560';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Chart data unavailable', w / 2, h / 2);
+    return;
+  }
 
   var vMin = Math.min.apply(null, allVals);
   var vMax = Math.max.apply(null, allVals);
