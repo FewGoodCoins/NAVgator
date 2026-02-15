@@ -842,6 +842,16 @@ async function fetchNAVHistory() {
       });
       // Sort by time ascending
       _navHistory.sort(function(a, b) { return a.time - b.time; });
+
+      // Insert TGE starting point if we have the data
+      if (CFG.tge && CFG.raise > 0 && CFG.supply > 0) {
+        var tgeTime = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
+        var tgeNav = CFG.raise / CFG.supply; // initial NAV = total raise / supply
+        // Only add if TGE is before our first data point
+        if (_navHistory.length === 0 || tgeTime < _navHistory[0].time) {
+          _navHistory.unshift({ time: tgeTime, value: tgeNav });
+        }
+      }
     }
   } catch (e) { console.error('NAV history fetch error:', e); }
 }
@@ -917,13 +927,27 @@ function addNAVOverlays(navPerToken) {
     _tvNavSeries.setData(_navHistory);
 
     // Add treasury withdrawal markers on NAV line
+    var markers = [];
+
+    // TGE marker
+    if (CFG.tge) {
+      var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
+      markers.push({
+        time: tgeTs,
+        position: 'belowBar',
+        color: '#00e5a0',
+        shape: 'arrowUp',
+        text: 'TGE',
+      });
+    }
+
+    // Treasury withdrawal markers
     if (_allowancePayments.length > 0) {
       var fmtK = function(n) {
         if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
         if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
         return '$' + Math.round(n);
       };
-      var markers = [];
       for (var i = 0; i < _allowancePayments.length; i++) {
         var p = _allowancePayments[i];
         var ts = Math.floor(new Date(p.date + 'T12:00:00Z').getTime() / 1000);
@@ -938,10 +962,11 @@ function addNAVOverlays(navPerToken) {
           });
         }
       }
-      if (markers.length > 0) {
-        markers.sort(function(a, b) { return a.time - b.time; });
-        _tvNavSeries.setMarkers(markers);
-      }
+    }
+
+    if (markers.length > 0) {
+      markers.sort(function(a, b) { return a.time - b.time; });
+      _tvNavSeries.setMarkers(markers);
     }
   } else {
     // Fallback: flat NAV line if no history available
