@@ -98,6 +98,14 @@
   .nav-stats-bar .ns-progress-fill { height: 100%; border-radius: 2px; }
 
   .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
+  .addr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .addr-grid { grid-template-columns: 1fr; } }
+  .bal-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; }
+  .bal-row:last-child { border-bottom: none; }
+  .bal-label { color: var(--muted); font-weight: 500; font-size: 11px; }
+  .bal-vals { text-align: right; }
+  .bal-usdc { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--green); }
+  .bal-token { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--dim); }
   .allowance-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
   .allowance-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
   .allowance-card .ac-label { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; font-family: Inter, sans-serif; margin-bottom: 4px; }
@@ -597,16 +605,25 @@ if (!_hasToken) {
   }
 
   let currentSort = 'treasury';
+  let sortDir = 'desc'; // 'asc' or 'desc'
+
+  const sortKeys = ['', 'name', 'price', 'nav', 'vsNav', 'treasury', 'mcap', ''];
+  // Column index: 0=#, 1=Name, 2=Price, 3=NAV, 4=vsNAV, 5=Treasury, 6=MCap, 7=Trend
 
   function renderTable() {
     const sorted = [...landingTokens].sort((a, b) => {
-      if (currentSort === 'treasury') return b.treasury - a.treasury;
-      if (currentSort === 'discount') {
-        const da = a.strike > 0 ? (a.strike - a.spot) / a.strike : -999;
-        const db = b.strike > 0 ? (b.strike - b.spot) / b.strike : -999;
-        return db - da;
+      let va, vb;
+      if (currentSort === 'treasury') { va = a.treasury; vb = b.treasury; }
+      else if (currentSort === 'price') { va = a.spot; vb = b.spot; }
+      else if (currentSort === 'nav') { va = a.strike; vb = b.strike; }
+      else if (currentSort === 'vsNav') {
+        va = a.strike > 0 ? (a.spot - a.strike) / a.strike : -999;
+        vb = b.strike > 0 ? (b.spot - b.strike) / b.strike : -999;
       }
-      return b.mcap - a.mcap;
+      else if (currentSort === 'mcap') { va = a.mcap; vb = b.mcap; }
+      else if (currentSort === 'name') { return sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name); }
+      else { va = a.mcap; vb = b.mcap; }
+      return sortDir === 'asc' ? va - vb : vb - va;
     });
 
     const tbody = document.getElementById('token-tbody');
@@ -619,7 +636,7 @@ if (!_hasToken) {
       }
       var discPct = t.strike > 0 ? ((t.spot - t.strike) / t.strike * 100) : 0;
       var isDiscount = discPct < 0;
-      var discLabel = t.strike === 0 ? '—' : (isDiscount ? Math.abs(discPct).toFixed(1) + '% disc' : '+' + discPct.toFixed(1) + '% prem');
+      var discLabel = t.strike === 0 ? '—' : (isDiscount ? '-' + Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(1) + '%');
       var discColor = t.strike === 0 ? 'var(--dim)' : (isDiscount ? '#e84057' : 'var(--green)');
       var allowLabel = t.monthlyAllowance > 0 ? lfmtK(t.monthlyAllowance) + '/mo' : '—';
 
@@ -635,8 +652,22 @@ if (!_hasToken) {
         '</tr>';
     }).join('');
 
-    // Sort header highlights
-    document.querySelectorAll('.token-table thead th').forEach(th => th.classList.remove('sorted'));
+    // Sort header highlights and arrows
+    document.querySelectorAll('.token-table thead th').forEach((th, idx) => {
+      th.classList.remove('sorted');
+      var key = sortKeys[idx];
+      // Remove old arrow
+      var oldArrow = th.querySelector('.sort-arrow');
+      if (oldArrow) oldArrow.remove();
+      if (key === currentSort) {
+        th.classList.add('sorted');
+        var arrow = document.createElement('span');
+        arrow.className = 'sort-arrow';
+        arrow.textContent = sortDir === 'desc' ? ' ▼' : ' ▲';
+        arrow.style.cssText = 'font-size:8px;opacity:0.8';
+        th.appendChild(arrow);
+      }
+    });
   }
 
   renderTable();
@@ -644,9 +675,14 @@ if (!_hasToken) {
   // Column sort click handlers
   document.querySelectorAll('.token-table thead th').forEach((th, idx) => {
     th.addEventListener('click', function() {
-      if (idx === 4) currentSort = 'treasury';
-      else if (idx === 5) currentSort = 'discount';
-      else currentSort = 'mcap';
+      var key = sortKeys[idx];
+      if (!key) return; // skip # and Trend columns
+      if (currentSort === key) {
+        sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        currentSort = key;
+        sortDir = 'desc';
+      }
       renderTable();
       loadSparklines();
     });
@@ -754,8 +790,13 @@ async function fetchFromAPI() {
     if (data.treasuryUSDC > 0) CFG.treasuryUSDC = data.treasuryUSDC;
     if (data.effectiveSupply > 0) CFG.effectiveSupply = data.effectiveSupply;
     if (data.onChainSupply > 0) CFG.onChainSupply = data.onChainSupply;
-    if (data.lockedTokens > 0) CFG.lockedTokenBalance = data.lockedTokens;
-    if (data.ammTokens > 0) CFG.ammTokenBalance = data.ammTokens;
+    if (data.lockedTokens > 0) CFG.lockTokenBalance = data.lockedTokens;
+    if (data.ammTokens > 0) CFG.ammTokens = data.ammTokens;
+    if (data.ammUSDC > 0) CFG.ammUSDC = data.ammUSDC;
+    if (data.daoTokens > 0) CFG.daoTokenBalance = data.daoTokens;
+    if (data.buybackTokens > 0) CFG.buybackTokenBalance = data.buybackTokens;
+    if (data.meteoraPoolUSDC > 0) CFG.meteoraPoolUSDC = data.meteoraPoolUSDC;
+    if (data.meteoraPoolTokens > 0) CFG.meteoraPoolTokens = data.meteoraPoolTokens;
     console.log('API data:', data);
     return true;
   } catch (e) { console.warn('API fetch failed:', e.message); return false; }
@@ -1160,24 +1201,94 @@ function renderAddresses() {
   const section = document.getElementById('addr-section');
   if (!section) return;
   const truncAddr = a => a.slice(0, 6) + '…' + a.slice(-4);
-  const solscanType = (label) => label === 'Token CA' ? 'token' : 'account';
-  const addrs = [];
-  if (CFG.mint) addrs.push(['Token CA', CFG.mint]);
-  if (CFG.daoWallet) addrs.push(['DAO Treasury', CFG.daoWallet]);
-  if (CFG.ammWallet) addrs.push(['AMM Pool 1', CFG.ammWallet]);
-  if (CFG.ammWallet2) addrs.push(['AMM Pool 2', CFG.ammWallet2]);
-  if (CFG.lockWallet) addrs.push(['Lock Contract', CFG.lockWallet]);
-  if (CFG.buybackWallet) addrs.push(['Buyback Wallet', CFG.buybackWallet]);
+  const solscanUrl = (addr, type) => 'https://solscan.io/' + type + '/' + addr;
+  const copyBtn = (addr) => '<button class="addr-copy" onclick="navigator.clipboard.writeText(\'' + addr + '\');this.textContent=\'Copied!\';this.classList.add(\'copied\');setTimeout(function(){this.textContent=\'Copy\';this.classList.remove(\'copied\')}.bind(this),1500)">Copy</button>';
 
-  section.innerHTML = '<div class="addr-title">On-Chain Addresses</div>' +
+  const addrs = [];
+  if (CFG.mint) addrs.push(['Token CA', CFG.mint, 'token']);
+  if (CFG.daoWallet) addrs.push(['DAO Treasury', CFG.daoWallet, 'account']);
+  if (CFG.ammWallet) addrs.push(['AMM Pool 1', CFG.ammWallet, 'account']);
+  if (CFG.ammWallet2) addrs.push(['AMM Pool 2', CFG.ammWallet2, 'account']);
+  if (CFG.lockWallet) addrs.push(['Lock Contract', CFG.lockWallet, 'account']);
+  if (CFG.buybackWallet) addrs.push(['Buyback Wallet', CFG.buybackWallet, 'account']);
+
+  // Left column: addresses
+  var leftHtml = '<div class="addr-title">On-Chain Addresses</div>' +
     addrs.map(function(a) {
-      var label = a[0], addr = a[1];
-      var type = solscanType(label);
-      return '<div class="addr-row"><span class="addr-label">' + label + '</span><div class="addr-val">' +
-        '<a href="https://solscan.io/' + type + '/' + addr + '" target="_blank">' + truncAddr(addr) + '</a>' +
-        '<button class="addr-copy" onclick="navigator.clipboard.writeText(\'' + addr + '\');this.textContent=\'Copied!\';this.classList.add(\'copied\');setTimeout(function(){this.textContent=\'Copy\';this.classList.remove(\'copied\')}.bind(this),1500)">Copy</button>' +
+      return '<div class="addr-row"><span class="addr-label">' + a[0] + '</span><div class="addr-val">' +
+        '<a href="' + solscanUrl(a[1], a[2]) + '" target="_blank" title="View on Solscan">' + truncAddr(a[1]) + '</a>' +
+        copyBtn(a[1]) +
         '</div></div>';
     }).join('');
+
+  // Right column: wallet balances (populated after API data loads)
+  var rightHtml = '<div class="addr-title">Wallet Balances</div><div id="wallet-balances"><div style="font-size:11px;color:var(--dim);padding:8px 0">Loading balances…</div></div>';
+
+  section.innerHTML = '<div class="addr-grid"><div>' + leftHtml + '</div><div>' + rightHtml + '</div></div>';
+
+  // Populate balances from CFG data (already fetched from API)
+  setTimeout(function() { renderBalances(); }, 100);
+}
+
+function renderBalances() {
+  var el = document.getElementById('wallet-balances');
+  if (!el) return;
+
+  var fmtBal = function(n) {
+    if (n === undefined || n === null) return '—';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+    return '$' + n.toFixed(2);
+  };
+  var fmtTokens = function(n, ticker) {
+    if (n === undefined || n === null || n === 0) return '';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M ' + ticker;
+    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K ' + ticker;
+    return n.toLocaleString() + ' ' + ticker;
+  };
+
+  var rows = [];
+
+  // DAO Treasury
+  if (CFG.treasuryUSDC > 0) {
+    rows.push({ label: 'DAO Treasury', usdc: CFG.treasuryUSDC, tokens: CFG.daoTokenBalance, ticker: CFG.ticker });
+  }
+
+  // Meteora pool
+  if (CFG.meteoraPoolUSDC > 0 || CFG.meteoraPoolTokens > 0) {
+    rows.push({ label: 'Meteora Pool', usdc: CFG.meteoraPoolUSDC, tokens: CFG.meteoraPoolTokens, ticker: CFG.ticker });
+  }
+
+  // AMM / effective supply info
+  if (CFG.ammTokens > 0) {
+    rows.push({ label: 'AMM Tokens', usdc: CFG.ammUSDC, tokens: CFG.ammTokens, ticker: CFG.ticker });
+  }
+
+  // Lock wallet
+  if (CFG.lockTokenBalance > 0) {
+    rows.push({ label: 'Locked Tokens', usdc: null, tokens: CFG.lockTokenBalance, ticker: CFG.ticker });
+  }
+
+  // Buyback wallet
+  if (CFG.buybackTokenBalance > 0) {
+    rows.push({ label: 'Buyback Wallet', usdc: null, tokens: CFG.buybackTokenBalance, ticker: CFG.ticker });
+  }
+
+  // Summary
+  rows.push({ label: 'Effective Supply', usdc: null, tokens: CFG.effectiveSupply, ticker: CFG.ticker, isSummary: true });
+
+  if (rows.length === 0) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--dim);padding:8px 0">No balance data available</div>';
+    return;
+  }
+
+  el.innerHTML = rows.map(function(r) {
+    var usdcStr = r.usdc ? '<span class="bal-usdc">' + fmtBal(r.usdc) + ' USDC</span>' : '';
+    var tokenStr = r.tokens ? '<span class="bal-token">' + fmtTokens(r.tokens, r.ticker) + '</span>' : '';
+    var sep = usdcStr && tokenStr ? '<br>' : '';
+    var labelStyle = r.isSummary ? 'color:var(--white);font-weight:600' : '';
+    return '<div class="bal-row"><span class="bal-label" style="' + labelStyle + '">' + r.label + '</span><div class="bal-vals">' + usdcStr + sep + tokenStr + '</div></div>';
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1288,6 +1399,7 @@ function renderAllowance(data) {
     var ohlcv = results[0], apiOk = results[1];
     var isLive = !!(ohlcv || apiOk);
     navPerToken = renderUI(isLive);
+    renderBalances();
 
     var chartData = (ohlcv && ohlcv.length > 0) ? ohlcv : [];
 
