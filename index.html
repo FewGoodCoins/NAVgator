@@ -264,7 +264,6 @@ const TOKENS = {
       { date: '2026-01-01', amount: 100_000, label: 'Draw #2' },
       { date: '2026-02-01', amount: 100_000, label: 'Draw #3' },
     ],
-    fallback: { peakDay: 1, peakPrice: 1.09, bounceDay: 30, bouncePrice: 0.70, listPrice: 0.94, floor: 0.40 },
   },
   zkfg: { live: true,
     name: 'ZKLSOL', ticker: 'ZKFG', pair: 'ZKFG/USDC',
@@ -284,7 +283,6 @@ const TOKENS = {
       { date: '2025-12-24', amount: 50_000, label: 'Draw #2' },
       { date: '2026-01-24', amount: 50_000, label: 'Draw #3' },
     ],
-    fallback: { peakDay: 14, peakPrice: 0.145, bounceDay: 45, bouncePrice: 0.09, listPrice: 0.0687, floor: 0.02 },
   },
   umbra: { live: true,
     name: 'Umbra', ticker: 'UMBRA', pair: 'UMBRA/USDC',
@@ -308,7 +306,6 @@ const TOKENS = {
       { date: '2026-01-10', amount: 34_000, label: 'Draw #3' },
       { date: '2026-02-10', amount: 34_000, label: 'Draw #4' },
     ],
-    fallback: { peakDay: 3, peakPrice: 2.43, bounceDay: 30, bouncePrice: 1.10, listPrice: 2.31, floor: 0.30 },
   },
   avici: { live: true,
     name: 'Avici', ticker: 'AVICI', pair: 'AVICI/USDC',
@@ -330,7 +327,6 @@ const TOKENS = {
       { date: '2025-12-18', amount: 45_000, label: 'Draw #2' },
       { date: '2026-01-18', amount: 45_000, label: 'Draw #3' },
     ],
-    fallback: { peakDay: 40, peakPrice: 7.57, bounceDay: 70, bouncePrice: 3.50, listPrice: 0.50, floor: 0.45 },
   },
   loyal: { live: true,
     name: 'Loyal', ticker: 'LOYAL', pair: 'LOYAL/USDC',
@@ -353,7 +349,6 @@ const TOKENS = {
       { date: '2025-12-23', amount: 45_000, label: 'Draw #2' },
       { date: '2026-01-23', amount: 45_000, label: 'Draw #3' },
     ],
-    fallback: { peakDay: 1, peakPrice: 0.37, bounceDay: 40, bouncePrice: 0.15, listPrice: 0.09, floor: 0.03 },
   },
   paystream: { live: false,
     name: 'Paystream', ticker: 'PAY', pair: 'PAY/USDC',
@@ -376,7 +371,6 @@ const TOKENS = {
       { date: '2025-12-27', amount: 15_000, label: 'Draw #2' },
       { date: '2026-01-27', amount: 15_000, label: 'Draw #3' },
     ],
-    fallback: { peakDay: 10, peakPrice: 0.04, bounceDay: 35, bouncePrice: 0.028, listPrice: 0.03, floor: 0.01 },
   },
   omfg: { live: true,
     name: 'Omnipair', ticker: 'OMFG', pair: 'OMFG/USDC',
@@ -399,7 +393,6 @@ const TOKENS = {
       { date: '2026-01-02', amount: 25_000, label: 'Draw #3' },
       { date: '2026-02-02', amount: 25_000, label: 'Draw #4' },
     ],
-    fallback: { peakDay: 21, peakPrice: 0.83, bounceDay: 50, bouncePrice: 0.50, listPrice: 0.08, floor: 0.04 },
   },
   meta: { live: false,
     name: 'MetaDAO', ticker: 'META', pair: 'META/USDC',
@@ -417,7 +410,6 @@ const TOKENS = {
     spot: 3.78, treasuryUSDC: 0, ammUSDCFixed: null,
     tge: '2025-04-09',
     draws: [],
-    fallback: { peakDay: 140, peakPrice: 10.69, bounceDay: 200, bouncePrice: 5.50, listPrice: 0.50, floor: 0.10 },
     note: 'Platform token — no ICO treasury structure. Treasury analytics are approximate.',
   },
   rngr: { live: true,
@@ -440,7 +432,6 @@ const TOKENS = {
     draws: [
       { date: '2026-02-10', amount: 250_000, label: 'Draw #1' },
     ],
-    fallback: { peakDay: 1, peakPrice: 0.865, bounceDay: 15, bouncePrice: 0.55, listPrice: 0.81, floor: 0.40 },
   },
 };
 // ═══════════════════════════════════════════════════════════════════════
@@ -593,30 +584,6 @@ async function fetchFromAPI() {
 // ═══════════════════════════════════════════════════════════════════════
 // FALLBACK SIMULATED DATA
 // ═══════════════════════════════════════════════════════════════════════
-function genFallback() {
-  const fb = CFG.fallback;
-  const data = [];
-  const tge = new Date(CFG.tge);
-  const now = new Date();
-  const days = Math.floor((now - tge) / 86400000);
-  let price = fb.listPrice;
-  let seed = 42;
-  const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  for (let d = 0; d <= days; d++) {
-    const noise = (rng() - 0.48) * 0.025 * price;
-    if (d < fb.peakDay) {
-      price += (fb.listPrice + (fb.peakPrice-fb.listPrice)*(1-Math.pow(1-d/fb.peakDay,1.8)) - price) * 0.12 + noise;
-    } else if (d < fb.bounceDay) {
-      price += (fb.peakPrice + (fb.bouncePrice-fb.peakPrice)*Math.pow((d-fb.peakDay)/(fb.bounceDay-fb.peakDay),0.6) - price) * 0.06 + noise*0.8;
-    } else {
-      price += (fb.bouncePrice + (CFG.spot-fb.bouncePrice)*Math.pow((d-fb.bounceDay)/Math.max(days-fb.bounceDay,1),0.7) - price) * 0.04 + noise*0.6;
-    }
-    price = Math.max(fb.floor, price);
-    if (d === days) price = CFG.spot;
-    data.push({ date: new Date(tge.getTime() + d*86400000), price: parseFloat(price.toFixed(6)) });
-  }
-  return data;
-}
 
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1048,7 +1015,7 @@ function renderAddresses() {
     var isLive = !!(ohlcv || apiOk);
     navPerToken = renderUI(isLive);
 
-    var chartData = (ohlcv && ohlcv.length > 0) ? ohlcv : genFallback();
+    var chartData = (ohlcv && ohlcv.length > 0) ? ohlcv : [];
 
     if (apiOk && chartData.length > 0) {
       var lastCandle = chartData[chartData.length - 1];
@@ -1065,20 +1032,20 @@ function renderAddresses() {
     if (!ohlcv) {
       var notice = document.createElement('div');
       notice.style.cssText = 'text-align:center;font-size:9px;color:#ff8c42;font-family:Inter,sans-serif;padding:6px 0';
-      notice.textContent = '\u26a0 Chart API unreachable \u2014 showing simulated data.';
+      notice.textContent = '\u26a0 Chart data unavailable — price data could not be loaded.';
       var chartContainer = document.getElementById('chart-container');
       chartContainer.parentNode.insertBefore(notice, chartContainer.nextSibling);
     }
 
-    console.log('NAVgator ' + CFG.ticker + ' | Live: ' + isLive + ' | OHLCV: ' + (ohlcv ? ohlcv.length + ' candles' : 'fallback') + ' | Spot: $' + CFG.spot + ' | Treasury: $' + CFG.treasuryUSDC.toLocaleString() + ' | EffSupply: ' + (CFG.effectiveSupply || CFG.supply).toLocaleString() + ' | NAV: $' + navPerToken.toFixed(6));
+    console.log('NAVgator ' + CFG.ticker + ' | Live: ' + isLive + ' | OHLCV: ' + (ohlcv ? ohlcv.length + ' candles' : 'none') + ' | Spot: $' + CFG.spot + ' | Treasury: $' + CFG.treasuryUSDC.toLocaleString() + ' | EffSupply: ' + (CFG.effectiveSupply || CFG.supply).toLocaleString() + ' | NAV: $' + navPerToken.toFixed(6));
   } catch (err) {
     console.error('NAVgator init error:', err);
     var loadEl2 = document.getElementById('chart-loading');
     if (loadEl2) loadEl2.remove();
-    initChart(genFallback(), navPerToken);
+    initChart([], navPerToken);
     var notice2 = document.createElement('div');
     notice2.style.cssText = 'text-align:center;font-size:9px;color:#e84057;font-family:Inter,sans-serif;padding:6px 0';
-    notice2.textContent = '\u26a0 Error loading data \u2014 showing simulated chart.';
+    notice2.textContent = '\u26a0 Error loading data — chart unavailable.';
     var cc2 = document.getElementById('chart-container');
     cc2.parentNode.insertBefore(notice2, cc2.nextSibling);
   }
