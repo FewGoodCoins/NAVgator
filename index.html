@@ -797,11 +797,12 @@ async function fetchFromAPI() {
     if (data.onChainSupply > 0) CFG.onChainSupply = data.onChainSupply;
     if (data.lockedTokens > 0) CFG.lockTokenBalance = data.lockedTokens;
     if (data.ammTokens > 0) CFG.ammTokens = data.ammTokens;
-    if (data.ammUSDC > 0) CFG.ammUSDC = data.ammUSDC;
     if (data.daoTokens > 0) CFG.daoTokenBalance = data.daoTokens;
     if (data.buybackTokens > 0) CFG.buybackTokenBalance = data.buybackTokens;
-    if (data.meteoraPoolUSDC > 0) CFG.meteoraPoolUSDC = data.meteoraPoolUSDC;
-    if (data.meteoraPoolTokens > 0) CFG.meteoraPoolTokens = data.meteoraPoolTokens;
+    if (data.futAmmTokens >= 0) CFG.futAmmTokens = data.futAmmTokens;
+    if (data.metAmmTokens >= 0) CFG.metAmmTokens = data.metAmmTokens;
+    if (data.meteoraPoolUSDC >= 0) CFG.metAmmUSDC = data.meteoraPoolUSDC;
+    CFG.futAmmUSDC = 0; // TODO: add to API response
     console.log('API data:', data);
     return true;
   } catch (e) { console.warn('API fetch failed:', e.message); return false; }
@@ -1443,12 +1444,12 @@ function renderAddresses() {
   const addrs = [];
   if (CFG.mint) addrs.push({ label: 'Token CA', addr: CFG.mint, type: 'token', balKey: null });
   if (CFG.daoWallet) addrs.push({ label: 'DAO Treasury', addr: CFG.daoWallet, type: 'account', balKey: 'dao' });
-  if (CFG.ammWallet) addrs.push({ label: 'AMM Pool 1', addr: CFG.ammWallet, type: 'account', balKey: 'amm1' });
-  if (CFG.ammWallet2) addrs.push({ label: 'AMM Pool 2', addr: CFG.ammWallet2, type: 'account', balKey: 'amm2' });
-  if (CFG.lockWallet) addrs.push({ label: 'Lock Contract', addr: CFG.lockWallet, type: 'account', balKey: 'lock' });
+  if (CFG.ammWallet) addrs.push({ label: 'Fut AMM', addr: CFG.ammWallet, type: 'account', balKey: 'futamm' });
+  if (CFG.ammWallet2) addrs.push({ label: 'Met AMM', addr: CFG.ammWallet2, type: 'account', balKey: 'metamm' });
+  if (CFG.lockWallet) addrs.push({ label: 'Team Locked', addr: CFG.lockWallet, type: 'account', balKey: 'lock' });
   if (CFG.buybackWallet) addrs.push({ label: 'Buyback Wallet', addr: CFG.buybackWallet, type: 'account', balKey: 'buyback' });
 
-  section.innerHTML = '<div class="addr-title">On-Chain Addresses</div>' +
+  section.innerHTML = '<div class="addr-title">Relevant Wallets</div>' +
     '<div id="addr-table">' +
     addrs.map(function(a) {
       return '<div class="addr-row">' +
@@ -1466,10 +1467,11 @@ function renderAddresses() {
 function renderBalances() {
   var ticker = CFG.ticker || '';
   var fmtUsdc = function(n) {
-    if (n === undefined || n === null) return '0 USDC';
+    if (n === undefined || n === null) return '';
     if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M USDC';
     if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K USDC';
-    return n.toFixed(0) + ' USDC';
+    if (n >= 100) return n.toFixed(0) + ' USDC';
+    return '<$100 USDC';
   };
   var fmtTokens = function(n) {
     if (n === undefined || n === null || n === 0) return '0 ' + ticker;
@@ -1481,8 +1483,8 @@ function renderBalances() {
   // Map balance keys to actual data
   var balData = {
     dao: { usdc: CFG.treasuryUSDC || 0, tokens: CFG.daoTokenBalance || 0 },
-    amm1: { usdc: CFG.meteoraPoolUSDC || 0, tokens: CFG.meteoraPoolTokens || 0 },
-    amm2: { usdc: 0, tokens: 0 },
+    futamm: { usdc: CFG.futAmmUSDC || 0, tokens: CFG.futAmmTokens || 0 },
+    metamm: { usdc: CFG.metAmmUSDC || 0, tokens: CFG.metAmmTokens || 0 },
     lock: { usdc: 0, tokens: CFG.lockTokenBalance || 0 },
     buyback: { usdc: 0, tokens: CFG.buybackTokenBalance || 0 },
   };
@@ -1491,9 +1493,15 @@ function renderBalances() {
     var key = el.dataset.bal;
     if (!key) { el.innerHTML = '<span class="bal-token">—</span>'; return; }
     var d = balData[key] || { usdc: 0, tokens: 0 };
-    el.innerHTML = '<span class="bal-usdc">' + fmtUsdc(d.usdc) + '</span>' +
-      '<span class="bal-sep">·</span>' +
-      '<span class="bal-token">' + fmtTokens(d.tokens) + '</span>';
+    var usdcStr = fmtUsdc(d.usdc);
+    var tokenStr = fmtTokens(d.tokens);
+    if (usdcStr) {
+      el.innerHTML = '<span class="bal-usdc">' + usdcStr + '</span>' +
+        '<span class="bal-sep">·</span>' +
+        '<span class="bal-token">' + tokenStr + '</span>';
+    } else {
+      el.innerHTML = '<span class="bal-token">' + tokenStr + '</span>';
+    }
   });
 }
 
