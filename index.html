@@ -1039,6 +1039,19 @@ function buildChart(candles, navPerToken) {
   var tvData = candlesToTV(candles);
   var tvLineData = candlesToTVLine(candles);
 
+  // Inject TGE starting point so price line emerges from the same circle as NAV
+  if (CFG.tge && CFG.icoPrice > 0) {
+    var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
+    // Only inject if we have data and TGE is before the first candle
+    if (tvLineData.length > 0 && tgeTs < tvLineData[0].time) {
+      tvLineData.unshift({ time: tgeTs, value: CFG.icoPrice });
+      tvData.unshift({ time: tgeTs, open: CFG.icoPrice, high: CFG.icoPrice, low: CFG.icoPrice, close: CFG.icoPrice });
+    } else if (tvLineData.length === 0) {
+      tvLineData.push({ time: tgeTs, value: CFG.icoPrice });
+      tvData.push({ time: tgeTs, open: CFG.icoPrice, high: CFG.icoPrice, low: CFG.icoPrice, close: CFG.icoPrice });
+    }
+  }
+
   if (_chartViewMode === 'candle') {
     _tvSeries = _tvChart.addCandlestickSeries({
       upColor: '#00e5a0',
