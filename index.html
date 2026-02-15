@@ -942,34 +942,11 @@ function addNAVOverlays(navPerToken) {
       var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000) - 1;
       markers.push({
         time: tgeTs,
-        position: 'inBar',
+        position: 'belowBar',
         color: '#ffffff',
         shape: 'circle',
-        text: 'TGE ' + (CFG.icoPrice > 0 ? '$' + CFG.icoPrice : ''),
+        text: 'TGE $' + CFG.icoPrice,
       });
-    }
-
-    // Treasury withdrawal markers
-    if (_allowancePayments.length > 0) {
-      var fmtK = function(n) {
-        if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-        if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
-        return '$' + Math.round(n);
-      };
-      for (var i = 0; i < _allowancePayments.length; i++) {
-        var p = _allowancePayments[i];
-        var ts = Math.floor(new Date(p.date + 'T12:00:00Z').getTime() / 1000);
-        // Only show payments >= $1000
-        if (p.amount >= 1000) {
-          markers.push({
-            time: ts,
-            position: 'aboveBar',
-            color: '#e84057',
-            shape: 'circle',
-            text: '-' + fmtK(p.amount),
-          });
-        }
-      }
     }
 
     if (markers.length > 0) {
@@ -1082,16 +1059,13 @@ function buildChart(candles, navPerToken) {
     });
     _tvSeries.setData(tvData);
   } else {
-    // Baseline series: green above NAV, red below NAV
-    _tvSeries = _tvChart.addBaselineSeries({
-      baseValue: { type: 'price', price: navPerToken },
-      topLineColor: '#00e5a0',
-      topFillColor1: 'rgba(0,229,160,0.18)',
-      topFillColor2: 'rgba(0,229,160,0.02)',
-      bottomLineColor: '#e84057',
-      bottomFillColor1: 'rgba(232,64,87,0.02)',
-      bottomFillColor2: 'rgba(232,64,87,0.18)',
+    // Line series: price line (no fill — baseline fill doesn't track dynamic NAV)
+    _tvSeries = _tvChart.addLineSeries({
+      color: '#00e5a0',
       lineWidth: 2,
+      crosshairMarkerVisible: true,
+      lastValueVisible: true,
+      priceLineVisible: false,
     });
     _tvSeries.setData(tvLineData);
   }
