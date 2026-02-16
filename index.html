@@ -1221,11 +1221,38 @@ function drawChart() {
   }
 
   // Helper: filter data to visible range and convert to pixel coords
+  // Includes boundary interpolation so fills/lines work at any zoom level
   function toPixels(data) {
     var pts = [];
+    var lastBefore = null;
+    var firstAfter = null;
     for (var i = 0; i < data.length; i++) {
-      if (data[i].time >= tMin && data[i].time <= tMax) {
+      if (data[i].time < tMin) {
+        lastBefore = data[i];
+      } else if (data[i].time <= tMax) {
         pts.push({ x: tx(data[i].time), y: ty(data[i].value), value: data[i].value, time: data[i].time });
+      } else if (!firstAfter) {
+        firstAfter = data[i];
+      }
+    }
+    // Inject interpolated point at left edge
+    if (lastBefore) {
+      var nextPt = pts.length > 0 ? pts[0] : firstAfter;
+      if (nextPt) {
+        var frac = (tMin - lastBefore.time) / (nextPt.time - lastBefore.time);
+        var interpVal = lastBefore.value + frac * (nextPt.value - lastBefore.value);
+        pts.unshift({ x: tx(tMin), y: ty(interpVal), value: interpVal, time: tMin });
+      } else {
+        pts.unshift({ x: tx(tMin), y: ty(lastBefore.value), value: lastBefore.value, time: tMin });
+      }
+    }
+    // Inject interpolated point at right edge
+    if (pts.length > 0) {
+      var lastPt = pts[pts.length - 1];
+      if (lastPt.time < tMax && firstAfter) {
+        var frac2 = (tMax - lastPt.time) / (firstAfter.time - lastPt.time);
+        var interpVal2 = lastPt.value + frac2 * (firstAfter.value - lastPt.value);
+        pts.push({ x: tx(tMax), y: ty(interpVal2), value: interpVal2, time: tMax });
       }
     }
     return pts;
@@ -1289,60 +1316,64 @@ function drawChart() {
       return pad.top + plotH / 2;
     }
 
+    // Collect all NAV Y values for gradient bounds
+    var allNavYVals = [];
+    for (var i = 0; i < pricePts.length; i++) {
+      allNavYVals.push(navYAtX(pricePts[i].x));
+    }
+    var allPriceY = pricePts.map(function(p) { return p.y; });
+    var minPriceY = Math.min.apply(null, allPriceY);
+    var maxNavY = Math.max.apply(null, allNavYVals);
+    var maxPriceY = Math.max.apply(null, allPriceY);
+    var minNavY = Math.min.apply(null, allNavYVals);
+
     ctx.save();
 
-    // Anchor gradients to full plot area so fills persist at any zoom level
-    var aboveGrad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-    aboveGrad.addColorStop(0, 'rgba(0,229,160,0.35)');
-    aboveGrad.addColorStop(0.5, 'rgba(0,229,160,0.15)');
-    aboveGrad.addColorStop(1, 'rgba(0,229,160,0.02)');
+    // Above NAV fill (green)
+    var aboveGrad = ctx.createLinearGradient(0, minPriceY, 0, maxNavY);
+    aboveGrad.addColorStop(0, 'rgba(0,229,160,0.30)');
+    aboveGrad.addColorStop(1, 'rgba(0,229,160,0.0)');
 
-    var belowGrad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
-    belowGrad.addColorStop(0, 'rgba(232,64,87,0.02)');
-    belowGrad.addColorStop(0.5, 'rgba(232,64,87,0.15)');
-    belowGrad.addColorStop(1, 'rgba(232,64,87,0.35)');
+    // Below NAV fill (red)
+    var belowGrad = ctx.createLinearGradient(0, maxPriceY, 0, minNavY);
+    belowGrad.addColorStop(0, 'rgba(232,64,87,0.30)');
+    belowGrad.addColorStop(1, 'rgba(232,64,87,0.0)');
 
-    // Interpolate price Y at any X for smooth fills when zoomed
-    function priceYAtX(xPos) {
-      if (pricePts.length === 0) return pad.top + plotH / 2;
-      if (xPos <= pricePts[0].x) return pricePts[0].y;
-      if (xPos >= pricePts[pricePts.length - 1].x) return pricePts[pricePts.length - 1].y;
-      for (var pi = 0; pi < pricePts.length - 1; pi++) {
-        if (xPos >= pricePts[pi].x && xPos <= pricePts[pi + 1].x) {
-          var t = (xPos - pricePts[pi].x) / (pricePts[pi + 1].x - pricePts[pi].x);
-          return pricePts[pi].y + t * (pricePts[pi + 1].y - pricePts[pi].y);
-        }
-      }
-      return pricePts[pricePts.length - 1].y;
-    }
-
-    // Sample 200 points across visible range for smooth fill at any zoom
-    var fillSteps = 200;
-    var pxStart = pricePts[0].x, pxEnd = pricePts[pricePts.length - 1].x, pxRange = pxEnd - pxStart;
-
-    // Above NAV fill (green — where price is above NAV)
+    // Draw above-NAV fill
     ctx.beginPath();
-    for (var si = 0; si <= fillSteps; si++) {
-      var sx = pxStart + (si / fillSteps) * pxRange;
-      var clippedY = Math.min(priceYAtX(sx), navYAtX(sx));
-      si === 0 ? ctx.moveTo(sx, clippedY) : ctx.lineTo(sx, clippedY);
+    // Determine shared X range (price and NAV may end at different X positions)
+    var fillXMin = pricePts[0].x;
+    var fillXMax = pricePts[pricePts.length - 1].x;
+    if (navPts.length > 0) {
+      fillXMax = Math.min(fillXMax, navPts[navPts.length - 1].x);
     }
-    for (var si = fillSteps; si >= 0; si--) {
-      ctx.lineTo(pxStart + (si / fillSteps) * pxRange, navYAtX(pxStart + (si / fillSteps) * pxRange));
+    for (var i = 0; i < pricePts.length; i++) {
+      if (pricePts[i].x > fillXMax) break;
+      var navY = navYAtX(pricePts[i].x);
+      var clippedY = Math.min(pricePts[i].y, navY);
+      if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
+      else ctx.lineTo(pricePts[i].x, clippedY);
+    }
+    for (var i = pricePts.length - 1; i >= 0; i--) {
+      if (pricePts[i].x > fillXMax) continue;
+      ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
     ctx.fillStyle = aboveGrad;
     ctx.fill();
 
-    // Below NAV fill (red — where price is below NAV)
+    // Draw below-NAV fill
     ctx.beginPath();
-    for (var si = 0; si <= fillSteps; si++) {
-      var sx = pxStart + (si / fillSteps) * pxRange;
-      var clippedY = Math.max(priceYAtX(sx), navYAtX(sx));
-      si === 0 ? ctx.moveTo(sx, clippedY) : ctx.lineTo(sx, clippedY);
+    for (var i = 0; i < pricePts.length; i++) {
+      if (pricePts[i].x > fillXMax) break;
+      var navY = navYAtX(pricePts[i].x);
+      var clippedY = Math.max(pricePts[i].y, navY);
+      if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
+      else ctx.lineTo(pricePts[i].x, clippedY);
     }
-    for (var si = fillSteps; si >= 0; si--) {
-      ctx.lineTo(pxStart + (si / fillSteps) * pxRange, navYAtX(pxStart + (si / fillSteps) * pxRange));
+    for (var i = pricePts.length - 1; i >= 0; i--) {
+      if (pricePts[i].x > fillXMax) continue;
+      ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
     ctx.fillStyle = belowGrad;
