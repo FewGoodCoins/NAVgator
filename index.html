@@ -97,9 +97,9 @@
   .nav-stats-bar .ns-progress { height: 4px; border-radius: 2px; margin-top: 6px; background: rgba(255,255,255,0.06); overflow: hidden; }
   .nav-stats-bar .ns-progress-fill { height: 100%; border-radius: 2px; }
 
-  .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; }
+  .addr-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 14px 18px; margin-bottom: 28px; }
   .addr-title { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
-  .addr-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; gap: 12px; flex-wrap: wrap; }
+  .addr-row { display: flex; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; gap: 12px; flex-wrap: wrap; }
   .addr-row:last-child { border-bottom: none; }
   .addr-label { color: var(--muted); font-weight: 500; min-width: 100px; font-size: 11px; }
   .addr-val { display: flex; align-items: center; gap: 6px; }
@@ -109,7 +109,7 @@
   .addr-copy:hover { border-color: var(--green); color: var(--green); }
   .addr-copy.copied { border-color: var(--green); color: var(--green); }
   .addr-bals { margin-left: auto; display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-  .bal-usdc { color: var(--green); }
+  .bal-usdc { color: var(--dim); }
   .bal-sep { color: var(--border2); }
   .bal-token { color: var(--dim); }
   .bal-loading { color: var(--dim); }
@@ -126,7 +126,7 @@
   .allowance-month .am-fill { height: 100%; border-radius: 2px; position: absolute; left: 0; top: 0; }
   .allowance-month .am-pct { color: var(--text); min-width: 32px; text-align: right; }
   .addr-title { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
-  .addr-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; }
+  .addr-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); font-family: 'Inter', sans-serif; font-size: 12px; }
   .addr-row:last-child { border-bottom: none; }
   .addr-label { color: var(--muted); font-weight: 500; min-width: 100px; }
   .addr-val { display: flex; align-items: center; gap: 8px; }
@@ -233,7 +233,7 @@
         <div class="how-item"><div class="how-num" style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">03</div><div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:5px">Dissolution right</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Any holder can propose dissolution via futarchy. If passed, treasury distributes pro-rata. This creates a soft price floor enforced by rational arbitrage.</div></div>
       </div>
     </div>
-    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · Data via NAVgator API + Solana RPC · Not financial advice</div>
+    <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · <a href="submit.html">Submit a Token</a> · Data via NAVgator API + Solana RPC · Not financial advice</div>
   </div>
 
   <!-- ══ DASHBOARD VIEW ══ -->
@@ -284,7 +284,7 @@
   </div>
 
   <div class="footer">
-    <a href="index.html">← NAVgator Home</a> · Treasury analytics for ownership tokens · Not financial advice
+    <a href="index.html">← NAVgator Home</a> · <a href="submit.html">Submit a Token</a> · Treasury analytics for ownership tokens · Not financial advice
   </div>
 
   </div><!-- /dashboard-view -->
@@ -485,11 +485,10 @@ const TOKENS = {
     daoWallet: '55H1Q1YrHJQ93uhG4jqrBBHx3a8H7TCM8kvf2UM2g5q3',
     ammWallet: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
     ammWallet2: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
-    buybackWallet: '33AEddb7BxoA7Y65BzybFCV5WyGy7LfBdjiL2anCDEkr',
     lockWallet: 'F35JE1HZMtZXXWdy3koSPRe1gGFQyqd5kpbPw2xNcjR8',
     gtPool: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
     gtPoolLegacy: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
-    raise: 8_000_000, supply: 10_000_000, icoPrice: 0.60, ath: 0.865,
+    raise: 8_000_000, supply: 10_000_000, icoPrice: 0.80, ath: 0.865,
     monthlyBurn: 250_000, monthlyAllowance: 250_000, realizedVol: 90, tradingDays: 32,
     genesisStrike: 0.47, genesisPut: 0.18,
     spot: 0.54, treasuryUSDC: 5_750_000, ammUSDCFixed: null,
