@@ -826,12 +826,32 @@ var _navHistory = [];
 var _chartTF = '1D';
 var _allowancePayments = [];
 var _chartScale = 'linear'; // 'linear' or 'log'
+var _premFmt = 'pct'; // 'pct' or 'x'
 
 function setChartScale(scale) {
   _chartScale = scale;
   document.getElementById('btn-lin').classList.toggle('active', scale === 'linear');
   document.getElementById('btn-log').classList.toggle('active', scale === 'log');
   drawChart();
+}
+
+function togglePremiumFormat() {
+  _premFmt = _premFmt === 'pct' ? 'x' : 'pct';
+  var el = document.getElementById('prem-val');
+  var sub = document.getElementById('prem-sub');
+  if (!el || !CFG) return;
+  var supplyForNAV = CFG.effectiveSupply || CFG.supply;
+  var strike = CFG.treasuryUSDC / supplyForNAV;
+  var ratio = strike > 0 ? CFG.spot / strike : 0;
+  var discPct = strike > 0 ? ((CFG.spot - strike) / strike * 100) : 0;
+  var isDiscount = discPct < 0;
+  if (_premFmt === 'x') {
+    el.textContent = ratio.toFixed(2) + 'x';
+    sub.textContent = (isDiscount ? 'of treasury floor' : 'of treasury floor') + ' · tap to toggle';
+  } else {
+    el.textContent = isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%';
+    sub.textContent = (isDiscount ? 'below treasury floor' : 'above treasury floor') + ' · tap to toggle';
+  }
 }
 
 // Chart state
@@ -1570,7 +1590,7 @@ function renderUI(isLive) {
     '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">' + fmtM(CFG.monthlyBurn) + '/mo burn</div></div>' +
     '<div class="card"><div class="card-label">Spot Price</div><div class="card-value" style="color:var(--white)">' + fmt$(CFG.spot) + '</div><div class="card-sub">current market price</div></div>' +
     '<div class="card"><div class="card-label">Backing / Token</div><div class="card-value" style="color:var(--white)">' + fmt$(strike) + '</div><div class="card-sub">treasury \u00f7 holder supply</div></div>' +
-    '<div class="card"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub">' + (isDiscount ? 'below treasury floor' : 'above treasury floor') + '</div></div>' +
+    '<div class="card" onclick="togglePremiumFormat()" style="cursor:pointer"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" id="prem-val" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub" id="prem-sub">' + (isDiscount ? 'below treasury floor' : 'above treasury floor') + ' · tap to toggle</div></div>' +
     '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">at current burn rate</div></div>';
 
   document.getElementById('params').innerHTML =
