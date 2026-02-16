@@ -1207,46 +1207,63 @@ function drawChart() {
   var estPts = toPixels(_chart.estimatedNav || []);
 
   // Draw fill between price and NAV lines (gradient: strong at price, fading toward NAV)
-  if (pricePts.length > 1 && navPts.length > 1) {
-    // Find overall Y bounds for gradient
-    var allPriceY = pricePts.map(function(p) { return p.y; });
-    var allNavY = navPts.map(function(p) { return p.y; });
-    var minPriceY = Math.min.apply(null, allPriceY);
-    var maxNavY = Math.max.apply(null, allNavY);
-    var maxPriceY = Math.max.apply(null, allPriceY);
-    var minNavY = Math.min.apply(null, allNavY);
+  // Combine estimated diagonal + accurate staircase into one NAV lookup function
+  var hasNav = (navPts.length > 0 || estPts.length >= 2);
+  if (pricePts.length > 1 && hasNav) {
 
-    // Build the full fill path: price line forward, NAV line backward
-    // Then clip and fill with gradient
+    // NAV Y at any X position — checks estimated diagonal first, then accurate staircase
+    function navYAtX(xPos) {
+      // Check accurate staircase first
+      if (navPts.length > 0 && xPos >= navPts[0].x) {
+        for (var ni = navPts.length - 1; ni >= 0; ni--) {
+          if (xPos >= navPts[ni].x) return navPts[ni].y;
+        }
+        return navPts[0].y;
+      }
+      // Fall back to estimated diagonal (linear interpolation)
+      if (estPts.length >= 2) {
+        var eStart = estPts[0], eEnd = estPts[estPts.length - 1];
+        if (xPos <= eStart.x) return eStart.y;
+        if (xPos >= eEnd.x) return eEnd.y;
+        var t = (xPos - eStart.x) / (eEnd.x - eStart.x);
+        return eStart.y + t * (eEnd.y - eStart.y);
+      }
+      // Fallback
+      if (navPts.length > 0) return navPts[0].y;
+      return pad.top + plotH / 2;
+    }
+
+    // Collect all NAV Y values for gradient bounds
+    var allNavYVals = [];
+    for (var i = 0; i < pricePts.length; i++) {
+      allNavYVals.push(navYAtX(pricePts[i].x));
+    }
+    var allPriceY = pricePts.map(function(p) { return p.y; });
+    var minPriceY = Math.min.apply(null, allPriceY);
+    var maxNavY = Math.max.apply(null, allNavYVals);
+    var maxPriceY = Math.max.apply(null, allPriceY);
+    var minNavY = Math.min.apply(null, allNavYVals);
+
     ctx.save();
 
-    // Above NAV fill (green) — clip to where price > NAV
+    // Above NAV fill (green)
     var aboveGrad = ctx.createLinearGradient(0, minPriceY, 0, maxNavY);
     aboveGrad.addColorStop(0, 'rgba(0,229,160,0.30)');
     aboveGrad.addColorStop(1, 'rgba(0,229,160,0.0)');
 
-    // Below NAV fill (red) — clip to where price < NAV  
+    // Below NAV fill (red)
     var belowGrad = ctx.createLinearGradient(0, maxPriceY, 0, minNavY);
     belowGrad.addColorStop(0, 'rgba(232,64,87,0.30)');
     belowGrad.addColorStop(1, 'rgba(232,64,87,0.0)');
-
-    // Build NAV path points (step function) at same x positions as price
-    function navYAtX(xPos) {
-      for (var ni = navPts.length - 1; ni >= 0; ni--) {
-        if (xPos >= navPts[ni].x) return navPts[ni].y;
-      }
-      return navPts[0].y;
-    }
 
     // Draw above-NAV fill
     ctx.beginPath();
     for (var i = 0; i < pricePts.length; i++) {
       var navY = navYAtX(pricePts[i].x);
-      var clippedY = Math.min(pricePts[i].y, navY); // above NAV means lower Y
+      var clippedY = Math.min(pricePts[i].y, navY);
       if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
       else ctx.lineTo(pricePts[i].x, clippedY);
     }
-    // Walk back along NAV line
     for (var i = pricePts.length - 1; i >= 0; i--) {
       ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
@@ -1258,7 +1275,7 @@ function drawChart() {
     ctx.beginPath();
     for (var i = 0; i < pricePts.length; i++) {
       var navY = navYAtX(pricePts[i].x);
-      var clippedY = Math.max(pricePts[i].y, navY); // below NAV means higher Y
+      var clippedY = Math.max(pricePts[i].y, navY);
       if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
       else ctx.lineTo(pricePts[i].x, clippedY);
     }
