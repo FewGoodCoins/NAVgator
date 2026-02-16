@@ -266,8 +266,8 @@
       <div class="chart-loading" id="chart-loading">Loading chart…</div>
     </div>
     <div class="legend">
-      <span class="legend-item"><span class="legend-line" style="background:#00e5a0"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:#ffffff"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
+      <span class="legend-item"><span class="legend-line" style="background:rgba(255,255,255,0.6);background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.6) 0 6px,transparent 6px 10px);background-color:transparent"></span> NAV <span id="leg-strike">…</span></span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
     </div>
@@ -924,20 +924,7 @@ function buildChart(candles, navPerToken) {
   var navData = _navHistory.slice();
   if (navPerToken > 0 && navData.length > 0) {
     var nowTs = Math.floor(Date.now() / 1000);
-    var lastLiveNav = navPerToken;
-    // Remove trailing backfill points that tick UP (stale data)
-    // Only trim from the end if the last point is higher than the one before it
-    while (navData.length > 2) {
-      var last = navData[navData.length - 1];
-      var prev = navData[navData.length - 2];
-      if (last.value > prev.value) {
-        navData.pop(); // remove stale uptick
-      } else {
-        break;
-      }
-    }
-    // Add current live NAV as the final point
-    navData.push({ time: nowTs, value: lastLiveNav });
+    navData.push({ time: nowTs, value: navPerToken });
   }
 
   // Deduplicate NAV to only keep points where value changes (clean staircase)
@@ -1008,9 +995,18 @@ function drawChart() {
   _chart.priceData.forEach(function(d) {
     if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
   });
+  // For NAV, include interpolated value at visible boundaries (staircase has few points)
   _chart.navData.forEach(function(d) {
     if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
   });
+  // Also include the NAV value that's active at the start of the visible range
+  for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
+    if (_chart.navData[ni].time <= tMin) { allVals.push(_chart.navData[ni].value); break; }
+  }
+  // And the NAV value active at the end
+  for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
+    if (_chart.navData[ni].time <= tMax) { allVals.push(_chart.navData[ni].value); break; }
+  }
   if (allVals.length === 0) {
     ctx.fillStyle = '#555560';
     ctx.font = '12px Inter, sans-serif';
@@ -1071,56 +1067,104 @@ function drawChart() {
     return pts;
   }
 
+  // For NAV staircase: include the last point before visible range so the line extends in
+  function toPixelsNav(data) {
+    var pts = [];
+    var lastBefore = null;
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].time < tMin) {
+        lastBefore = data[i];
+      } else if (data[i].time <= tMax) {
+        pts.push({ x: tx(data[i].time), y: ty(data[i].value), value: data[i].value, time: data[i].time });
+      }
+    }
+    // Inject the last point before visible range at the left edge
+    if (lastBefore) {
+      pts.unshift({ x: tx(tMin), y: ty(lastBefore.value), value: lastBefore.value, time: tMin });
+    }
+    // Extend the last visible point to the right edge
+    if (pts.length > 0) {
+      var last = pts[pts.length - 1];
+      if (last.time < tMax) {
+        pts.push({ x: tx(tMax), y: last.y, value: last.value, time: tMax });
+      }
+    }
+    return pts;
+  }
+
   var pricePts = toPixels(_chart.priceData);
-  var navPts = toPixels(_chart.navData);
+  var navPts = toPixelsNav(_chart.navData);
 
   // Draw fill between price and NAV lines (gradient: strong at price, fading toward NAV)
   if (pricePts.length > 1 && navPts.length > 1) {
-    for (var i = 0; i < pricePts.length - 1; i++) {
-      var px1 = pricePts[i].x, px2 = pricePts[i + 1].x;
-      var py1 = pricePts[i].y, py2 = pricePts[i + 1].y;
-      var ny1 = interpolateNav(navPts, px1);
-      var ny2 = interpolateNav(navPts, px2);
-      if (ny1 === null || ny2 === null) continue;
+    // Find overall Y bounds for gradient
+    var allPriceY = pricePts.map(function(p) { return p.y; });
+    var allNavY = navPts.map(function(p) { return p.y; });
+    var minPriceY = Math.min.apply(null, allPriceY);
+    var maxNavY = Math.max.apply(null, allNavY);
+    var maxPriceY = Math.max.apply(null, allPriceY);
+    var minNavY = Math.min.apply(null, allNavY);
 
-      // Determine if price is above or below NAV
-      var avgPrice = (pricePts[i].value + pricePts[i + 1].value) / 2;
-      var avgNavVal = 0;
-      for (var ni = 0; ni < _chart.navData.length - 1; ni++) {
-        var nxL = tx(_chart.navData[ni].time);
-        var nxR = tx(_chart.navData[ni + 1].time);
-        if ((px1 + px2) / 2 >= nxL && (px1 + px2) / 2 <= nxR) { avgNavVal = _chart.navData[ni].value; break; }
+    // Build the full fill path: price line forward, NAV line backward
+    // Then clip and fill with gradient
+    ctx.save();
+
+    // Above NAV fill (green) — clip to where price > NAV
+    var aboveGrad = ctx.createLinearGradient(0, minPriceY, 0, maxNavY);
+    aboveGrad.addColorStop(0, 'rgba(0,229,160,0.30)');
+    aboveGrad.addColorStop(1, 'rgba(0,229,160,0.0)');
+
+    // Below NAV fill (red) — clip to where price < NAV  
+    var belowGrad = ctx.createLinearGradient(0, maxPriceY, 0, minNavY);
+    belowGrad.addColorStop(0, 'rgba(232,64,87,0.30)');
+    belowGrad.addColorStop(1, 'rgba(232,64,87,0.0)');
+
+    // Build NAV path points (step function) at same x positions as price
+    function navYAtX(xPos) {
+      for (var ni = navPts.length - 1; ni >= 0; ni--) {
+        if (xPos >= navPts[ni].x) return navPts[ni].y;
       }
-      if (avgNavVal === 0) avgNavVal = _chart.navData[_chart.navData.length - 1].value;
-      var isAbove = avgPrice >= avgNavVal;
-
-      // Gradient from price line to NAV line
-      var avgPriceY = (py1 + py2) / 2;
-      var avgNavY = (ny1 + ny2) / 2;
-      var grad = ctx.createLinearGradient(0, avgPriceY, 0, avgNavY);
-      if (isAbove) {
-        grad.addColorStop(0, 'rgba(0,229,160,0.35)');
-        grad.addColorStop(1, 'rgba(0,229,160,0.0)');
-      } else {
-        grad.addColorStop(0, 'rgba(232,64,87,0.35)');
-        grad.addColorStop(1, 'rgba(232,64,87,0.0)');
-      }
-
-      ctx.beginPath();
-      ctx.moveTo(px1, py1);
-      ctx.lineTo(px2, py2);
-      ctx.lineTo(px2, ny2);
-      ctx.lineTo(px1, ny1);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
+      return navPts[0].y;
     }
+
+    // Draw above-NAV fill
+    ctx.beginPath();
+    for (var i = 0; i < pricePts.length; i++) {
+      var navY = navYAtX(pricePts[i].x);
+      var clippedY = Math.min(pricePts[i].y, navY); // above NAV means lower Y
+      if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
+      else ctx.lineTo(pricePts[i].x, clippedY);
+    }
+    // Walk back along NAV line
+    for (var i = pricePts.length - 1; i >= 0; i--) {
+      ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
+    }
+    ctx.closePath();
+    ctx.fillStyle = aboveGrad;
+    ctx.fill();
+
+    // Draw below-NAV fill
+    ctx.beginPath();
+    for (var i = 0; i < pricePts.length; i++) {
+      var navY = navYAtX(pricePts[i].x);
+      var clippedY = Math.max(pricePts[i].y, navY); // below NAV means higher Y
+      if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
+      else ctx.lineTo(pricePts[i].x, clippedY);
+    }
+    for (var i = pricePts.length - 1; i >= 0; i--) {
+      ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
+    }
+    ctx.closePath();
+    ctx.fillStyle = belowGrad;
+    ctx.fill();
+
+    ctx.restore();
   }
 
-  // Draw price line (green)
+  // Draw price line (white)
   if (pricePts.length > 1) {
     ctx.beginPath();
-    ctx.strokeStyle = '#00e5a0';
+    ctx.strokeStyle = '#e8e6e3';
     ctx.lineWidth = 2;
     ctx.moveTo(pricePts[0].x, pricePts[0].y);
     for (var i = 1; i < pricePts.length; i++) {
@@ -1145,17 +1189,19 @@ function drawChart() {
     ctx.fill();
   }
 
-  // Draw NAV line (white)
+  // Draw NAV line (white dashed)
   if (navPts.length > 1) {
     ctx.beginPath();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
     ctx.moveTo(navPts[0].x, navPts[0].y);
     for (var i = 1; i < navPts.length; i++) {
       ctx.lineTo(navPts[i].x, navPts[i - 1].y);
       ctx.lineTo(navPts[i].x, navPts[i].y);
     }
     ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   // TGE circle
@@ -1207,8 +1253,9 @@ function attachChartEvents(container) {
   container._eventsAttached = true;
   var canvas = _chart.canvas;
 
-  // Crosshair on mouse move
+  // Crosshair on mouse move (only when not dragging)
   canvas.addEventListener('mousemove', function(e) {
+    if (_chart.isDragging) return;
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
     var my = e.clientY - rect.top;
@@ -1217,7 +1264,7 @@ function attachChartEvents(container) {
   });
 
   canvas.addEventListener('mouseleave', function() {
-    drawChart();
+    if (!_chart.isDragging) drawChart();
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
   });
 
@@ -1233,28 +1280,40 @@ function attachChartEvents(container) {
     _chart.viewStart = Math.max(0, center - mx * newRange);
     _chart.viewEnd = Math.min(1, _chart.viewStart + newRange);
     if (_chart.viewEnd > 1) { _chart.viewEnd = 1; _chart.viewStart = Math.max(0, 1 - newRange); }
+    if (_chart.viewStart < 0) { _chart.viewStart = 0; _chart.viewEnd = Math.min(1, newRange); }
     drawChart();
   }, { passive: false });
 
-  // Pan with drag
+  // Pan with click-drag
   canvas.addEventListener('mousedown', function(e) {
     _chart.isDragging = true;
     _chart.dragStartX = e.clientX;
-    _chart.dragStartView = _chart.viewStart;
+    _chart.dragStartViewStart = _chart.viewStart;
+    _chart.dragStartViewEnd = _chart.viewEnd;
     _chart.dragRange = _chart.viewEnd - _chart.viewStart;
+    canvas.style.cursor = 'grabbing';
+    if (_chart.tooltip) _chart.tooltip.style.display = 'none';
   });
 
   window.addEventListener('mousemove', function(e) {
     if (!_chart.isDragging) return;
     var dx = e.clientX - _chart.dragStartX;
     var shift = -(dx / _chart.width) * _chart.dragRange;
-    var newStart = Math.max(0, Math.min(1 - _chart.dragRange, _chart.dragStartView + shift));
+    var newStart = _chart.dragStartViewStart + shift;
+    // Clamp: allow panning to edges but not past them
+    if (newStart < 0) newStart = 0;
+    if (newStart + _chart.dragRange > 1) newStart = 1 - _chart.dragRange;
     _chart.viewStart = newStart;
     _chart.viewEnd = newStart + _chart.dragRange;
     drawChart();
   });
 
   window.addEventListener('mouseup', function() {
+    if (_chart.isDragging) {
+      _chart.isDragging = false;
+      canvas.style.cursor = 'crosshair';
+    }
+  });
     _chart.isDragging = false;
   });
 
