@@ -974,12 +974,36 @@ function buildChart(candles, navPerToken) {
     cleanNav.push(navData[navData.length - 1]);
   }
 
-  // Store event markers — skip first (TGE) and last (live) point, only outflow events get markers
-  _chart.navEvents = cleanNav.filter(function(p, idx) {
-    if (idx === 0) return false; // skip TGE
-    if (idx === cleanNav.length - 1) return false; // skip live
-    return p.treasury > 0;
-  });
+  // Store event markers from raw nav history (not cleanNav which has staircase helpers)
+  // Skip first (TGE) and last (live), deduplicate same-day events keeping the last one
+  var rawEvents = [];
+  for (var i = 1; i < navData.length - 1; i++) {
+    var p = navData[i];
+    if (p.treasury > 0) {
+      // Calculate outflow as drop from previous point's treasury
+      var prevTreasury = navData[i - 1].treasury || 0;
+      var outflow = prevTreasury - p.treasury;
+      rawEvents.push({
+        time: p.time, value: p.value, treasury: p.treasury, supply: p.supply,
+        outflow: outflow > 0 ? outflow : 0
+      });
+    }
+  }
+  // Deduplicate: if two events on same day, keep only the last one (with combined outflow)
+  var eventsByDay = {};
+  for (var i = 0; i < rawEvents.length; i++) {
+    var dayKey = Math.floor(rawEvents[i].time / 86400);
+    if (eventsByDay[dayKey]) {
+      eventsByDay[dayKey].outflow += rawEvents[i].outflow;
+      eventsByDay[dayKey].treasury = rawEvents[i].treasury;
+      eventsByDay[dayKey].value = rawEvents[i].value;
+      eventsByDay[dayKey].supply = rawEvents[i].supply;
+    } else {
+      eventsByDay[dayKey] = rawEvents[i];
+    }
+  }
+  _chart.navEvents = Object.values(eventsByDay);
+  _chart.navEvents.sort(function(a, b) { return a.time - b.time; });
 
   _chart.navData = cleanNav;
   _chart.viewStart = 0;
@@ -1279,25 +1303,28 @@ function drawChart() {
     }
   }
 
-  // Treasury event markers (vertical lines at each NAV change)
+  // Treasury event markers (short dashes at each NAV change)
   if (_chart.navEvents && _chart.navEvents.length > 0) {
     var eventPts = [];
     for (var i = 0; i < _chart.navEvents.length; i++) {
       var evt = _chart.navEvents[i];
       if (evt.time >= tMin && evt.time <= tMax) {
         var ex = tx(evt.time);
-        // Draw subtle vertical line
+        var ey = ty(evt.value);
+
+        // Short dash above and below diamond (not full height)
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255,140,66,0.25)';
+        ctx.strokeStyle = 'rgba(255,140,66,0.35)';
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 3]);
-        ctx.moveTo(ex, pad.top);
-        ctx.lineTo(ex, pad.top + plotH);
+        ctx.moveTo(ex, ey - 18);
+        ctx.lineTo(ex, ey - 6);
+        ctx.moveTo(ex, ey + 6);
+        ctx.lineTo(ex, ey + 18);
         ctx.stroke();
         ctx.setLineDash([]);
 
         // Small diamond marker at NAV line
-        var ey = ty(evt.value);
         ctx.beginPath();
         ctx.moveTo(ex, ey - 4);
         ctx.lineTo(ex + 4, ey);
@@ -1307,7 +1334,7 @@ function drawChart() {
         ctx.fillStyle = '#ff8c42';
         ctx.fill();
 
-        eventPts.push({ x: ex, y: ey, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply });
+        eventPts.push({ x: ex, y: ey, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow });
       }
     }
     _chart._eventPts = eventPts;
@@ -1509,38 +1536,41 @@ function drawCrosshair(mx, my) {
       }
     }
 
-    // Tooltip
+    // Tooltip — only show when near an event marker
     var tooltip = _chart.tooltip;
     if (tooltip) {
-      var tRange = _chart._tMax - _chart._tMin || 1;
-      var plotW = w - pad.left - pad.right;
-      var cursorTime = _chart._tMin + ((mx - pad.left) / plotW) * tRange;
-      var date = new Date(cursorTime * 1000);
-      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      var dateStr = months[date.getUTCMonth()] + ' ' + date.getUTCDate() + ', ' + date.getUTCFullYear();
-      var fmt = function(v) { return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(4)); };
-      var fmtM = function(v) { return v >= 1000000 ? '$' + (v / 1000000).toFixed(2) + 'M' : '$' + Math.round(v).toLocaleString(); };
-      var fmtK = function(v) { return v >= 1000000 ? (v / 1000000).toFixed(2) + 'M' : Math.round(v).toLocaleString(); };
-
-      var html = '<div class="tt-date">' + dateStr + '</div>';
-      if (closestPrice && closestPriceDist < 50) {
-        html += '<div class="tt-line" style="color:#e8e6e3">Price: ' + fmt(closestPrice.value) + '</div>';
-      }
-      html += '<div class="tt-line" style="color:rgba(255,255,255,0.7)">NAV: ' + fmt(navVal) + '</div>';
-
       if (nearEvent) {
-        html += '<div style="border-top:1px solid rgba(255,140,66,0.3);margin:6px 0 4px"></div>';
-        html += '<div class="tt-line" style="color:#ff8c42;font-size:10px">Treasury: ' + fmtM(nearEvent.treasury) + '</div>';
-        html += '<div class="tt-line" style="color:#ff8c42;font-size:10px">Eff. Supply: ' + fmtK(nearEvent.supply) + '</div>';
-      }
+        var tRange = _chart._tMax - _chart._tMin || 1;
+        var plotW = w - pad.left - pad.right;
+        var cursorTime = _chart._tMin + ((mx - pad.left) / plotW) * tRange;
+        var evtDate = new Date(nearEvent.time * 1000);
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var dateStr = months[evtDate.getUTCMonth()] + ' ' + evtDate.getUTCDate() + ', ' + evtDate.getUTCFullYear();
+        var fmt = function(v) { return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(4)); };
+        var fmtM = function(v) { return v >= 1000000 ? '$' + (v / 1000000).toFixed(2) + 'M' : '$' + Math.round(v).toLocaleString(); };
+        var fmtK = function(v) { return v >= 1000000 ? (v / 1000000).toFixed(2) + 'M' : Math.round(v).toLocaleString(); };
 
-      tooltip.innerHTML = html;
-      tooltip.style.display = 'block';
-      var ttLeft = mx + 16;
-      if (ttLeft + 200 > w) ttLeft = mx - 200;
-      tooltip.style.left = ttLeft + 'px';
-      tooltip.style.top = (navY - 40) + 'px';
+        var html = '<div class="tt-date">' + dateStr + '</div>';
+        if (nearEvent.outflow > 0) {
+          html += '<div class="tt-line" style="color:#ff8c42;font-weight:600">Withdrawn: -' + fmtM(nearEvent.outflow) + '</div>';
+        }
+        html += '<div style="border-top:1px solid rgba(255,140,66,0.2);margin:4px 0 3px"></div>';
+        html += '<div class="tt-line" style="color:rgba(255,255,255,0.7);font-size:10px">Treasury: ' + fmtM(nearEvent.treasury) + '</div>';
+        html += '<div class="tt-line" style="color:rgba(255,255,255,0.7);font-size:10px">Eff. Supply: ' + fmtK(nearEvent.supply) + '</div>';
+        html += '<div class="tt-line" style="color:rgba(255,255,255,0.7);font-size:10px">NAV: ' + fmt(nearEvent.value) + '</div>';
+
+        tooltip.innerHTML = html;
+        tooltip.style.display = 'block';
+        var ttLeft = nearEvent.x + 16;
+        if (ttLeft + 200 > w) ttLeft = nearEvent.x - 200;
+        tooltip.style.left = ttLeft + 'px';
+        tooltip.style.top = (nearEvent.y - 50) + 'px';
+      } else {
+        tooltip.style.display = 'none';
+      }
     }
+  } else {
+    if (_chart.tooltip) _chart.tooltip.style.display = 'none';
   }
 }
 
