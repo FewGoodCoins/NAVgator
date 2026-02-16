@@ -276,7 +276,7 @@
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
       <span class="legend-item"><span class="legend-line" style="background:rgba(100,149,237,0.85)"></span> NAV <span id="leg-strike">…</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:transparent;border-top:1.5px dashed rgba(100,149,237,0.4);height:0"></span> Est. NAV</span>
+      <span class="legend-item"><span class="legend-line" style="background:rgba(100,149,237,0.4)"></span> Est. NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
       <span class="legend-item"><span style="color:#e84057;font-size:13px;line-height:1">↓</span> Withdrawal</span>
@@ -964,6 +964,15 @@ function buildChart(candles, navPerToken) {
 
   _chart.priceData = priceData;
 
+  // Append live spot price so price line extends to current time
+  if (CFG.spot > 0 && priceData.length > 0) {
+    var nowTs = Math.floor(Date.now() / 1000);
+    var lastCandle = priceData[priceData.length - 1];
+    if (nowTs > lastCandle.time) {
+      priceData.push({ time: nowTs, value: CFG.spot });
+    }
+  }
+
   // Cap NAV history with current live NAV
   var navData = _navHistory.slice();
   if (navPerToken > 0 && navData.length > 0) {
@@ -1382,11 +1391,9 @@ function drawChart() {
       ctx.beginPath();
       ctx.strokeStyle = 'rgba(100,149,237,0.4)';
       ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 4]);
       ctx.moveTo(tx(drawT0), ty(estNavAt(drawT0)));
       ctx.lineTo(tx(drawT1), ty(estNavAt(drawT1)));
       ctx.stroke();
-      ctx.setLineDash([]);
     }
   }
 
