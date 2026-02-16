@@ -259,6 +259,10 @@
         <button class="chart-btn" data-tf="1W">1W</button>
         <button class="chart-btn" data-tf="1M">1M</button>
       </div>
+      <div class="chart-btn-group" style="margin-left:12px">
+        <button class="chart-btn active" id="btn-lin" onclick="setChartScale('linear')">LIN</button>
+        <button class="chart-btn" id="btn-log" onclick="setChartScale('log')">LOG</button>
+      </div>
     </div>
     <div id="chart-container" style="position:relative;cursor:crosshair">
       <canvas id="chart-canvas"></canvas>
@@ -821,6 +825,14 @@ var _navPerToken = 0;
 var _navHistory = [];
 var _chartTF = '1D';
 var _allowancePayments = [];
+var _chartScale = 'linear'; // 'linear' or 'log'
+
+function setChartScale(scale) {
+  _chartScale = scale;
+  document.getElementById('btn-lin').classList.toggle('active', scale === 'linear');
+  document.getElementById('btn-log').classList.toggle('active', scale === 'log');
+  drawChart();
+}
 
 // Chart state
 var _chart = {
@@ -1024,13 +1036,26 @@ function drawChart() {
   var vPad = (vMax - vMin) * 0.1 || 0.01;
   vMin -= vPad;
   vMax += vPad;
+  // Ensure vMin > 0 for log scale
+  if (_chartScale === 'log' && vMin <= 0) vMin = 0.001;
   var vRange = vMax - vMin || 1;
 
   var plotW = w - pad.left - pad.right;
   var plotH = h - pad.top - pad.bottom;
 
   var tx = function(t) { return pad.left + ((t - tMin) / tRange) * plotW; };
-  var ty = function(v) { return pad.top + (1 - (v - vMin) / vRange) * plotH; };
+  var ty;
+  if (_chartScale === 'log') {
+    var logMin = Math.log(vMin);
+    var logMax = Math.log(vMax);
+    var logRange = logMax - logMin || 1;
+    ty = function(v) {
+      var logV = Math.log(Math.max(v, vMin));
+      return pad.top + (1 - (logV - logMin) / logRange) * plotH;
+    };
+  } else {
+    ty = function(v) { return pad.top + (1 - (v - vMin) / vRange) * plotH; };
+  }
 
   // Grid lines
   ctx.strokeStyle = 'rgba(34,34,40,0.8)';
@@ -1039,8 +1064,14 @@ function drawChart() {
   for (var i = 0; i <= gridSteps; i++) {
     var gy = pad.top + (i / gridSteps) * plotH;
     ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(w - pad.right, gy); ctx.stroke();
-    // Y labels
-    var gVal = vMax - (i / gridSteps) * vRange;
+    // Y labels — use log-spaced values if in log mode
+    var gVal;
+    if (_chartScale === 'log') {
+      var logVal = logMax - (i / gridSteps) * logRange;
+      gVal = Math.exp(logVal);
+    } else {
+      gVal = vMax - (i / gridSteps) * vRange;
+    }
     ctx.fillStyle = '#555560';
     ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'left';
@@ -1413,8 +1444,16 @@ function drawCrosshair(mx, my) {
   var navVal = null;
   if (navY !== null && _chart._vMin !== undefined) {
     var plotH = h - pad.top - pad.bottom;
-    var vRange = _chart._vMax - _chart._vMin;
-    navVal = _chart._vMax - ((navY - pad.top) / plotH) * vRange;
+    if (_chartScale === 'log') {
+      var logMin = Math.log(_chart._vMin);
+      var logMax = Math.log(_chart._vMax);
+      var logRange = logMax - logMin;
+      var logVal = logMax - ((navY - pad.top) / plotH) * logRange;
+      navVal = Math.exp(logVal);
+    } else {
+      var vRange = _chart._vMax - _chart._vMin;
+      navVal = _chart._vMax - ((navY - pad.top) / plotH) * vRange;
+    }
   }
 
   if (closest && closestDist < 50 && navVal !== null) {
