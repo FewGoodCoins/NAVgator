@@ -853,14 +853,6 @@ async function fetchNAVHistory() {
         return true;
       });
       _navHistory.sort(function(a, b) { return a.time - b.time; });
-
-      // Insert TGE starting point
-      if (CFG.tge && CFG.icoPrice > 0) {
-        var tgeTime = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
-        if (_navHistory.length === 0 || tgeTime < _navHistory[0].time) {
-          _navHistory.unshift({ time: tgeTime, value: CFG.icoPrice, treasury: CFG.raise || 0, supply: CFG.supply || 0 });
-        }
-      }
     }
   } catch (e) { console.error('NAV history fetch error:', e); }
 }
@@ -950,8 +942,12 @@ function buildChart(candles, navPerToken) {
     cleanNav.push(navData[navData.length - 1]);
   }
 
-  // Store event markers — each NAV change point (excluding last live point) is a treasury event
-  _chart.navEvents = cleanNav.filter(function(p) { return p.treasury > 0; });
+  // Store event markers — skip first (TGE) and last (live) point, only outflow events get markers
+  _chart.navEvents = cleanNav.filter(function(p, idx) {
+    if (idx === 0) return false; // skip TGE
+    if (idx === cleanNav.length - 1) return false; // skip live
+    return p.treasury > 0;
+  });
 
   _chart.navData = cleanNav;
   _chart.viewStart = 0;
