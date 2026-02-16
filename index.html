@@ -272,6 +272,7 @@
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
       <span class="legend-item"><span class="legend-line" style="background:rgba(255,255,255,0.7)"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-line" style="background:transparent;border-top:1.5px dashed rgba(255,255,255,0.35);height:0"></span> Est. NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
       <span class="legend-item"><span style="color:#e84057;font-size:13px;line-height:1">↓</span> Withdrawal</span>
@@ -958,42 +959,60 @@ function buildChart(candles, navPerToken) {
     navData.push({ time: nowTs, value: navPerToken, treasury: CFG.treasuryUSDC, supply: CFG.effectiveSupply || CFG.supply });
   }
 
-  // Deduplicate NAV to only keep points where value changes (clean staircase)
-  var cleanNav = [];
+  // Split into estimated (pre-accurate) and accurate data
+  // Accurate data starts Feb 15 2026 when cron snapshots became reliable
+  var accurateCutoff = Math.floor(new Date('2026-02-15T00:00:00Z').getTime() / 1000);
+  var estimatedNav = []; // TGE + first accurate point (diagonal)
+  var accurateNav = []; // real cron snapshots (staircase)
+
   for (var i = 0; i < navData.length; i++) {
-    if (i === 0) { cleanNav.push(navData[i]); continue; }
-    // Keep if value changed from previous
-    if (Math.abs(navData[i].value - navData[i - 1].value) > 0.000001) {
-      // Add the last point before the change (end of flat line)
-      if (cleanNav[cleanNav.length - 1].time !== navData[i - 1].time) {
-        cleanNav.push(navData[i - 1]);
+    if (navData[i].time < accurateCutoff) {
+      // Only keep the very first point (TGE) from pre-accurate data
+      if (estimatedNav.length === 0) {
+        estimatedNav.push(navData[i]);
       }
-      cleanNav.push(navData[i]);
+    } else {
+      accurateNav.push(navData[i]);
+    }
+  }
+  // Connect diagonal: TGE → first accurate point
+  if (estimatedNav.length > 0 && accurateNav.length > 0) {
+    estimatedNav.push(accurateNav[0]); // end of diagonal = start of accurate
+  }
+
+  // Deduplicate accurate NAV to only keep points where value changes (clean staircase)
+  var cleanNav = [];
+  for (var i = 0; i < accurateNav.length; i++) {
+    if (i === 0) { cleanNav.push(accurateNav[i]); continue; }
+    if (Math.abs(accurateNav[i].value - accurateNav[i - 1].value) > 0.000001) {
+      if (cleanNav[cleanNav.length - 1].time !== accurateNav[i - 1].time) {
+        cleanNav.push(accurateNav[i - 1]);
+      }
+      cleanNav.push(accurateNav[i]);
     }
   }
   // Always include the last point
-  if (navData.length > 0 && (cleanNav.length === 0 || cleanNav[cleanNav.length - 1].time !== navData[navData.length - 1].time)) {
-    cleanNav.push(navData[navData.length - 1]);
+  if (accurateNav.length > 0 && (cleanNav.length === 0 || cleanNav[cleanNav.length - 1].time !== accurateNav[accurateNav.length - 1].time)) {
+    cleanNav.push(accurateNav[accurateNav.length - 1]);
   }
 
-  // Store event markers from raw nav history (not cleanNav which has staircase helpers)
-  // Skip first (TGE) and last (live), deduplicate same-day events keeping the last one
+  // Store event markers — only from accurate data
   var rawEvents = [];
-  for (var i = 1; i < navData.length - 1; i++) {
-    var p = navData[i];
+  var todayDayKey = Math.floor(Date.now() / 1000 / 86400);
+  for (var i = 1; i < accurateNav.length - 1; i++) {
+    var p = accurateNav[i];
+    var pDayKey = Math.floor(p.time / 86400);
+    if (pDayKey === todayDayKey) continue;
     if (p.treasury > 0) {
-      // Calculate outflow as drop from previous point's treasury
-      var prevTreasury = navData[i - 1].treasury || 0;
+      var prevTreasury = accurateNav[i - 1].treasury || 0;
       var outflow = prevTreasury - p.treasury;
-      if (outflow > 0) {
-        rawEvents.push({
-          time: p.time, value: p.value, treasury: p.treasury, supply: p.supply,
-          outflow: outflow
-        });
-      }
+      rawEvents.push({
+        time: p.time, value: p.value, treasury: p.treasury, supply: p.supply,
+        outflow: outflow > 0 ? outflow : 0
+      });
     }
   }
-  // Deduplicate: max one event per week — combine outflows within 7-day windows
+  // Deduplicate: max one event per week
   var eventsByWeek = {};
   for (var i = 0; i < rawEvents.length; i++) {
     var weekKey = Math.floor(rawEvents[i].time / (86400 * 7));
@@ -1002,7 +1021,7 @@ function buildChart(candles, navPerToken) {
       eventsByWeek[weekKey].treasury = rawEvents[i].treasury;
       eventsByWeek[weekKey].value = rawEvents[i].value;
       eventsByWeek[weekKey].supply = rawEvents[i].supply;
-      eventsByWeek[weekKey].time = rawEvents[i].time; // use latest time in the week
+      eventsByWeek[weekKey].time = rawEvents[i].time;
     } else {
       eventsByWeek[weekKey] = {
         time: rawEvents[i].time, value: rawEvents[i].value,
@@ -1014,6 +1033,7 @@ function buildChart(candles, navPerToken) {
   _chart.navEvents = Object.values(eventsByWeek);
   _chart.navEvents.sort(function(a, b) { return a.time - b.time; });
 
+  _chart.estimatedNav = estimatedNav;
   _chart.navData = cleanNav;
   _chart.viewStart = 0;
   _chart.viewEnd = 1;
@@ -1182,6 +1202,7 @@ function drawChart() {
 
   var pricePts = toPixels(_chart.priceData);
   var navPts = toPixelsNav(_chart.navData);
+  var estPts = toPixels(_chart.estimatedNav || []);
 
   // Draw fill between price and NAV lines (gradient: strong at price, fading toward NAV)
   if (pricePts.length > 1 && navPts.length > 1) {
@@ -1277,17 +1298,31 @@ function drawChart() {
     ctx.fill();
   }
 
-  // Draw NAV line (solid white)
-  if (navPts.length > 1) {
+  // Draw estimated NAV diagonal (dashed white line from TGE to first accurate point)
+  if (estPts.length >= 2) {
     ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.moveTo(estPts[0].x, estPts[0].y);
+    ctx.lineTo(estPts[estPts.length - 1].x, estPts[estPts.length - 1].y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw NAV line (horizontal segments only — vertical transitions handled by event markers)
+  if (navPts.length > 1) {
     ctx.strokeStyle = 'rgba(255,255,255,0.7)';
     ctx.lineWidth = 1.5;
-    ctx.moveTo(navPts[0].x, navPts[0].y);
-    for (var i = 1; i < navPts.length; i++) {
-      ctx.lineTo(navPts[i].x, navPts[i - 1].y);
-      ctx.lineTo(navPts[i].x, navPts[i].y);
+    for (var i = 0; i < navPts.length; i++) {
+      var startX = navPts[i].x;
+      var endX = (i < navPts.length - 1) ? navPts[i + 1].x : (pad.left + plotW);
+      var y = navPts[i].y;
+      ctx.beginPath();
+      ctx.moveTo(startX, y);
+      ctx.lineTo(endX, y);
+      ctx.stroke();
     }
-    ctx.stroke();
   }
 
   // TGE circle
@@ -1310,38 +1345,35 @@ function drawChart() {
     }
   }
 
-  // Treasury event markers — red dash down for NAV drop, green dash up for NAV increase
+  // Treasury event markers — colored vertical connectors between NAV levels
   if (_chart.navEvents && _chart.navEvents.length > 0) {
     var eventPts = [];
+    // Build a lookup of NAV values from navPts to find previous level
     var prevNav = CFG.icoPrice || 0;
     for (var i = 0; i < _chart.navEvents.length; i++) {
       var evt = _chart.navEvents[i];
       var navDropped = evt.value < prevNav;
       if (evt.time >= tMin && evt.time <= tMax) {
         var ex = tx(evt.time);
-        var ey = ty(evt.value);
+        var eyOld = ty(prevNav);
+        var eyNew = ty(evt.value);
         var color = navDropped ? '#e84057' : '#00e5a0';
 
-        // Short dash: down for red, up for green
+        // Vertical line connecting old NAV level to new NAV level
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
-        if (navDropped) {
-          ctx.moveTo(ex, ey + 2);
-          ctx.lineTo(ex, ey + 14);
-        } else {
-          ctx.moveTo(ex, ey - 2);
-          ctx.lineTo(ex, ey - 14);
-        }
+        ctx.moveTo(ex, eyOld);
+        ctx.lineTo(ex, eyNew);
         ctx.stroke();
 
-        // Small dot at NAV line
+        // Small dot at new NAV level
         ctx.beginPath();
-        ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+        ctx.arc(ex, eyNew, 3, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
 
-        eventPts.push({ x: ex, y: ey, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow, color: color });
+        eventPts.push({ x: ex, y: eyNew, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow, color: color });
       }
       prevNav = evt.value;
     }
