@@ -1074,15 +1074,37 @@ function drawChart() {
   var pricePts = toPixels(_chart.priceData);
   var navPts = toPixels(_chart.navData);
 
-  // Draw fill between price and NAV lines (green above NAV, red below)
+  // Draw fill between price and NAV lines (gradient: strong at price, fading toward NAV)
   if (pricePts.length > 1 && navPts.length > 1) {
     for (var i = 0; i < pricePts.length - 1; i++) {
       var px1 = pricePts[i].x, px2 = pricePts[i + 1].x;
       var py1 = pricePts[i].y, py2 = pricePts[i + 1].y;
-      // Interpolate NAV at these x positions (step function)
       var ny1 = interpolateNav(navPts, px1);
       var ny2 = interpolateNav(navPts, px2);
       if (ny1 === null || ny2 === null) continue;
+
+      // Determine if price is above or below NAV
+      var avgPrice = (pricePts[i].value + pricePts[i + 1].value) / 2;
+      var avgNavVal = 0;
+      for (var ni = 0; ni < _chart.navData.length - 1; ni++) {
+        var nxL = tx(_chart.navData[ni].time);
+        var nxR = tx(_chart.navData[ni + 1].time);
+        if ((px1 + px2) / 2 >= nxL && (px1 + px2) / 2 <= nxR) { avgNavVal = _chart.navData[ni].value; break; }
+      }
+      if (avgNavVal === 0) avgNavVal = _chart.navData[_chart.navData.length - 1].value;
+      var isAbove = avgPrice >= avgNavVal;
+
+      // Gradient from price line to NAV line
+      var avgPriceY = (py1 + py2) / 2;
+      var avgNavY = (ny1 + ny2) / 2;
+      var grad = ctx.createLinearGradient(0, avgPriceY, 0, avgNavY);
+      if (isAbove) {
+        grad.addColorStop(0, 'rgba(0,229,160,0.35)');
+        grad.addColorStop(1, 'rgba(0,229,160,0.0)');
+      } else {
+        grad.addColorStop(0, 'rgba(232,64,87,0.35)');
+        grad.addColorStop(1, 'rgba(232,64,87,0.0)');
+      }
 
       ctx.beginPath();
       ctx.moveTo(px1, py1);
@@ -1090,13 +1112,7 @@ function drawChart() {
       ctx.lineTo(px2, ny2);
       ctx.lineTo(px1, ny1);
       ctx.closePath();
-
-      // Green if price above NAV, red if below
-      var avgPrice = (pricePts[i].value + pricePts[i + 1].value) / 2;
-      var avgNav = interpolateNav(_chart.navData.map(function(d) { return { x: tx(d.time), y: d.value }; }), (px1 + px2) / 2);
-      if (avgNav === null) avgNav = _navPerToken;
-      var isAbove = avgPrice >= avgNav;
-      ctx.fillStyle = isAbove ? 'rgba(0,229,160,0.12)' : 'rgba(232,64,87,0.12)';
+      ctx.fillStyle = grad;
       ctx.fill();
     }
   }
