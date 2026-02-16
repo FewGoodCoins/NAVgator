@@ -271,9 +271,11 @@
     </div>
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:rgba(255,255,255,0.6);background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.6) 0 6px,transparent 6px 10px);background-color:transparent"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-line" style="background:rgba(255,255,255,0.7)"></span> NAV <span id="leg-strike">…</span></span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
+      <span class="legend-item"><span style="color:#e84057;font-size:13px;line-height:1">↓</span> Withdrawal</span>
+      <span class="legend-item"><span style="color:#00e5a0;font-size:13px;line-height:1">↑</span> NAV increase</span>
     </div>
     <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
@@ -806,7 +808,7 @@ async function fetchFromAPI() {
     if (data.futAmmTokens >= 0) CFG.futAmmTokens = data.futAmmTokens;
     if (data.metAmmTokens >= 0) CFG.metAmmTokens = data.metAmmTokens;
     if (data.meteoraPoolUSDC >= 0) CFG.metAmmUSDC = data.meteoraPoolUSDC;
-    CFG.futAmmUSDC = 0; // TODO: add to API response
+    if (data.futAmmUSDC >= 0) CFG.futAmmUSDC = data.futAmmUSDC;
     console.log('API data:', data);
     return true;
   } catch (e) { console.warn('API fetch failed:', e.message); return false; }
@@ -983,26 +985,33 @@ function buildChart(candles, navPerToken) {
       // Calculate outflow as drop from previous point's treasury
       var prevTreasury = navData[i - 1].treasury || 0;
       var outflow = prevTreasury - p.treasury;
-      rawEvents.push({
-        time: p.time, value: p.value, treasury: p.treasury, supply: p.supply,
-        outflow: outflow > 0 ? outflow : 0
-      });
+      if (outflow > 0) {
+        rawEvents.push({
+          time: p.time, value: p.value, treasury: p.treasury, supply: p.supply,
+          outflow: outflow
+        });
+      }
     }
   }
-  // Deduplicate: if two events on same day, keep only the last one (with combined outflow)
-  var eventsByDay = {};
+  // Deduplicate: max one event per week — combine outflows within 7-day windows
+  var eventsByWeek = {};
   for (var i = 0; i < rawEvents.length; i++) {
-    var dayKey = Math.floor(rawEvents[i].time / 86400);
-    if (eventsByDay[dayKey]) {
-      eventsByDay[dayKey].outflow += rawEvents[i].outflow;
-      eventsByDay[dayKey].treasury = rawEvents[i].treasury;
-      eventsByDay[dayKey].value = rawEvents[i].value;
-      eventsByDay[dayKey].supply = rawEvents[i].supply;
+    var weekKey = Math.floor(rawEvents[i].time / (86400 * 7));
+    if (eventsByWeek[weekKey]) {
+      eventsByWeek[weekKey].outflow += rawEvents[i].outflow;
+      eventsByWeek[weekKey].treasury = rawEvents[i].treasury;
+      eventsByWeek[weekKey].value = rawEvents[i].value;
+      eventsByWeek[weekKey].supply = rawEvents[i].supply;
+      eventsByWeek[weekKey].time = rawEvents[i].time; // use latest time in the week
     } else {
-      eventsByDay[dayKey] = rawEvents[i];
+      eventsByWeek[weekKey] = {
+        time: rawEvents[i].time, value: rawEvents[i].value,
+        treasury: rawEvents[i].treasury, supply: rawEvents[i].supply,
+        outflow: rawEvents[i].outflow
+      };
     }
   }
-  _chart.navEvents = Object.values(eventsByDay);
+  _chart.navEvents = Object.values(eventsByWeek);
   _chart.navEvents.sort(function(a, b) { return a.time - b.time; });
 
   _chart.navData = cleanNav;
@@ -1268,19 +1277,17 @@ function drawChart() {
     ctx.fill();
   }
 
-  // Draw NAV line (white dashed)
+  // Draw NAV line (solid white)
   if (navPts.length > 1) {
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
     ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 4]);
     ctx.moveTo(navPts[0].x, navPts[0].y);
     for (var i = 1; i < navPts.length; i++) {
       ctx.lineTo(navPts[i].x, navPts[i - 1].y);
       ctx.lineTo(navPts[i].x, navPts[i].y);
     }
     ctx.stroke();
-    ctx.setLineDash([]);
   }
 
   // TGE circle
@@ -1303,39 +1310,40 @@ function drawChart() {
     }
   }
 
-  // Treasury event markers (short dashes at each NAV change)
+  // Treasury event markers — red dash down for NAV drop, green dash up for NAV increase
   if (_chart.navEvents && _chart.navEvents.length > 0) {
     var eventPts = [];
+    var prevNav = CFG.icoPrice || 0;
     for (var i = 0; i < _chart.navEvents.length; i++) {
       var evt = _chart.navEvents[i];
+      var navDropped = evt.value < prevNav;
       if (evt.time >= tMin && evt.time <= tMax) {
         var ex = tx(evt.time);
         var ey = ty(evt.value);
+        var color = navDropped ? '#e84057' : '#00e5a0';
 
-        // Short dash above and below diamond (not full height)
+        // Short dash: down for red, up for green
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255,140,66,0.35)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
-        ctx.moveTo(ex, ey - 18);
-        ctx.lineTo(ex, ey - 6);
-        ctx.moveTo(ex, ey + 6);
-        ctx.lineTo(ex, ey + 18);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        if (navDropped) {
+          ctx.moveTo(ex, ey + 2);
+          ctx.lineTo(ex, ey + 14);
+        } else {
+          ctx.moveTo(ex, ey - 2);
+          ctx.lineTo(ex, ey - 14);
+        }
         ctx.stroke();
-        ctx.setLineDash([]);
 
-        // Small diamond marker at NAV line
+        // Small dot at NAV line
         ctx.beginPath();
-        ctx.moveTo(ex, ey - 4);
-        ctx.lineTo(ex + 4, ey);
-        ctx.lineTo(ex, ey + 4);
-        ctx.lineTo(ex - 4, ey);
-        ctx.closePath();
-        ctx.fillStyle = '#ff8c42';
+        ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
         ctx.fill();
 
-        eventPts.push({ x: ex, y: ey, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow });
+        eventPts.push({ x: ex, y: ey, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow, color: color });
       }
+      prevNav = evt.value;
     }
     _chart._eventPts = eventPts;
   }
@@ -1409,14 +1417,17 @@ function attachChartEvents(container) {
     _chart.dragRange = _chart.viewEnd - _chart.viewStart;
     canvas.style.cursor = 'grabbing';
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
+    e.preventDefault();
   });
 
   window.addEventListener('mousemove', function(e) {
     if (!_chart.isDragging) return;
+    var rect = canvas.getBoundingClientRect();
+    var canvasW = rect.width;
     var dx = e.clientX - _chart.dragStartX;
-    var shift = -(dx / _chart.width) * _chart.dragRange;
+    var shift = -(dx / canvasW) * _chart.dragRange;
     var newStart = _chart.dragStartViewStart + shift;
-    // Clamp: allow panning to edges but not past them
+    // Clamp
     if (newStart < 0) newStart = 0;
     if (newStart + _chart.dragRange > 1) newStart = 1 - _chart.dragRange;
     _chart.viewStart = newStart;
