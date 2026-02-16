@@ -1074,6 +1074,45 @@ function drawChart() {
   var pricePts = toPixels(_chart.priceData);
   var navPts = toPixels(_chart.navData);
 
+  // Draw fill between price and NAV lines (green above NAV, red below)
+  if (pricePts.length > 1 && navPts.length > 1) {
+    for (var i = 0; i < pricePts.length - 1; i++) {
+      var px1 = pricePts[i].x, px2 = pricePts[i + 1].x;
+      var py1 = pricePts[i].y, py2 = pricePts[i + 1].y;
+      // Interpolate NAV at these x positions (step function)
+      var ny1 = interpolateNav(navPts, px1);
+      var ny2 = interpolateNav(navPts, px2);
+      if (ny1 === null || ny2 === null) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(px1, py1);
+      ctx.lineTo(px2, py2);
+      ctx.lineTo(px2, ny2);
+      ctx.lineTo(px1, ny1);
+      ctx.closePath();
+
+      // Green if price above NAV, red if below
+      var avgPrice = (pricePts[i].value + pricePts[i + 1].value) / 2;
+      var avgNav = interpolateNav(_chart.navData.map(function(d) { return { x: tx(d.time), y: d.value }; }), (px1 + px2) / 2);
+      if (avgNav === null) avgNav = _navPerToken;
+      var isAbove = avgPrice >= avgNav;
+      ctx.fillStyle = isAbove ? 'rgba(0,229,160,0.12)' : 'rgba(232,64,87,0.12)';
+      ctx.fill();
+    }
+  }
+
+  // Draw price line (green)
+  if (pricePts.length > 1) {
+    ctx.beginPath();
+    ctx.strokeStyle = '#00e5a0';
+    ctx.lineWidth = 2;
+    ctx.moveTo(pricePts[0].x, pricePts[0].y);
+    for (var i = 1; i < pricePts.length; i++) {
+      ctx.lineTo(pricePts[i].x, pricePts[i].y);
+    }
+    ctx.stroke();
+  }
+
   // Draw fill between NAV and bottom of chart (subtle)
   if (navPts.length > 1) {
     var bottomY = pad.top + plotH;
