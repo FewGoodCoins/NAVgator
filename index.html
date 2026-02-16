@@ -264,6 +264,9 @@
         <button class="chart-btn active" id="btn-lin" onclick="setChartScale('linear')">LIN</button>
         <button class="chart-btn" id="btn-log" onclick="setChartScale('log')">LOG</button>
       </div>
+      <div class="chart-btn-group" style="margin-left:12px">
+        <button class="chart-btn" id="btn-nav-focus" onclick="toggleNavFocus()">NAV</button>
+      </div>
     </div>
     <div id="chart-container" style="position:relative;cursor:crosshair">
       <canvas id="chart-canvas"></canvas>
@@ -272,8 +275,8 @@
     </div>
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:rgba(255,255,255,0.7)"></span> NAV <span id="leg-strike">…</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:transparent;border-top:1.5px dashed rgba(255,255,255,0.35);height:0"></span> Est. NAV</span>
+      <span class="legend-item"><span class="legend-line" style="background:rgba(100,149,237,0.85)"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-line" style="background:transparent;border-top:1.5px dashed rgba(100,149,237,0.4);height:0"></span> Est. NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
       <span class="legend-item"><span style="color:#e84057;font-size:13px;line-height:1">↓</span> Withdrawal</span>
@@ -832,11 +835,18 @@ var _chartTF = '1D';
 var _allowancePayments = [];
 var _chartScale = 'linear'; // 'linear' or 'log'
 var _premFmt = 'pct'; // 'pct' or 'x'
+var _navFocus = false;
 
 function setChartScale(scale) {
   _chartScale = scale;
   document.getElementById('btn-lin').classList.toggle('active', scale === 'linear');
   document.getElementById('btn-log').classList.toggle('active', scale === 'log');
+  drawChart();
+}
+
+function toggleNavFocus() {
+  _navFocus = !_navFocus;
+  document.getElementById('btn-nav-focus').classList.toggle('active', _navFocus);
   drawChart();
 }
 
@@ -1108,6 +1118,41 @@ function drawChart() {
 
   var vMin = Math.min.apply(null, allVals);
   var vMax = Math.max.apply(null, allVals);
+
+  // NAV Focus mode: constrain Y range around NAV values
+  if (_navFocus) {
+    var navVals = [];
+    // Collect visible accurate NAV values
+    for (var ni = 0; ni < _chart.navData.length; ni++) {
+      if (_chart.navData[ni].time >= tMin && _chart.navData[ni].time <= tMax) {
+        navVals.push(_chart.navData[ni].value);
+      }
+    }
+    // Include estimated NAV at visible range boundaries
+    var estData = _chart.estimatedNav || [];
+    if (estData.length >= 2 && estData[0].time < tMax && estData[estData.length - 1].time > tMin) {
+      var eT0 = estData[0].time, eV0 = estData[0].value;
+      var eT1 = estData[estData.length - 1].time, eV1 = estData[estData.length - 1].value;
+      var clipT0 = Math.max(eT0, tMin), clipT1 = Math.min(eT1, tMax);
+      navVals.push(eV0 + (clipT0 - eT0) / (eT1 - eT0) * (eV1 - eV0));
+      navVals.push(eV0 + (clipT1 - eT0) / (eT1 - eT0) * (eV1 - eV0));
+    }
+    // Also include last NAV before visible range
+    for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
+      if (_chart.navData[ni].time <= tMin) { navVals.push(_chart.navData[ni].value); break; }
+    }
+    if (navVals.length > 0) {
+      var navMin = Math.min.apply(null, navVals);
+      var navMax = Math.max.apply(null, navVals);
+      var navMid = (navMin + navMax) / 2;
+      var navSpread = (navMax - navMin) || navMid * 0.1;
+      // Show 3x the NAV spread centered on NAV midpoint
+      vMin = navMid - navSpread * 1.5;
+      vMax = navMid + navSpread * 1.5;
+      if (vMin < 0) vMin = 0;
+    }
+  }
+
   var vPad = (vMax - vMin) * 0.1 || 0.01;
   vMin -= vPad;
   vMax += vPad;
@@ -1192,11 +1237,13 @@ function drawChart() {
     if (lastBefore) {
       pts.unshift({ x: tx(tMin), y: ty(lastBefore.value), value: lastBefore.value, time: tMin });
     }
-    // Extend the last visible point to the right edge
-    if (pts.length > 0) {
+    // Extend the last visible point to the last price data point (not chart edge)
+    if (pts.length > 0 && _chart.priceData && _chart.priceData.length > 0) {
+      var lastPriceTime = _chart.priceData[_chart.priceData.length - 1].time;
       var last = pts[pts.length - 1];
-      if (last.time < tMax) {
-        pts.push({ x: tx(tMax), y: last.y, value: last.value, time: tMax });
+      var extendTo = Math.min(tMax, lastPriceTime);
+      if (last.time < extendTo) {
+        pts.push({ x: tx(extendTo), y: last.y, value: last.value, time: extendTo });
       }
     }
     return pts;
@@ -1313,33 +1360,67 @@ function drawChart() {
     ctx.lineTo(navPts[navPts.length - 1].x, bottomY);
     ctx.lineTo(navPts[0].x, bottomY);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillStyle = 'rgba(100,149,237,0.04)';
     ctx.fill();
   }
 
   // Draw estimated NAV diagonal (dashed white line from TGE to first accurate point)
-  if (estPts.length >= 2) {
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 4]);
-    ctx.moveTo(estPts[0].x, estPts[0].y);
-    ctx.lineTo(estPts[estPts.length - 1].x, estPts[estPts.length - 1].y);
-    ctx.stroke();
-    ctx.setLineDash([]);
+  // Clip to visible range so it shows when zoomed in
+  var estData = _chart.estimatedNav || [];
+  if (estData.length >= 2) {
+    var eT0 = estData[0].time, eV0 = estData[0].value;
+    var eT1 = estData[estData.length - 1].time, eV1 = estData[estData.length - 1].value;
+    // Only draw if the estimated range overlaps the visible range
+    if (eT0 < tMax && eT1 > tMin) {
+      // Interpolate to get NAV value at any time in the estimated range
+      function estNavAt(t) {
+        var p = (t - eT0) / (eT1 - eT0);
+        return eV0 + p * (eV1 - eV0);
+      }
+      var drawT0 = Math.max(eT0, tMin);
+      var drawT1 = Math.min(eT1, tMax);
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(100,149,237,0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.moveTo(tx(drawT0), ty(estNavAt(drawT0)));
+      ctx.lineTo(tx(drawT1), ty(estNavAt(drawT1)));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   }
 
-  // Draw NAV line (horizontal segments only — vertical transitions handled by event markers)
+  // Draw NAV line (continuous staircase — horizontal steps with vertical transitions)
   if (navPts.length > 1) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    var lastPriceX = (pricePts.length > 0) ? pricePts[pricePts.length - 1].x : (pad.left + plotW);
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(100,149,237,0.85)';
     ctx.lineWidth = 1.5;
-    for (var i = 0; i < navPts.length; i++) {
-      var startX = navPts[i].x;
-      var endX = (i < navPts.length - 1) ? navPts[i + 1].x : (pad.left + plotW);
-      var y = navPts[i].y;
+    ctx.moveTo(navPts[0].x, navPts[0].y);
+    for (var i = 1; i < navPts.length; i++) {
+      // Horizontal to next point's x at current y, then vertical to new y
+      ctx.lineTo(navPts[i].x, navPts[i - 1].y);
+      ctx.lineTo(navPts[i].x, navPts[i].y);
+    }
+    // Extend last segment to last price candle
+    var lastNav = navPts[navPts.length - 1];
+    if (lastNav.x < lastPriceX) {
+      ctx.lineTo(lastPriceX, lastNav.y);
+    }
+    ctx.stroke();
+  }
+
+  // White circle at the start of accurate NAV data
+  if (_chart.navData && _chart.navData.length > 0) {
+    var firstAccurate = _chart.navData[0];
+    if (firstAccurate.time >= tMin && firstAccurate.time <= tMax) {
+      var acX = tx(firstAccurate.time), acY = ty(firstAccurate.value);
       ctx.beginPath();
-      ctx.moveTo(startX, y);
-      ctx.lineTo(endX, y);
+      ctx.arc(acX, acY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(100,149,237,0.85)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
   }
