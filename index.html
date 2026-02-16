@@ -249,6 +249,7 @@
 
   <div class="cards" id="cards"></div>
   <div class="params" id="params"></div>
+  <div class="params" id="treasury-flow" style="margin-top:8px"></div>
 
   <div class="chart-section">
     <div class="chart-title" id="chart-label"></div>
@@ -810,6 +811,7 @@ async function fetchFromAPI() {
     if (data.metAmmTokens >= 0) CFG.metAmmTokens = data.metAmmTokens;
     if (data.meteoraPoolUSDC >= 0) CFG.metAmmUSDC = data.meteoraPoolUSDC;
     if (data.futAmmUSDC >= 0) CFG.futAmmUSDC = data.futAmmUSDC;
+    if (data.daoUSDC >= 0) CFG.daoUSDC = data.daoUSDC;
     console.log('API data:', data);
     return true;
   } catch (e) { console.warn('API fetch failed:', e.message); return false; }
@@ -1674,6 +1676,12 @@ function renderUI(isLive) {
     '<span>Spot now <span class="spot">' + fmt$(CFG.spot) + '</span></span>' +
     '<span>ATH <b>' + fmt$(CFG.ath) + '</b></span>' +
     '<span>Burn <b>' + fmtBurn(CFG.monthlyBurn) + '/mo</b></span>';
+
+  var daoBalance = CFG.daoUSDC || 0;
+  document.getElementById('treasury-flow').innerHTML =
+    '<span>Raised <b style="color:var(--green)">' + fmtM(CFG.raise) + '</b></span>' +
+    '<span>DAO Balance <b style="color:var(--white)">' + fmtM(daoBalance) + '</b></span>' +
+    '<span>Total Treasury <b style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</b></span>';
 
   document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price vs NAV';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
