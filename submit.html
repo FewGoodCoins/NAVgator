@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAVgator · Submit Token</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@300;400;500&display=swap');
+  :root {
+    --bg: #0c0c10; --bg2: #141418; --bg3: #1a1a20;
+    --white: #e8e6e3; --muted: #a09c97; --dim: #555560;
+    --green: #00e5a0; --red: #e84057; --orange: #ff8c42;
+    --card-bg: rgba(255,255,255,0.03); --card-border: rgba(255,255,255,0.06);
+    --border: rgba(255,255,255,0.06); --border2: rgba(255,255,255,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--white); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+  }
+  .header-logo { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--white); text-decoration: none; }
+  .header-logo span { color: var(--green); }
+  .header-back { color: var(--dim); text-decoration: none; font-size: 12px; font-family: 'Inter', sans-serif; }
+  .header-back:hover { color: var(--white); }
+
+  .container { max-width: 620px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  h1 { font-family: 'DM Serif Display', serif; font-size: 28px; margin-bottom: 8px; }
+  .subtitle { color: var(--dim); font-size: 13px; margin-bottom: 32px; line-height: 1.5; }
+
+  .section-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--dim); margin: 28px 0 12px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title:first-of-type { margin-top: 0; }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; font-size: 12px; color: var(--muted);
+    margin-bottom: 5px; font-weight: 500;
+  }
+  .field label .req { color: var(--red); margin-left: 2px; }
+  .field label .hint { color: var(--dim); font-weight: 400; font-size: 11px; margin-left: 4px; }
+
+  .field input, .field textarea {
+    width: 100%; background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 12px; color: var(--white);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--green); }
+  .field input::placeholder, .field textarea::placeholder { color: var(--dim); }
+  .field textarea { resize: vertical; min-height: 60px; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  .submit-btn {
+    width: 100%; padding: 14px; margin-top: 32px;
+    background: var(--green); color: #0c0c10; border: none; border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .submit-btn:hover { opacity: 0.9; }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .status-msg {
+    margin-top: 16px; padding: 12px 16px; border-radius: 8px;
+    font-size: 13px; display: none;
+  }
+  .status-msg.success { display: block; background: rgba(0,229,160,0.1); color: var(--green); border: 1px solid rgba(0,229,160,0.2); }
+  .status-msg.error { display: block; background: rgba(232,64,87,0.1); color: var(--red); border: 1px solid rgba(232,64,87,0.2); }
+
+  .info-box {
+    background: rgba(255,140,66,0.06); border: 1px solid rgba(255,140,66,0.15);
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;
+    font-size: 12px; color: var(--orange); line-height: 1.5;
+  }
+
+  @media (max-width: 500px) {
+    .row, .row3 { grid-template-columns: 1fr; }
+    .container { padding: 24px 16px 60px; }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="index.html" class="header-logo">NAV<span>gator</span></a>
+  <a href="index.html" class="header-back">&larr; Back to Dashboard</a>
+</div>
+
+<div class="container">
+  <h1>Submit a Token</h1>
+  <p class="subtitle">List your MetaDAO token on NAVgator. Provide the on-chain addresses and treasury details below. Submissions are reviewed before going live.</p>
+
+  <div class="info-box">
+    All wallet addresses must be Solana addresses. For Meteora pool vaults, find the token account and USDC account on Solscan under the pool address.
+  </div>
+
+  <div id="form-content">
+    <div class="section-title">Token Info</div>
+
+    <div class="row">
+      <div class="field">
+        <label>Ticker<span class="req">*</span></label>
+        <input type="text" id="f-ticker" placeholder="e.g. SOLO" maxlength="10">
+      </div>
+      <div class="field">
+        <label>Name<span class="req">*</span></label>
+        <input type="text" id="f-name" placeholder="e.g. Solomon">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Token Mint Address (CA)<span class="req">*</span></label>
+      <input type="text" id="f-mint" placeholder="SoLo9oxzLDpcq1dpqAgMwgce5WqkRDtNXK7EPnbmeta">
+    </div>
+
+    <div class="field">
+      <label>Logo URL<span class="hint">(optional — direct image link)</span></label>
+      <input type="text" id="f-logo" placeholder="https://example.com/logo.png">
+    </div>
+
+    <div class="section-title">Treasury & Wallets</div>
+
+    <div class="field">
+      <label>DAO Treasury Wallet<span class="req">*</span><span class="hint">(holds USDC)</span></label>
+      <input type="text" id="f-dao" placeholder="Solana address">
+    </div>
+
+    <div class="field">
+      <label>Futarchy AMM Wallet<span class="req">*</span><span class="hint">(governance AMM vault)</span></label>
+      <input type="text" id="f-futamm" placeholder="Solana address">
+    </div>
+
+    <div class="field">
+      <label>Meteora Token Vault<span class="req">*</span><span class="hint">(token account holding project tokens in Meteora pool)</span></label>
+      <input type="text" id="f-metamm" placeholder="Solana address — find on Solscan under pool">
+    </div>
+
+    <div class="field">
+      <label>Meteora USDC Vault<span class="req">*</span><span class="hint">(USDC account paired with token vault)</span></label>
+      <input type="text" id="f-metammUsdc" placeholder="Solana address">
+    </div>
+
+    <div class="field">
+      <label>Meteora Pool Address<span class="hint">(optional — the pool itself)</span></label>
+      <input type="text" id="f-pubmetpool" placeholder="Solana address">
+    </div>
+
+    <div class="field">
+      <label>Team Lock Wallet<span class="hint">(optional — performance-locked tokens)</span></label>
+      <input type="text" id="f-teamlocked" placeholder="Solana address">
+    </div>
+
+    <div class="field">
+      <label>Buyback Wallet<span class="hint">(optional)</span></label>
+      <input type="text" id="f-buyback" placeholder="Solana address">
+    </div>
+
+    <div class="section-title">ICO & Economics</div>
+
+    <div class="row3">
+      <div class="field">
+        <label>Raise Amount (USD)<span class="req">*</span></label>
+        <input type="number" id="f-raise" placeholder="8000000">
+      </div>
+      <div class="field">
+        <label>ICO Price (USD)<span class="req">*</span></label>
+        <input type="number" id="f-icoprice" step="0.01" placeholder="0.80">
+      </div>
+      <div class="field">
+        <label>ICO Supply<span class="req">*</span><span class="hint">(public sale)</span></label>
+        <input type="number" id="f-supply" placeholder="10000000">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>TGE Date<span class="req">*</span></label>
+        <input type="date" id="f-tge">
+      </div>
+      <div class="field">
+        <label>Monthly Allowance (USD)<span class="req">*</span></label>
+        <input type="number" id="f-allowance" placeholder="100000">
+      </div>
+    </div>
+
+    <div class="section-title">Contact</div>
+
+    <div class="field">
+      <label>Contact<span class="req">*</span><span class="hint">(Telegram, Twitter, or email — for review questions)</span></label>
+      <input type="text" id="f-contact" placeholder="@yourhandle or email">
+    </div>
+
+    <div class="field">
+      <label>Notes<span class="hint">(optional — anything we should know)</span></label>
+      <textarea id="f-notes" placeholder="e.g. Investor vesting details, special wallet setups, etc."></textarea>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitToken()">Submit for Review</button>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+</div>
+
+<script>
+var API_BASE = 'https://navgator-api.vercel.app';
+
+async function submitToken() {
+  var btn = document.getElementById('submit-btn');
+  var msg = document.getElementById('status-msg');
+  msg.className = 'status-msg';
+  msg.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  var payload = {
+    ticker: document.getElementById('f-ticker').value,
+    name: document.getElementById('f-name').value,
+    mint: document.getElementById('f-mint').value,
+    logoUrl: document.getElementById('f-logo').value,
+    daoWallet: document.getElementById('f-dao').value,
+    futAmm: document.getElementById('f-futamm').value,
+    metAmm: document.getElementById('f-metamm').value,
+    metAmmUsdc: document.getElementById('f-metammUsdc').value,
+    pubMetPool: document.getElementById('f-pubmetpool').value,
+    teamLocked: document.getElementById('f-teamlocked').value,
+    buybackWallet: document.getElementById('f-buyback').value,
+    raise: document.getElementById('f-raise').value,
+    icoPrice: document.getElementById('f-icoprice').value,
+    supply: document.getElementById('f-supply').value,
+    tge: document.getElementById('f-tge').value,
+    monthlyAllowance: document.getElementById('f-allowance').value,
+    submitterContact: document.getElementById('f-contact').value,
+    notes: document.getElementById('f-notes').value,
+  };
+
+  try {
+    var res = await fetch(API_BASE + '/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    var data = await res.json();
+
+    if (data.success) {
+      msg.className = 'status-msg success';
+      msg.textContent = data.ticker + ' submitted successfully! We\'ll review and add it to NAVgator shortly.';
+      msg.style.display = 'block';
+      btn.textContent = 'Submitted ✓';
+    } else {
+      msg.className = 'status-msg error';
+      msg.textContent = data.error || 'Something went wrong. Please try again.';
+      msg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Submit for Review';
+    }
+  } catch (err) {
+    msg.className = 'status-msg error';
+    msg.textContent = 'Network error. Please try again.';
+    msg.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Submit for Review';
+  }
+}
+</script>
+</body>
+</html>
