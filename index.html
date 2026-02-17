@@ -844,7 +844,7 @@ var _chart = {
   isXDragging: false, xDragStartX: 0, xDragStartViewStart: 0, xDragStartViewEnd: 0,
   yZoom: 1, yOffset: 0, // Y-axis zoom (1=auto) and vertical offset
   width: 0, height: 420,
-  padding: { top: 20, right: 70, bottom: 30, left: 30 },
+  padding: { top: 20, right: 50, bottom: 50, left: 30 },
 };
 
 
@@ -1243,12 +1243,13 @@ function attachChartEvents(container) {
     var myScaled = my * (_chart.height / rect.height);
     var w = _chart.width;
     var cpad = _chart.padding;
-    // Change cursor based on zone
-    if (mxScaled > w - cpad.right) {
+    // Change cursor based on zone — use consistent drag zone sizes
+    var dragZone = cpad.bottom; // use bottom padding as the standard zone size
+    if (mxScaled > w - dragZone && myScaled <= _chart.height - cpad.bottom) {
       canvas.style.cursor = 'ns-resize';
-    } else if (myScaled > _chart.height - cpad.bottom) {
+    } else if (myScaled > _chart.height - cpad.bottom && mxScaled <= w - dragZone) {
       canvas.style.cursor = 'ew-resize';
-    } else if (mxScaled >= cpad.left && mxScaled <= w - cpad.right && myScaled >= cpad.top && myScaled <= _chart.height - cpad.bottom) {
+    } else if (mxScaled >= cpad.left && mxScaled <= w - dragZone && myScaled >= cpad.top && myScaled <= _chart.height - cpad.bottom) {
       canvas.style.cursor = 'crosshair';
     } else {
       canvas.style.cursor = 'default';
@@ -1272,7 +1273,7 @@ function attachChartEvents(container) {
     var cpad = _chart.padding;
 
     // If scrolling on the right price scale zone, zoom Y-axis
-    if (mx > w - cpad.right) {
+    if (mx > w - cpad.bottom) {
       var zoomFactor = e.deltaY > 0 ? 0.97 : 1.03;
       _chart.yZoom = Math.max(0.2, Math.min(10, _chart.yZoom * zoomFactor));
       drawChart();
@@ -1304,8 +1305,9 @@ function attachChartEvents(container) {
     var w = _chart.width;
     var cpad = _chart.padding;
 
-    // Right price scale zone — Y-axis drag (only in padding)
-    if (mx > w - cpad.right) {
+    // Right price scale zone — Y-axis drag (same size as bottom zone)
+    var dragZone = cpad.bottom;
+    if (mx > w - dragZone && my <= _chart.height - cpad.bottom) {
       _chart.isYDragging = true;
       _chart.yDragStartY = e.clientY;
       _chart.yDragStartZoom = _chart.yZoom;
