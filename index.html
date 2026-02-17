@@ -1564,7 +1564,7 @@ function drawChart() {
     ctx.restore();
   }
 
-  // Draw price line — entire line colored by current price vs NAV
+  // Draw price line — colored by current price vs NAV
   if (pricePts.length > 1) {
     var currentAboveNav = true;
     if (_chart.navData && _chart.navData.length > 0) {
