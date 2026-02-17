@@ -1273,7 +1273,7 @@ function drawChart() {
   // Grid lines
   ctx.strokeStyle = 'rgba(34,34,40,0.8)';
   ctx.lineWidth = 1;
-  var gridSteps = 5;
+  var gridSteps = 10;
   for (var i = 0; i <= gridSteps; i++) {
     var gy = pad.top + (i / gridSteps) * plotH;
     ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(w - pad.right, gy); ctx.stroke();
@@ -1464,6 +1464,9 @@ function drawChart() {
     for (var i = 1; i < pricePts.length; i++) {
       ctx.lineTo(pricePts[i].x, pricePts[i].y);
     }
+    // Extend price line horizontally to right edge
+    var lastPriceY = pricePts[pricePts.length - 1].y;
+    ctx.lineTo(w - pad.right, lastPriceY);
     ctx.stroke();
   }
 
@@ -1544,10 +1547,11 @@ function drawChart() {
       // Vertical step to new Y
       allSegments.push({ x1: navPts[i].x, y1: navPts[i - 1].y, x2: navPts[i].x, y2: navPts[i].y });
     }
-    // Extend to last price candle
+    // Extend to right edge of plot area
     var lastNav = navPts[navPts.length - 1];
-    if (lastNav.x < lastPriceX) {
-      allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: lastPriceX, y2: lastNav.y });
+    var rightEdge = w - pad.right;
+    if (lastNav.x < rightEdge) {
+      allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: rightEdge, y2: lastNav.y });
     }
 
     // Draw each segment — red dashes near withdrawals, white dashes elsewhere
