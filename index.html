@@ -634,30 +634,30 @@ if (!_hasToken) {
   var _sparkCache = {};
 
   async function loadSparklines() {
-    // Fetch OHLCV data sequentially
-    var liveTokens = landingTokens.filter(function(t) { return t.live; });
-    for (var i = 0; i < liveTokens.length; i++) {
-      var t = liveTokens[i];
-      try {
-        var ohlcvRes = await fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H');
-        var ohlcvData = await ohlcvRes.json();
-        var prices = [];
-        if (ohlcvData && ohlcvData.data && ohlcvData.data.items && ohlcvData.data.items.length > 1) {
-          var items = ohlcvData.data.items.slice(-60);
-          prices = items.map(function(c) { return c.c; }).filter(function(p) { return p > 0; });
-          if (prices.length > 4) {
-            var sorted = prices.slice().sort(function(a, b) { return a - b; });
-            var median = sorted[Math.floor(sorted.length / 2)];
-            prices = prices.filter(function(p) { return p < median * 5 && p > median * 0.1; });
-          }
+    try {
+      var res = await fetch(API_BASE + '/api/sparklines');
+      var data = await res.json();
+      if (!data.sparklines) return;
+
+      var liveTokens = landingTokens.filter(function(t) { return t.live; });
+      for (var i = 0; i < liveTokens.length; i++) {
+        var t = liveTokens[i];
+        var items = data.sparklines[t.key];
+        if (!items || items.length < 2) continue;
+
+        var prices = items.map(function(c) { return c.p; }).filter(function(p) { return p > 0; });
+        if (prices.length > 4) {
+          var sorted = prices.slice().sort(function(a, b) { return a - b; });
+          var median = sorted[Math.floor(sorted.length / 2)];
+          prices = prices.filter(function(p) { return p < median * 5 && p > median * 0.1; });
         }
         var navVal = t.strike > 0 ? t.strike : 0;
         if (prices.length >= 2) {
           _sparkCache[t.key] = { prices: prices, nav: navVal };
           drawSVGSparkline(t.key, prices, navVal);
         }
-      } catch (e) {}
-    }
+      }
+    } catch (e) { console.warn('Sparklines fetch error:', e); }
   }
 
   function drawSVGSparkline(key, prices, navVal) {
