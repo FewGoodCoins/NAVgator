@@ -429,8 +429,13 @@ if (!_hasToken) {
   function drawSparkline(canvas, priceData, navData) {
     if ((!priceData || priceData.length < 2) && (!navData || navData.length < 2)) return;
     var ctx = canvas.getContext('2d');
-    var w = canvas.width = canvas.offsetWidth * 2;
-    var h = canvas.height = canvas.offsetHeight * 2;
+    var targetW = canvas.offsetWidth * 2;
+    var targetH = canvas.offsetHeight * 2;
+    // Only resize if needed — setting canvas.width clears ALL canvases in table reflow
+    if (canvas.width !== targetW) canvas.width = targetW;
+    if (canvas.height !== targetH) canvas.height = targetH;
+    var w = canvas.width;
+    var h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
     var pad = 4; // padding top/bottom in pixels
@@ -659,15 +664,11 @@ if (!_hasToken) {
   }
 
   function drawAllSparklines() {
-    // Draw one at a time with small delay between each to avoid canvas conflicts
-    var keys = Object.keys(_sparkCache);
-    keys.forEach(function(key, i) {
-      setTimeout(function() {
-        var canvas = document.querySelector('canvas[data-token="' + key + '"]');
-        if (canvas && canvas.offsetWidth > 0) {
-          drawSparkline(canvas, _sparkCache[key].prices, _sparkCache[key].navs);
-        }
-      }, i * 20);
+    Object.keys(_sparkCache).forEach(function(key) {
+      var canvas = document.querySelector('canvas[data-token="' + key + '"]');
+      if (canvas && canvas.offsetWidth > 0) {
+        drawSparkline(canvas, _sparkCache[key].prices, _sparkCache[key].navs);
+      }
     });
   }
 
