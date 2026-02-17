@@ -580,6 +580,10 @@ if (!_hasToken) {
         th.appendChild(arrow);
       }
     });
+    // Redraw sparklines on new canvases if we have cached data
+    if (typeof _sparkCache !== 'undefined' && Object.keys(_sparkCache).length > 0) {
+      setTimeout(drawAllSparklines, 10);
+    }
   }
 
   renderTable();
@@ -596,7 +600,6 @@ if (!_hasToken) {
         sortDir = 'desc';
       }
       renderTable();
-      loadSparklines();
     });
   });
 
@@ -627,8 +630,11 @@ if (!_hasToken) {
   }
 
   // Load sparklines from NAV history (shows both price + NAV)
+  var _sparkCache = {};
+
   async function loadSparklines() {
-    var promises = landingTokens.filter(function(t) { return t.live; }).map(async function(t) {
+    // Collect all data first
+    await Promise.all(landingTokens.filter(function(t) { return t.live; }).map(async function(t) {
       try {
         var ohlcvRes = await fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H');
         var ohlcvData = await ohlcvRes.json();
@@ -636,30 +642,29 @@ if (!_hasToken) {
         if (ohlcvData && ohlcvData.data && ohlcvData.data.items && ohlcvData.data.items.length > 1) {
           var items = ohlcvData.data.items.slice(-60);
           prices = items.map(function(c) { return c.c; }).filter(function(p) { return p > 0; });
-          // Filter outliers: remove any price > 5x the median (handles ICO spike artifacts)
           if (prices.length > 4) {
             var sorted = prices.slice().sort(function(a, b) { return a - b; });
             var median = sorted[Math.floor(sorted.length / 2)];
             prices = prices.filter(function(p) { return p < median * 5 && p > median * 0.1; });
           }
         }
-        // NAV is a flat line at current value
         var navs = [];
         if (t.strike > 0 && prices.length >= 2) {
           navs = prices.map(function() { return t.strike; });
         }
-        var canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
-        if (canvas && prices.length >= 2) {
-          // If canvas has no width, wait for layout
-          if (canvas.offsetWidth === 0) {
-            await new Promise(function(r) { setTimeout(r, 100); });
-            canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
-          }
-          if (canvas && canvas.offsetWidth > 0) drawSparkline(canvas, prices, navs);
-        }
-      } catch (e) { console.warn('Sparkline error for ' + t.key, e); }
+        if (prices.length >= 2) _sparkCache[t.key] = { prices: prices, navs: navs };
+      } catch (e) {}
+    }));
+    drawAllSparklines();
+  }
+
+  function drawAllSparklines() {
+    Object.keys(_sparkCache).forEach(function(key) {
+      var canvas = document.querySelector('canvas[data-token="' + key + '"]');
+      if (canvas && canvas.offsetWidth > 0) {
+        drawSparkline(canvas, _sparkCache[key].prices, _sparkCache[key].navs);
+      }
     });
-    await Promise.all(promises);
   }
 
   fetchLandingData();
