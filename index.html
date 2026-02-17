@@ -561,7 +561,7 @@ if (!_hasToken) {
         '<td style="color:' + discColor + ';font-weight:500">' + (noData ? '—' : discLabel) + '</td>' +
         '<td style="color:var(--text)">' + (noData ? '—' : lfmtK(t.treasury)) + '</td>' +
         '<td style="color:var(--text)">' + (noData ? '—' : lfmtK(t.mcap)) + '</td>' +
-        '<td><canvas class="tt-sparkline" data-token="' + t.key + '"></canvas></td>' +
+        '<td><div class="spark-container tt-sparkline" data-token="' + t.key + '"></div></td>' +
         '</tr>';
     }).join('');
 
@@ -634,13 +634,7 @@ if (!_hasToken) {
   var _sparkCache = {};
 
   async function loadSparklines() {
-    // Pre-size all canvases before any drawing
-    document.querySelectorAll('canvas.tt-sparkline').forEach(function(c) {
-      c.width = c.offsetWidth * 2;
-      c.height = c.offsetHeight * 2;
-    });
-
-    // Fetch OHLCV data SEQUENTIALLY to avoid Birdeye rate limits
+    // Fetch OHLCV data sequentially
     var liveTokens = landingTokens.filter(function(t) { return t.live; });
     for (var i = 0; i < liveTokens.length; i++) {
       var t = liveTokens[i];
@@ -657,33 +651,49 @@ if (!_hasToken) {
             prices = prices.filter(function(p) { return p < median * 5 && p > median * 0.1; });
           }
         }
-        var navs = [];
-        if (t.strike > 0 && prices.length >= 2) {
-          navs = prices.map(function() { return t.strike; });
-        }
+        var navVal = t.strike > 0 ? t.strike : 0;
         if (prices.length >= 2) {
-          _sparkCache[t.key] = { prices: prices, navs: navs };
-          // Draw immediately as each one loads
-          var canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
-          if (canvas && canvas.offsetWidth > 0) {
-            drawSparkline(canvas, prices, navs);
-          }
+          _sparkCache[t.key] = { prices: prices, nav: navVal };
+          drawSVGSparkline(t.key, prices, navVal);
         }
       } catch (e) {}
     }
   }
 
+  function drawSVGSparkline(key, prices, navVal) {
+    var container = document.querySelector('.spark-container[data-token="' + key + '"]');
+    if (!container) return;
+    var w = 200, h = 50;
+    var pMin = Math.min.apply(null, prices);
+    var pMax = Math.max.apply(null, prices);
+    if (navVal > 0) { pMin = Math.min(pMin, navVal); pMax = Math.max(pMax, navVal); }
+    var range = pMax - pMin || 1;
+    pMin -= range * 0.05; pMax += range * 0.05; range = pMax - pMin;
+
+    var first = prices[0], last = prices[prices.length - 1];
+    var color = last >= first ? '#00e5a0' : '#e84057';
+
+    var pts = prices.map(function(p, i) {
+      var x = (i / (prices.length - 1)) * w;
+      var y = h - ((p - pMin) / range) * h;
+      return x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ');
+
+    var navLine = '';
+    if (navVal > 0) {
+      var navY = (h - ((navVal - pMin) / range) * h).toFixed(1);
+      navLine = '<line x1="0" y1="' + navY + '" x2="' + w + '" y2="' + navY + '" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-dasharray="3,4"/>';
+    }
+
+    container.innerHTML = '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%;height:100%">' +
+      navLine +
+      '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '</svg>';
+  }
+
   function drawAllSparklines() {
-    // Pre-size all canvases
-    document.querySelectorAll('canvas.tt-sparkline').forEach(function(c) {
-      c.width = c.offsetWidth * 2;
-      c.height = c.offsetHeight * 2;
-    });
     Object.keys(_sparkCache).forEach(function(key) {
-      var canvas = document.querySelector('canvas[data-token="' + key + '"]');
-      if (canvas && canvas.offsetWidth > 0) {
-        drawSparkline(canvas, _sparkCache[key].prices, _sparkCache[key].navs);
-      }
+      drawSVGSparkline(key, _sparkCache[key].prices, _sparkCache[key].nav);
     });
   }
 
