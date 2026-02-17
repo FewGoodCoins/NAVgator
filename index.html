@@ -7,7 +7,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@300;400;500&display=swap');
   :root {
-    --bg: #000000; --bg2: #0a0a0a; --bg3: #111111;
+    --bg: #0d0d0d; --bg2: #131313; --bg3: #1a1a1a;
     --border: #222228; --border2: #2a2a32;
     --dim: #555560; --muted: #77778a; --text: #a0a0b0; --bright: #d0d0dd; --white: #eeeef2;
     --green: #00e5a0; --green-dim: rgba(0,229,160,0.10);
@@ -963,7 +963,7 @@ var _chart = {
   isYDragging: false, yDragStartY: 0, yDragStartZoom: 1, yDragStartOffset: 0,
   yZoom: 1, yOffset: 0, // Y-axis zoom (1=auto) and vertical offset
   width: 0, height: 420,
-  padding: { top: 20, right: 60, bottom: 30, left: 70 },
+  padding: { top: 20, right: 70, bottom: 30, left: 10 },
 };
 
 // Fetch historical NAV data from backend
@@ -1287,8 +1287,8 @@ function drawChart() {
     }
     ctx.fillStyle = '#555560';
     ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText('$' + gVal.toFixed(gVal >= 1 ? 2 : 4), pad.left - 8, gy + 3);
+    ctx.textAlign = 'left';
+    ctx.fillText('$' + gVal.toFixed(gVal >= 1 ? 2 : 4), w - pad.right + 8, gy + 3);
   }
 
   // Time labels
