@@ -1227,6 +1227,7 @@ function buildChart(candles, navPerToken) {
 
   _chart.estimatedNav = estimatedNav;
   _chart.navData = cleanNav;
+  _chart.currentNav = navPerToken;
   _chart.viewStart = 0;
   _chart.viewEnd = 1;
 
@@ -1244,11 +1245,6 @@ function getVisibleData(data) {
 function getTimeRange() {
   var allTimes = [];
   _chart.priceData.forEach(function(d) { allTimes.push(d.time); });
-  _chart.navData.forEach(function(d) { allTimes.push(d.time); });
-  // Include TGE and estimated NAV so chart starts early enough to show them
-  if (_chart.estimatedNav) {
-    _chart.estimatedNav.forEach(function(d) { allTimes.push(d.time); });
-  }
   if (allTimes.length === 0) return { min: 0, max: 1 };
   allTimes.sort(function(a, b) { return a - b; });
   var tMin = allTimes[0];
@@ -1280,18 +1276,9 @@ function drawChart() {
   _chart.priceData.forEach(function(d) {
     if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
   });
-  // For NAV, include interpolated value at visible boundaries (staircase has few points)
-  _chart.navData.forEach(function(d) {
-    if (d.time >= tMin && d.time <= tMax) allVals.push(d.value);
-  });
-  // Also include the NAV value that's active at the start of the visible range
-  for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
-    if (_chart.navData[ni].time <= tMin) { allVals.push(_chart.navData[ni].value); break; }
-  }
-  // And the NAV value active at the end
-  for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
-    if (_chart.navData[ni].time <= tMax) { allVals.push(_chart.navData[ni].value); break; }
-  }
+  // Include current NAV in Y range
+  var currentNav = _chart.currentNav || 0;
+  if (currentNav > 0) allVals.push(currentNav);
   if (allVals.length === 0) {
     ctx.fillStyle = '#555560';
     ctx.font = '12px Inter, sans-serif';
@@ -1303,36 +1290,12 @@ function drawChart() {
   var vMin = Math.min.apply(null, allVals);
   var vMax = Math.max.apply(null, allVals);
 
-  // NAV Focus mode: constrain Y range around NAV values
-  if (_navFocus) {
-    var navVals = [];
-    // Collect visible accurate NAV values
-    for (var ni = 0; ni < _chart.navData.length; ni++) {
-      if (_chart.navData[ni].time >= tMin && _chart.navData[ni].time <= tMax) {
-        navVals.push(_chart.navData[ni].value);
-      }
-    }
-    // Include simulated NAV values in visible range
-    var estData = _chart.estimatedNav || [];
-    for (var ei = 0; ei < estData.length; ei++) {
-      if (estData[ei].time >= tMin && estData[ei].time <= tMax) {
-        navVals.push(estData[ei].value);
-      }
-    }
-    // Also include last NAV before visible range
-    for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
-      if (_chart.navData[ni].time <= tMin) { navVals.push(_chart.navData[ni].value); break; }
-    }
-    if (navVals.length > 0) {
-      var navMin = Math.min.apply(null, navVals);
-      var navMax = Math.max.apply(null, navVals);
-      var navMid = (navMin + navMax) / 2;
-      var navSpread = (navMax - navMin) || navMid * 0.1;
-      // Show 3x the NAV spread centered on NAV midpoint
-      vMin = navMid - navSpread * 1.5;
-      vMax = navMid + navSpread * 1.5;
-      if (vMin < 0) vMin = 0;
-    }
+  // NAV Focus mode: constrain Y range around NAV
+  if (_navFocus && currentNav > 0) {
+    var navSpread = currentNav * 0.1;
+    vMin = currentNav - navSpread * 1.5;
+    vMax = currentNav + navSpread * 1.5;
+    if (vMin < 0) vMin = 0;
   }
 
   var vPad = (vMax - vMin) * 0.1 || 0.01;
@@ -1480,93 +1443,50 @@ function drawChart() {
     return pts;
   }
 
+
   var pricePts = toPixels(_chart.priceData);
-  var navPts = toPixelsNav(_chart.navData);
-  var estPts = toPixels(_chart.estimatedNav || []);
 
-  // Draw fill between price and NAV lines (gradient: strong at price, fading toward NAV)
-  // Combine estimated diagonal + accurate staircase into one NAV lookup function
-  var hasNav = (navPts.length > 0 || estPts.length >= 2);
-  if (pricePts.length > 1 && hasNav) {
+  // Current NAV as horizontal line
+  var currentNav = _chart.currentNav || 0;
+  var navLineY = currentNav > 0 ? ty(currentNav) : null;
 
-    // NAV Y at any X position — checks accurate staircase first, then simulated NAV
-    function navYAtX(xPos) {
-      // Check accurate staircase first
-      if (navPts.length > 0 && xPos >= navPts[0].x) {
-        for (var ni = navPts.length - 1; ni >= 0; ni--) {
-          if (xPos >= navPts[ni].x) return navPts[ni].y;
-        }
-        return navPts[0].y;
-      }
-      // Fall back to simulated NAV (walk through points, interpolate between them)
-      if (estPts.length >= 2) {
-        if (xPos <= estPts[0].x) return estPts[0].y;
-        if (xPos >= estPts[estPts.length - 1].x) return estPts[estPts.length - 1].y;
-        for (var ei = 1; ei < estPts.length; ei++) {
-          if (xPos <= estPts[ei].x) {
-            var t = (xPos - estPts[ei - 1].x) / (estPts[ei].x - estPts[ei - 1].x);
-            return estPts[ei - 1].y + t * (estPts[ei].y - estPts[ei - 1].y);
-          }
-        }
-        return estPts[estPts.length - 1].y;
-      }
-      // Fallback
-      if (navPts.length > 0) return navPts[0].y;
-      return pad.top + plotH / 2;
-    }
-
-    // Collect all NAV Y values for gradient bounds
-    var allNavYVals = [];
-    for (var i = 0; i < pricePts.length; i++) {
-      allNavYVals.push(navYAtX(pricePts[i].x));
-    }
+  // Draw fills between price and NAV horizontal line
+  if (pricePts.length > 1 && navLineY !== null) {
+    ctx.save();
     var allPriceY = pricePts.map(function(p) { return p.y; });
     var minPriceY = Math.min.apply(null, allPriceY);
-    var maxNavY = Math.max.apply(null, allNavYVals);
     var maxPriceY = Math.max.apply(null, allPriceY);
-    var minNavY = Math.min.apply(null, allNavYVals);
 
-    ctx.save();
-
-    // Gradient fills — stronger at price line, fading toward NAV line
-    var aboveGrad = ctx.createLinearGradient(0, Math.min.apply(null, allPriceY), 0, minNavY);
+    var aboveGrad = ctx.createLinearGradient(0, minPriceY, 0, navLineY);
     aboveGrad.addColorStop(0, 'rgba(0,229,160,0.25)');
     aboveGrad.addColorStop(1, 'rgba(0,229,160,0.02)');
-
-    var belowGrad = ctx.createLinearGradient(0, Math.max.apply(null, allPriceY), 0, maxNavY);
+    var belowGrad = ctx.createLinearGradient(0, maxPriceY, 0, navLineY);
     belowGrad.addColorStop(0, 'rgba(232,64,87,0.25)');
     belowGrad.addColorStop(1, 'rgba(232,64,87,0.02)');
 
-    // Draw above-NAV fill
+    // Above NAV fill
     ctx.beginPath();
     for (var i = 0; i < pricePts.length; i++) {
-      var navY = navYAtX(pricePts[i].x);
-      var clippedY = Math.min(pricePts[i].y, navY);
+      var clippedY = Math.min(pricePts[i].y, navLineY);
       if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
       else ctx.lineTo(pricePts[i].x, clippedY);
     }
-    for (var i = pricePts.length - 1; i >= 0; i--) {
-      ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
-    }
+    for (var i = pricePts.length - 1; i >= 0; i--) ctx.lineTo(pricePts[i].x, navLineY);
     ctx.closePath();
     ctx.fillStyle = aboveGrad;
     ctx.fill();
 
-    // Draw below-NAV fill
+    // Below NAV fill
     ctx.beginPath();
     for (var i = 0; i < pricePts.length; i++) {
-      var navY = navYAtX(pricePts[i].x);
-      var clippedY = Math.max(pricePts[i].y, navY);
+      var clippedY = Math.max(pricePts[i].y, navLineY);
       if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
       else ctx.lineTo(pricePts[i].x, clippedY);
     }
-    for (var i = pricePts.length - 1; i >= 0; i--) {
-      ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
-    }
+    for (var i = pricePts.length - 1; i >= 0; i--) ctx.lineTo(pricePts[i].x, navLineY);
     ctx.closePath();
     ctx.fillStyle = belowGrad;
     ctx.fill();
-
     ctx.restore();
   }
 
@@ -1578,197 +1498,59 @@ function drawChart() {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.moveTo(pricePts[0].x, pricePts[0].y);
-    for (var i = 1; i < pricePts.length; i++) {
-      ctx.lineTo(pricePts[i].x, pricePts[i].y);
-    }
+    for (var i = 1; i < pricePts.length; i++) ctx.lineTo(pricePts[i].x, pricePts[i].y);
     ctx.stroke();
   }
 
-  // Draw fill between NAV and bottom of chart (subtle)
-  if (navPts.length > 1) {
-    var bottomY = pad.top + plotH;
+  // Draw NAV horizontal line (dotted)
+  if (navLineY !== null) {
     ctx.beginPath();
-    ctx.moveTo(navPts[0].x, navPts[0].y);
-    for (var i = 1; i < navPts.length; i++) {
-      ctx.lineTo(navPts[i].x, navPts[i - 1].y);
-      ctx.lineTo(navPts[i].x, navPts[i].y);
-    }
-    ctx.lineTo(navPts[navPts.length - 1].x, bottomY);
-    ctx.lineTo(navPts[0].x, bottomY);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(255,255,255,0.02)';
-    ctx.fill();
-  }
+    ctx.strokeStyle = '#e8e6e3';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 5]);
+    ctx.lineCap = 'round';
+    ctx.moveTo(pad.left, navLineY);
+    ctx.lineTo(w - pad.right, navLineY);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-  // Draw simulated NAV line from TGE to first accurate point (dotted)
-  var estData = _chart.estimatedNav || [];
-  if (estData.length >= 2) {
-    var estPtsVis = toPixels(estData);
-    if (estPtsVis.length >= 2) {
-      ctx.beginPath();
-      ctx.strokeStyle = '#e8e6e3';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([3, 5]);
-      ctx.lineCap = 'round';
-      ctx.moveTo(estPtsVis[0].x, estPtsVis[0].y);
-      for (var i = 1; i < estPtsVis.length; i++) {
-        ctx.lineTo(estPtsVis[i].x, estPtsVis[i].y);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  // Draw NAV line — zigzag white staircase, same weight as price line
-  // Dashes turn red near withdrawal events
-  if (navPts.length > 1) {
-    var lastPriceX = (pricePts.length > 0) ? pricePts[pricePts.length - 1].x : (pad.left + plotW);
-
-    // Build list of withdrawal X positions for coloring
-    var withdrawXs = [];
-    if (_chart.navEvents) {
-      for (var ei = 0; ei < _chart.navEvents.length; ei++) {
-        var evt = _chart.navEvents[ei];
-        if (evt.time >= tMin && evt.time <= tMax) {
-          withdrawXs.push(tx(evt.time));
-        }
-      }
-    }
-
-    // Check if an X position is near a withdrawal (within 15px)
-    function isNearWithdraw(x) {
-      for (var wi = 0; wi < withdrawXs.length; wi++) {
-        if (Math.abs(x - withdrawXs[wi]) < 15) return true;
-      }
-      return false;
-    }
-
-    // Draw staircase segment by segment with dashed style
-    // Each segment: horizontal from prev to next X, then vertical step
-    var allSegments = [];
-    // First point
-    allSegments.push({ x1: navPts[0].x, y1: navPts[0].y, x2: navPts[0].x, y2: navPts[0].y });
-    for (var i = 1; i < navPts.length; i++) {
-      // Horizontal segment at previous Y
-      allSegments.push({ x1: navPts[i - 1].x, y1: navPts[i - 1].y, x2: navPts[i].x, y2: navPts[i - 1].y });
-      // Vertical step to new Y
-      allSegments.push({ x1: navPts[i].x, y1: navPts[i - 1].y, x2: navPts[i].x, y2: navPts[i].y });
-    }
-    // Extend to last price candle
-    var lastNav = navPts[navPts.length - 1];
-    var lastPriceX = (pricePts.length > 0) ? pricePts[pricePts.length - 1].x : lastNav.x;
-    if (lastNav.x < lastPriceX) {
-      allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: lastPriceX, y2: lastNav.y });
-    }
-
-    // Draw each segment — dotted white
-    for (var si = 0; si < allSegments.length; si++) {
-      var seg = allSegments[si];
-      ctx.beginPath();
-      ctx.strokeStyle = '#e8e6e3';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([3, 5]);
-      ctx.lineCap = 'round';
-      ctx.moveTo(seg.x1, seg.y1);
-      ctx.lineTo(seg.x2, seg.y2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  // TGE circle
-  if (CFG.tge && CFG.icoPrice > 0) {
-    var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
-    if (tgeTs >= tMin && tgeTs <= tMax) {
-      var cx = tx(tgeTs), cy = ty(CFG.icoPrice);
-      ctx.beginPath();
-      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      // Label below
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 10px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('TGE $' + CFG.icoPrice, cx, cy + 18);
-    }
-  }
-
-  // Treasury event markers — store positions for tooltip hover (dots replaced by red dashes on NAV line)
-  if (_chart.navEvents && _chart.navEvents.length > 0) {
-    var eventPts = [];
-    for (var i = 0; i < _chart.navEvents.length; i++) {
-      var evt = _chart.navEvents[i];
-      if (evt.time >= tMin && evt.time <= tMax) {
-        var ex = tx(evt.time);
-        var eyNav = navYAtX ? navYAtX(ex) : ty(evt.value);
-        eventPts.push({ x: ex, y: eyNav, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow, color: '#e84057' });
-      }
-    }
-    _chart._eventPts = eventPts;
-  }
-
-  // ── Live price badge on right edge (checkprice style) ──
-  if (pricePts.length > 0) {
-    var lastPt = pricePts[pricePts.length - 1];
-    var lastY = lastPt.y;
-    var lastVal = CFG.spot;
-    var badgeColor = '#e84057'; // default red
-    if (_chart.navData && _chart.navData.length > 0) {
-      var lastNavVal = _chart.navData[_chart.navData.length - 1].value;
-      badgeColor = lastVal >= lastNavVal ? '#00e5a0' : '#e84057';
-    }
-
-    // Price badge on right edge
-    var badgeText = '$' + lastVal.toFixed(lastVal >= 1 ? 2 : 4);
+    // NAV price badge on right
+    var navText = currentNav >= 1 ? '$' + currentNav.toFixed(2) : '$' + currentNav.toFixed(4);
     ctx.font = 'bold 10px Inter, sans-serif';
-    var badgeW = ctx.measureText(badgeText).width + 12;
-    var badgeH = 18;
-    var badgeX = w - pad.right + 2;
-    var badgeY = lastY - badgeH / 2;
-
-    // Badge background
-    ctx.fillStyle = badgeColor;
+    var navBadgeW = ctx.measureText(navText).width + 12;
+    var navBadgeX = w - pad.right + 4;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.beginPath();
-    ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
+    ctx.roundRect(navBadgeX, navLineY - 9, navBadgeW, 18, 3);
     ctx.fill();
-
-    // Badge text
     ctx.fillStyle = '#000';
     ctx.textAlign = 'left';
-    ctx.fillText(badgeText, badgeX + 6, lastY + 3.5);
+    ctx.fillText(navText, navBadgeX + 6, navLineY + 3.5);
   }
 
-  // ── NAV badge on right edge ──
-  if (navPts.length > 0) {
-    var lastNavPt = navPts[navPts.length - 1];
-    var navY = lastNavPt.y;
-    var navVal = _chart.navData[_chart.navData.length - 1].value;
-
-    // Only draw if NAV badge won't overlap price badge (>20px apart)
-    var priceY = pricePts.length > 0 ? pricePts[pricePts.length - 1].y : -100;
-    if (Math.abs(navY - priceY) > 22) {
-      // Badge
-      var navText = '$' + navVal.toFixed(navVal >= 1 ? 2 : 4);
-      ctx.font = 'bold 10px Inter, sans-serif';
-      var navBadgeW = ctx.measureText(navText).width + 12;
-      var navBadgeH = 18;
-      var navBadgeX = w - pad.right + 2;
-      var navBadgeY = navY - navBadgeH / 2;
-
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.beginPath();
-      ctx.roundRect(navBadgeX, navBadgeY, navBadgeW, navBadgeH, 3);
-      ctx.fill();
-
-      ctx.fillStyle = '#000';
-      ctx.textAlign = 'left';
-      ctx.fillText(navText, navBadgeX + 6, navY + 3.5);
-    }
+  // Price badge on right edge
+  if (pricePts.length > 0) {
+    var lastPt = pricePts[pricePts.length - 1];
+    var lastPrice = _chart.priceData[_chart.priceData.length - 1].value;
+    var priceText = lastPrice >= 1 ? '$' + lastPrice.toFixed(2) : '$' + lastPrice.toFixed(4);
+    ctx.font = 'bold 10px Inter, sans-serif';
+    var badgeW = ctx.measureText(priceText).width + 12;
+    var badgeX = w - pad.right + 4;
+    ctx.fillStyle = 'rgba(232,230,227,0.9)';
+    ctx.beginPath();
+    ctx.roundRect(badgeX, lastPt.y - 9, badgeW, 18, 3);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'left';
+    ctx.fillText(priceText, badgeX + 6, lastPt.y + 3.5);
   }
+
+  _chart._eventPts = [];
 
   // Store pixel data for crosshair
   _chart._pricePts = pricePts;
-  _chart._navPts = navPts;
+  _chart._navPts = [];
+  _chart._navLineY = navLineY;
   _chart._tx = tx;
   _chart._ty = ty;
   _chart._tMin = tMin;
@@ -1845,7 +1627,7 @@ function attachChartEvents(container) {
     var newStart = center - mxNorm * newRange;
     var newEnd = newStart + newRange;
     // Clamp: small left overscroll allowed, no right overscroll
-    var leftPad = newRange * 0.05;
+    var leftPad = 0;
     if (newStart < -leftPad) { newStart = -leftPad; newEnd = newStart + newRange; }
     if (newEnd > 1) { newEnd = 1; newStart = newEnd - newRange; }
     _chart.viewStart = newStart;
@@ -1906,7 +1688,7 @@ function attachChartEvents(container) {
     // X-axis pan — small overscroll on left, none on right
     var shift = -(dx / canvasW) * _chart.dragRange;
     var newStart = _chart.dragStartViewStart + shift;
-    var leftPad = _chart.dragRange * 0.05;
+    var leftPad = 0;
     if (newStart < -leftPad) newStart = -leftPad;
     if (newStart + _chart.dragRange > 1) newStart = 1 - _chart.dragRange;
     _chart.viewStart = newStart;
@@ -2014,90 +1796,28 @@ function drawCrosshair(mx, my) {
   ctx.fillStyle = '#ccc';
   ctx.fillText(priceLabel, w - pad.right + 2 + datePadX, my + 3);
 
-  // Find closest NAV point
-  var closest = null, closestDist = Infinity;
-  var navPts = _chart._navPts || [];
-  for (var i = 0; i < navPts.length; i++) {
-    var d = Math.abs(navPts[i].x - mx);
-    if (d < closestDist) { closestDist = d; closest = navPts[i]; }
+  // Find closest price point
+  var navLineY = _chart._navLineY;
+  var pricePts = _chart._pricePts || [];
+  var closestPrice = null, closestPriceDist = Infinity;
+  for (var i = 0; i < pricePts.length; i++) {
+    var d = Math.abs(pricePts[i].x - mx);
+    if (d < closestPriceDist) { closestPriceDist = d; closestPrice = pricePts[i]; }
   }
 
-  // For step-style, use the interpolated NAV value at cursor position
-  var navY = interpolateNav(_chart._navPts || [], mx);
-  var navVal = null;
-  if (navY !== null && _chart._vMin !== undefined) {
-    var plotH = h - pad.top - pad.bottom;
-    if (_chartScale === 'log') {
-      var logMin = Math.log(_chart._vMin);
-      var logMax = Math.log(_chart._vMax);
-      var logRange = logMax - logMin;
-      var logVal = logMax - ((navY - pad.top) / plotH) * logRange;
-      navVal = Math.exp(logVal);
-    } else {
-      var vRange = _chart._vMax - _chart._vMin;
-      navVal = _chart._vMax - ((navY - pad.top) / plotH) * vRange;
-    }
-  }
-
-  if (closest && closestDist < 50 && navVal !== null) {
-    // Dot on NAV line
+  if (closestPrice && closestPriceDist < 50) {
+    // Dot on price line
     ctx.beginPath();
-    ctx.arc(mx, navY, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
+    ctx.arc(mx, closestPrice.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8e6e3';
     ctx.fill();
 
-    // Find closest price point too
-    var pricePts = _chart._pricePts || [];
-    var closestPrice = null, closestPriceDist = Infinity;
-    for (var i = 0; i < pricePts.length; i++) {
-      var d = Math.abs(pricePts[i].x - mx);
-      if (d < closestPriceDist) { closestPriceDist = d; closestPrice = pricePts[i]; }
-    }
-
-    // Dot on price line
-    if (closestPrice && closestPriceDist < 50) {
+    // Dot on NAV line
+    if (navLineY !== null) {
       ctx.beginPath();
-      ctx.arc(mx, closestPrice.y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#e8e6e3';
+      ctx.arc(mx, navLineY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
       ctx.fill();
-    }
-
-    // Check if cursor is near a treasury event marker
-    var nearEvent = null;
-    var eventPts = _chart._eventPts || [];
-    for (var i = 0; i < eventPts.length; i++) {
-      if (Math.abs(eventPts[i].x - mx) < 20) {
-        nearEvent = eventPts[i];
-        break;
-      }
-    }
-
-    // Tooltip — only show when near an event marker
-    var tooltip = _chart.tooltip;
-    if (tooltip) {
-      if (nearEvent) {
-        var tRange = _chart._tMax - _chart._tMin || 1;
-        var plotW = w - pad.left - pad.right;
-        var cursorTime = _chart._tMin + ((mx - pad.left) / plotW) * tRange;
-        var evtDate = new Date(nearEvent.time * 1000);
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var dateStr = months[evtDate.getUTCMonth()] + ' ' + evtDate.getUTCDate() + ', ' + evtDate.getUTCFullYear();
-        var fmt = function(v) { return '$' + (v >= 1 ? v.toFixed(2) : v.toFixed(4)); };
-        var fmtM = function(v) { return v >= 1000000 ? '$' + (v / 1000000).toFixed(2) + 'M' : '$' + Math.round(v).toLocaleString(); };
-        var fmtK = function(v) { return v >= 1000000 ? (v / 1000000).toFixed(2) + 'M' : Math.round(v).toLocaleString(); };
-
-        var html = '<div class="tt-date">' + dateStr + '</div>';
-        html += '<div class="tt-line" style="color:#e84057;font-weight:600">Withdraw: -' + fmtM(nearEvent.outflow) + '</div>';
-
-        tooltip.innerHTML = html;
-        tooltip.style.display = 'block';
-        var ttLeft = nearEvent.x + 16;
-        if (ttLeft + 200 > w) ttLeft = nearEvent.x - 200;
-        tooltip.style.left = ttLeft + 'px';
-        tooltip.style.top = (nearEvent.y - 50) + 'px';
-      } else {
-        tooltip.style.display = 'none';
-      }
     }
   } else {
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
