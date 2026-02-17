@@ -318,7 +318,7 @@
         <button class="chart-btn" id="btn-nav-focus" onclick="toggleNavFocus()">NAV</button>
       </div>
     </div>
-    <div id="chart-container" style="position:relative;cursor:crosshair">
+    <div id="chart-container" style="position:relative;cursor:default">
       <canvas id="chart-canvas"></canvas>
       <div class="chart-tooltip" id="chart-tooltip"></div>
       <div class="chart-loading" id="chart-loading">Loading chart…</div>
@@ -1243,13 +1243,15 @@ function attachChartEvents(container) {
     var myScaled = my * (_chart.height / rect.height);
     var w = _chart.width;
     var cpad = _chart.padding;
-    // Change cursor on price scale zone or time scale zone — ONLY in padding area
+    // Change cursor based on zone
     if (mxScaled > w - cpad.right) {
       canvas.style.cursor = 'ns-resize';
     } else if (myScaled > _chart.height - cpad.bottom) {
       canvas.style.cursor = 'ew-resize';
-    } else {
+    } else if (mxScaled >= cpad.left && mxScaled <= w - cpad.right && myScaled >= cpad.top && myScaled <= _chart.height - cpad.bottom) {
       canvas.style.cursor = 'crosshair';
+    } else {
+      canvas.style.cursor = 'default';
     }
     drawChart();
     drawCrosshair(mx, my);
@@ -1394,15 +1396,15 @@ function attachChartEvents(container) {
   window.addEventListener('mouseup', function() {
     if (_chart.isDragging) {
       _chart.isDragging = false;
-      _chart.canvas.style.cursor = 'crosshair';
+      _chart.canvas.style.cursor = 'default';
     }
     if (_chart.isYDragging) {
       _chart.isYDragging = false;
-      _chart.canvas.style.cursor = 'crosshair';
+      _chart.canvas.style.cursor = 'default';
     }
     if (_chart.isXDragging) {
       _chart.isXDragging = false;
-      _chart.canvas.style.cursor = 'crosshair';
+      _chart.canvas.style.cursor = 'default';
     }
   });
 
