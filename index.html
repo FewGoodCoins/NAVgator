@@ -1413,12 +1413,12 @@ function drawChart() {
 
     ctx.save();
 
-    // Gradient fills — fade from NAV line outward (like checkprice)
-    var aboveGrad = ctx.createLinearGradient(0, minNavY, 0, Math.min.apply(null, allPriceY));
+    // Gradient fills — stronger at price line, fading toward NAV line
+    var aboveGrad = ctx.createLinearGradient(0, Math.min.apply(null, allPriceY), 0, minNavY);
     aboveGrad.addColorStop(0, 'rgba(0,229,160,0.25)');
     aboveGrad.addColorStop(1, 'rgba(0,229,160,0.02)');
 
-    var belowGrad = ctx.createLinearGradient(0, maxNavY, 0, Math.max.apply(null, allPriceY));
+    var belowGrad = ctx.createLinearGradient(0, Math.max.apply(null, allPriceY), 0, maxNavY);
     belowGrad.addColorStop(0, 'rgba(232,64,87,0.25)');
     belowGrad.addColorStop(1, 'rgba(232,64,87,0.02)');
 
@@ -1464,9 +1464,6 @@ function drawChart() {
     for (var i = 1; i < pricePts.length; i++) {
       ctx.lineTo(pricePts[i].x, pricePts[i].y);
     }
-    // Extend price line horizontally to right edge
-    var lastPriceY = pricePts[pricePts.length - 1].y;
-    ctx.lineTo(w - pad.right, lastPriceY);
     ctx.stroke();
   }
 
@@ -1547,11 +1544,11 @@ function drawChart() {
       // Vertical step to new Y
       allSegments.push({ x1: navPts[i].x, y1: navPts[i - 1].y, x2: navPts[i].x, y2: navPts[i].y });
     }
-    // Extend to right edge of plot area
+    // Extend to last price candle
     var lastNav = navPts[navPts.length - 1];
-    var rightEdge = w - pad.right;
-    if (lastNav.x < rightEdge) {
-      allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: rightEdge, y2: lastNav.y });
+    var lastPriceX = (pricePts.length > 0) ? pricePts[pricePts.length - 1].x : lastNav.x;
+    if (lastNav.x < lastPriceX) {
+      allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: lastPriceX, y2: lastNav.y });
     }
 
     // Draw each segment — red dashes near withdrawals, white dashes elsewhere
@@ -1776,34 +1773,38 @@ function attachChartEvents(container) {
       return;
     }
 
-    // Chart area — X-axis drag
+    // Chart area — X+Y axis drag (2D pan)
     _chart.isDragging = true;
     _chart.dragStartX = e.clientX;
+    _chart.dragStartY = e.clientY;
     _chart.dragStartViewStart = _chart.viewStart;
     _chart.dragStartViewEnd = _chart.viewEnd;
     _chart.dragRange = _chart.viewEnd - _chart.viewStart;
+    _chart.dragStartYOffset = _chart.yOffset;
     canvas.style.cursor = 'grabbing';
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
     e.preventDefault();
   });
 
   window.addEventListener('mousemove', function(e) {
-    // Y-axis dragging — controls zoom: drag down = compress, drag up = elongate
+    // Y-axis dragging on price scale — controls zoom
     if (_chart.isYDragging) {
       var dy = e.clientY - _chart.yDragStartY;
       var rect = _chart.canvas.getBoundingClientRect();
-      // Drag down (positive dy) = zoom out, drag up = zoom in
       var zoomDelta = 1 + (dy / rect.height) * 2;
       _chart.yZoom = Math.max(0.1, Math.min(20, _chart.yDragStartZoom / Math.max(0.1, zoomDelta)));
       drawChart();
       return;
     }
 
-    // X-axis panning
+    // Chart area 2D panning
     if (!_chart.isDragging) return;
     var rect = _chart.canvas.getBoundingClientRect();
     var canvasW = rect.width;
     var dx = e.clientX - _chart.dragStartX;
+    var dy = e.clientY - _chart.dragStartY;
+
+    // X-axis pan
     var shift = -(dx / canvasW) * _chart.dragRange;
     var newStart = _chart.dragStartViewStart + shift;
     var overscroll = _chart.dragRange * 0.3;
@@ -1811,6 +1812,11 @@ function attachChartEvents(container) {
     if (newStart + _chart.dragRange > 1 + overscroll) newStart = 1 + overscroll - _chart.dragRange;
     _chart.viewStart = newStart;
     _chart.viewEnd = newStart + _chart.dragRange;
+
+    // Y-axis pan — drag up moves chart down (see lower prices), drag down moves chart up
+    var sensitivity = (_chart._vMax - _chart._vMin) || 1;
+    _chart.yOffset = _chart.dragStartYOffset + (dy / rect.height) * sensitivity;
+
     drawChart();
   });
 
