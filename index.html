@@ -308,16 +308,16 @@
 
   <!-- Chart section — dominates the page -->
   <div class="chart-section">
-    <div class="chart-controls" id="chart-controls">
+    <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
       <div class="chart-btn-group">
+        <button class="chart-btn" data-tf="1H">1H</button>
         <button class="chart-btn" data-tf="12H">12H</button>
         <button class="chart-btn active" data-tf="1D">1D</button>
         <button class="chart-btn" data-tf="1W">1W</button>
         <button class="chart-btn" data-tf="1M">1M</button>
       </div>
       <div class="chart-btn-group" style="margin-left:12px">
-        <button class="chart-btn active" id="btn-lin" onclick="setChartScale('linear')">LIN</button>
-        <button class="chart-btn" id="btn-log" onclick="setChartScale('log')">LOG</button>
+        <button class="chart-btn active" id="btn-lin">LINE</button>
       </div>
       <div class="chart-btn-group" style="margin-left:12px">
         <button class="chart-btn" id="btn-nav-focus" onclick="toggleNavFocus()">NAV</button>
@@ -336,7 +336,6 @@
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
       <span class="legend-item"><span class="legend-dash" style="border-color:#e84057"></span> Withdrawal</span>
     </div>
-    <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
 
   <!-- Key metrics below chart -->
@@ -1414,10 +1413,14 @@ function drawChart() {
 
     ctx.save();
 
-    // Use flat semi-transparent fills instead of gradients
-    // This prevents discoloration bands at NAV step boundaries
-    var aboveColor = 'rgba(0,229,160,0.15)';
-    var belowColor = 'rgba(232,64,87,0.15)';
+    // Gradient fills — fade from NAV line outward (like checkprice)
+    var aboveGrad = ctx.createLinearGradient(0, minNavY, 0, Math.min.apply(null, allPriceY));
+    aboveGrad.addColorStop(0, 'rgba(0,229,160,0.25)');
+    aboveGrad.addColorStop(1, 'rgba(0,229,160,0.02)');
+
+    var belowGrad = ctx.createLinearGradient(0, maxNavY, 0, Math.max.apply(null, allPriceY));
+    belowGrad.addColorStop(0, 'rgba(232,64,87,0.25)');
+    belowGrad.addColorStop(1, 'rgba(232,64,87,0.02)');
 
     // Draw above-NAV fill
     ctx.beginPath();
@@ -1431,7 +1434,7 @@ function drawChart() {
       ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
-    ctx.fillStyle = aboveColor;
+    ctx.fillStyle = aboveGrad;
     ctx.fill();
 
     // Draw below-NAV fill
@@ -1446,7 +1449,7 @@ function drawChart() {
       ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
-    ctx.fillStyle = belowColor;
+    ctx.fillStyle = belowGrad;
     ctx.fill();
 
     ctx.restore();
@@ -1751,7 +1754,7 @@ function attachChartEvents(container) {
     drawChart();
   }, { passive: false });
 
-  // Y-axis drag on price scale zone only — no X-axis panning
+  // Pan with click-drag — Y-axis on price scale, X-axis elsewhere
   canvas.addEventListener('mousedown', function(e) {
     var rect = canvas.getBoundingClientRect();
     var mx = (e.clientX - rect.left) * (_chart.width / rect.width);
@@ -1762,28 +1765,56 @@ function attachChartEvents(container) {
     if (mx > w - cpad.right - 30) {
       _chart.isYDragging = true;
       _chart.yDragStartY = e.clientY;
-      _chart.yDragStartOffset = _chart.yOffset;
+      _chart.yDragStartZoom = _chart.yZoom;
       canvas.style.cursor = 'ns-resize';
       if (_chart.tooltip) _chart.tooltip.style.display = 'none';
       e.preventDefault();
       return;
     }
+
+    // Chart area — X-axis drag
+    _chart.isDragging = true;
+    _chart.dragStartX = e.clientX;
+    _chart.dragStartViewStart = _chart.viewStart;
+    _chart.dragStartViewEnd = _chart.viewEnd;
+    _chart.dragRange = _chart.viewEnd - _chart.viewStart;
+    canvas.style.cursor = 'grabbing';
+    if (_chart.tooltip) _chart.tooltip.style.display = 'none';
     e.preventDefault();
   });
 
   window.addEventListener('mousemove', function(e) {
-    // Y-axis dragging
+    // Y-axis dragging — controls zoom: drag down = compress, drag up = elongate
     if (_chart.isYDragging) {
       var dy = e.clientY - _chart.yDragStartY;
       var rect = _chart.canvas.getBoundingClientRect();
-      var sensitivity = (_chart._vMax - _chart._vMin) || 1;
-      _chart.yOffset = _chart.yDragStartOffset + (dy / rect.height) * sensitivity;
+      // Drag down (positive dy) = zoom out, drag up = zoom in
+      var zoomDelta = 1 + (dy / rect.height) * 2;
+      _chart.yZoom = Math.max(0.1, Math.min(20, _chart.yDragStartZoom / Math.max(0.1, zoomDelta)));
       drawChart();
       return;
     }
+
+    // X-axis panning
+    if (!_chart.isDragging) return;
+    var rect = _chart.canvas.getBoundingClientRect();
+    var canvasW = rect.width;
+    var dx = e.clientX - _chart.dragStartX;
+    var shift = -(dx / canvasW) * _chart.dragRange;
+    var newStart = _chart.dragStartViewStart + shift;
+    var overscroll = _chart.dragRange * 0.3;
+    if (newStart < -overscroll) newStart = -overscroll;
+    if (newStart + _chart.dragRange > 1 + overscroll) newStart = 1 + overscroll - _chart.dragRange;
+    _chart.viewStart = newStart;
+    _chart.viewEnd = newStart + _chart.dragRange;
+    drawChart();
   });
 
   window.addEventListener('mouseup', function() {
+    if (_chart.isDragging) {
+      _chart.isDragging = false;
+      _chart.canvas.style.cursor = 'crosshair';
+    }
     if (_chart.isYDragging) {
       _chart.isYDragging = false;
       _chart.canvas.style.cursor = 'crosshair';
