@@ -401,9 +401,10 @@ const TOKENS = {
     spot: 0.55, treasuryUSDC: 7_420_000, ammUSDCFixed: null,
     tge: '2025-11-18',
     draws: [
-      { date: '2025-12-01', amount: 100_000, label: 'Draw #1' },
-      { date: '2026-01-01', amount: 100_000, label: 'Draw #2' },
-      { date: '2026-02-01', amount: 100_000, label: 'Draw #3' },
+      { date: '2025-11-20', amount: 30_000, label: 'Draw #1a' },
+      { date: '2025-12-17', amount: 70_000, label: 'Draw #1b' },
+      { date: '2025-12-24', amount: 100_000, label: 'Draw #2' },
+      { date: '2026-01-26', amount: 100_000, label: 'Draw #3' },
     ],
   },
   zkfg: { live: true,
@@ -1122,10 +1123,22 @@ function buildChart(candles, navPerToken) {
 
     // Only use AMM simulation for tokens that have AMM data
     if (CFG.raise && _chart.priceData.length > 0) {
+      // Build draw schedule as timestamps
+      var drawEvents = [];
+      if (CFG.draws) {
+        for (var di = 0; di < CFG.draws.length; di++) {
+          var drawTs = Math.floor(new Date(CFG.draws[di].date + 'T00:00:00Z').getTime() / 1000);
+          if (drawTs > tgeTs && drawTs < firstAccTs) {
+            drawEvents.push({ time: drawTs, amount: CFG.draws[di].amount });
+          }
+        }
+        drawEvents.sort(function(a, b) { return a.time - b.time; });
+      }
+
       // Walk through price data points between TGE and first accurate NAV
       var simPoints = [];
-      var burnPerSec = monthlyBurn / (30.44 * 86400); // burn rate per second
-      var lastBurnTime = tgeTs;
+      var cumulativeDraws = 0;
+      var drawIdx = 0;
 
       // Add TGE point
       var tgeAmmUsdc = initialAmmUsdc;
@@ -1136,18 +1149,29 @@ function buildChart(candles, navPerToken) {
         var pt = _chart.priceData[pi];
         if (pt.time <= tgeTs || pt.time >= firstAccTs) continue;
 
-        // Calculate cumulative burn from TGE to this point
-        var elapsed = pt.time - tgeTs;
-        var totalBurned = burnPerSec * elapsed;
-        var currentIdle = Math.max(0, idleUsdc - totalBurned);
+        // Apply any draws that occurred before this price point
+        while (drawIdx < drawEvents.length && drawEvents[drawIdx].time <= pt.time) {
+          cumulativeDraws += drawEvents[drawIdx].amount;
+          drawIdx++;
+          // Insert a NAV drop point at the draw time
+          var drawTime = drawEvents[drawIdx - 1].time;
+          var prevPrice = pt.value; // approximate with current price
+          // Find closest price before draw
+          for (var pj = pi - 1; pj >= 0; pj--) {
+            if (_chart.priceData[pj].time <= drawTime) { prevPrice = _chart.priceData[pj].value; break; }
+          }
+          var drawIdle = Math.max(0, idleUsdc - cumulativeDraws);
+          var drawAmm = Math.sqrt(ammK * prevPrice);
+          drawAmm = Math.min(drawAmm, CFG.raise * 0.8);
+          drawAmm = Math.max(drawAmm, initialAmmUsdc * 0.1);
+          simPoints.push({ time: drawTime, value: (drawIdle + drawAmm) / holderSupply });
+        }
+
+        var currentIdle = Math.max(0, idleUsdc - cumulativeDraws);
 
         // AMM rebalance: at price P, USDC in pool = sqrt(k * P)
-        // Since k = usdc * tokens, and price = usdc/tokens
-        // usdc_in_amm = sqrt(k * price)
         var price = pt.value;
         var ammUsdc = Math.sqrt(ammK * price);
-
-        // Cap AMM USDC at reasonable bounds
         ammUsdc = Math.min(ammUsdc, CFG.raise * 0.8);
         ammUsdc = Math.max(ammUsdc, initialAmmUsdc * 0.1);
 
