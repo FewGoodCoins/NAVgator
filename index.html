@@ -23,7 +23,7 @@
   /* Nav bar */
   .nav { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
   .nav-brand { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; display: inline; }
-  .nav-brand span { color: #00ff88; font-weight: 700; }
+  .nav-brand span { color: #008a45; font-weight: 700; }
   .nav-brand-icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, var(--green), #00b880); font-family: 'DM Serif Display', serif; font-size: 13px; font-weight: 400; color: #0c0c10; flex-shrink: 0; }
   .nav-sep { color: var(--dim); }
   .nav-tokens { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -55,9 +55,9 @@
   /* Metric cards — compact inline next to price */
   .cards { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end; margin-bottom: 0; }
   .card { border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px; background: var(--card-bg); }
-  .card-label { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .card-value { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.1; color: var(--white); }
-  .card-sub { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 400; color: var(--dim); margin-top: 3px; }
+  .card-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card-value { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.1; color: var(--white); }
+  .card-sub { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; color: var(--dim); margin-top: 3px; }
   @media (max-width: 800px) { .price-metrics-row { flex-wrap: wrap; } .cards { justify-content: flex-start; } }
   @media (max-width: 500px) { .price-hero-value { font-size: 30px; } .price-metrics-row { flex-direction: column; align-items: flex-start; } }
 
@@ -168,7 +168,7 @@
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
   .landing-nav-left .brand-text { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
-  .landing-nav-left .brand-text span { color: #00ff88; font-weight: 700; }
+  .landing-nav-left .brand-text span { color: #008a45; font-weight: 700; }
   .landing-nav-left .brand-stat { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--muted); margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--border2); }
   .landing-nav-left .brand-stat b { color: var(--white); font-weight: 600; }
   .landing-nav-left .brand-stat .up { color: var(--green); }
@@ -340,8 +340,8 @@
   </div>
 
   <!-- Params below chart -->
-  <div class="params" id="params"></div>
-  <div class="params" id="treasury-flow" style="margin-top:8px"></div>
+  <div class="params" id="params" style="display:none"></div>
+  <div class="params" id="treasury-flow" style="display:none"></div>
 
   <!-- Hidden elements for compat -->
   <div class="sub" id="sub-line" style="display:none"></div>
@@ -1520,7 +1520,7 @@ function drawChart() {
       var p1 = (drawT1 - eT0) / (eT1 - eT0);
       ctx.beginPath();
       ctx.strokeStyle = '#e8e6e3';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
       ctx.moveTo(tx(drawT0), ty(eV0 + p0 * (eV1 - eV0)));
       ctx.lineTo(tx(drawT1), ty(eV0 + p1 * (eV1 - eV0)));
       ctx.stroke();
@@ -1569,12 +1569,12 @@ function drawChart() {
       allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: lastPriceX, y2: lastNav.y });
     }
 
-    // Draw each segment — same style as price line (solid white)
+    // Draw each segment — same style as price line (solid white, thinner)
     for (var si = 0; si < allSegments.length; si++) {
       var seg = allSegments[si];
       ctx.beginPath();
       ctx.strokeStyle = '#e8e6e3';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
       ctx.moveTo(seg.x1, seg.y1);
       ctx.lineTo(seg.x2, seg.y2);
       ctx.stroke();
@@ -1605,9 +1605,6 @@ function drawChart() {
       ctx.arc(cx, cy, 5, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
-      ctx.strokeStyle = '#00e5a0';
-      ctx.lineWidth = 2;
-      ctx.stroke();
       // Label below
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 10px Inter, sans-serif';
@@ -1819,10 +1816,11 @@ function attachChartEvents(container) {
     var dx = e.clientX - _chart.dragStartX;
     var dy = e.clientY - _chart.dragStartY;
 
-    // X-axis pan — no overscroll, clamp to data bounds
+    // X-axis pan — small overscroll on left, none on right
     var shift = -(dx / canvasW) * _chart.dragRange;
     var newStart = _chart.dragStartViewStart + shift;
-    if (newStart < 0) newStart = 0;
+    var leftPad = _chart.dragRange * 0.05;
+    if (newStart < -leftPad) newStart = -leftPad;
     if (newStart + _chart.dragRange > 1) newStart = 1 - _chart.dragRange;
     _chart.viewStart = newStart;
     _chart.viewEnd = newStart + _chart.dragRange;
