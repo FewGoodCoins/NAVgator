@@ -843,6 +843,7 @@ var _chart = {
   viewStart: 0, viewEnd: 1, // 0-1 range for zoom/pan
   isDragging: false, dragStartX: 0, dragStartView: 0,
   isYDragging: false, yDragStartY: 0, yDragStartZoom: 1, yDragStartOffset: 0,
+  isXDragging: false, xDragStartX: 0, xDragStartViewStart: 0, xDragStartViewEnd: 0,
   yZoom: 1, yOffset: 0, // Y-axis zoom (1=auto) and vertical offset
   width: 0, height: 420,
   padding: { top: 20, right: 70, bottom: 30, left: 30 },
@@ -1236,16 +1237,19 @@ function attachChartEvents(container) {
 
   // Crosshair on mouse move (only when not dragging)
   canvas.addEventListener('mousemove', function(e) {
-    if (_chart.isDragging || _chart.isYDragging) return;
+    if (_chart.isDragging || _chart.isYDragging || _chart.isXDragging) return;
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
     var my = e.clientY - rect.top;
     var mxScaled = mx * (_chart.width / rect.width);
+    var myScaled = my * (_chart.height / rect.height);
     var w = _chart.width;
     var cpad = _chart.padding;
-    // Change cursor on price scale zone
+    // Change cursor on price scale zone or time scale zone
     if (mxScaled > w - cpad.right - 30) {
       canvas.style.cursor = 'ns-resize';
+    } else if (myScaled > _chart.height - cpad.bottom) {
+      canvas.style.cursor = 'ew-resize';
     } else {
       canvas.style.cursor = 'crosshair';
     }
@@ -1296,6 +1300,7 @@ function attachChartEvents(container) {
   canvas.addEventListener('mousedown', function(e) {
     var rect = canvas.getBoundingClientRect();
     var mx = (e.clientX - rect.left) * (_chart.width / rect.width);
+    var my = (e.clientY - rect.top) * (_chart.height / rect.height);
     var w = _chart.width;
     var cpad = _chart.padding;
 
@@ -1305,6 +1310,18 @@ function attachChartEvents(container) {
       _chart.yDragStartY = e.clientY;
       _chart.yDragStartZoom = _chart.yZoom;
       canvas.style.cursor = 'ns-resize';
+      if (_chart.tooltip) _chart.tooltip.style.display = 'none';
+      e.preventDefault();
+      return;
+    }
+
+    // Bottom time scale zone — X-axis drag to zoom
+    if (my > _chart.height - cpad.bottom) {
+      _chart.isXDragging = true;
+      _chart.xDragStartX = e.clientX;
+      _chart.xDragStartViewStart = _chart.viewStart;
+      _chart.xDragStartViewEnd = _chart.viewEnd;
+      canvas.style.cursor = 'ew-resize';
       if (_chart.tooltip) _chart.tooltip.style.display = 'none';
       e.preventDefault();
       return;
@@ -1331,6 +1348,23 @@ function attachChartEvents(container) {
       var rect = _chart.canvas.getBoundingClientRect();
       var zoomDelta = 1 + (dy / rect.height) * 2;
       _chart.yZoom = Math.max(0.1, Math.min(20, _chart.yDragStartZoom / Math.max(0.1, zoomDelta)));
+      drawChart();
+      return;
+    }
+
+    // X-axis dragging on time scale — drag right to zoom in, left to zoom out
+    if (_chart.isXDragging) {
+      var dx = e.clientX - _chart.xDragStartX;
+      var rect = _chart.canvas.getBoundingClientRect();
+      var range = _chart.xDragStartViewEnd - _chart.xDragStartViewStart;
+      var zoomFactor = 1 + (dx / rect.width) * 2;
+      var newRange = Math.min(1, Math.max(0.05, range / Math.max(0.1, zoomFactor)));
+      // Keep right edge pinned (most recent data)
+      var newEnd = _chart.xDragStartViewEnd;
+      var newStart = newEnd - newRange;
+      if (newStart < 0) { newStart = 0; newEnd = newRange; }
+      _chart.viewStart = newStart;
+      _chart.viewEnd = newEnd;
       drawChart();
       return;
     }
@@ -1366,6 +1400,10 @@ function attachChartEvents(container) {
     }
     if (_chart.isYDragging) {
       _chart.isYDragging = false;
+      _chart.canvas.style.cursor = 'crosshair';
+    }
+    if (_chart.isXDragging) {
+      _chart.isXDragging = false;
       _chart.canvas.style.cursor = 'crosshair';
     }
   });
