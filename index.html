@@ -12,7 +12,7 @@
     --dim: #555560; --muted: #77778a; --text: #a0a0b0; --bright: #d0d0dd; --white: #eeeef2;
     --green: #00e5a0; --green-dim: rgba(0,229,160,0.10);
     --red: #e84057; --orange: #f59e42; --blue: #5b8def; --purple: #9f8cfc;
-    --card-bg: #16161c; --card-border: #24242c;
+    --card-bg: #0a0a0a; --card-border: #1a1a1a;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
@@ -22,8 +22,8 @@
 
   /* Nav bar */
   .nav { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
-  .nav-brand { font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; color: var(--white); text-decoration: none; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
-  .nav-brand span { color: var(--green); }
+  .nav-brand { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+  .nav-brand span { color: #00ff88; font-weight: 700; }
   .nav-brand-icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, var(--green), #00b880); font-family: 'DM Serif Display', serif; font-size: 13px; font-weight: 400; color: #0c0c10; flex-shrink: 0; }
   .nav-sep { color: var(--dim); }
   .nav-tokens { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -59,17 +59,34 @@
   .params .hl { color: var(--green); font-weight: 600; }
   .params .spot { color: var(--red); font-weight: 600; }
 
-  /* Chart section */
-  .chart-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 24px 20px 16px; margin-bottom: 28px; position: relative; }
-  .chart-title { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 16px; }
-  .chart-title span { color: var(--red); }
-  .chart-controls { display: flex; gap: 6px; position: absolute; top: 20px; right: 20px; z-index: 2; align-items: center; }
+  /* Token header — checkprice style */
+  .token-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 4px; }
+  .token-header-left { display: flex; align-items: center; gap: 12px; }
+  .token-header-icon { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .token-header-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .token-header-name { display: flex; align-items: baseline; gap: 10px; }
+  .token-header-title { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 600; color: var(--white); }
+  .token-header-ticker { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--dim); }
+
+  /* Big price hero */
+  .price-hero { padding: 8px 0 20px; }
+  .price-hero-left { display: flex; align-items: baseline; gap: 16px; }
+  .price-hero-value { font-family: 'Inter', sans-serif; font-size: 42px; font-weight: 700; color: var(--white); letter-spacing: -1px; }
+  .price-hero-change { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; }
+  .price-hero-change.up { color: var(--green); }
+  .price-hero-change.down { color: var(--red); }
+  @media (max-width: 500px) { .price-hero-value { font-size: 30px; } }
+
+  /* Chart section — clean, no box */
+  .chart-section { background: transparent; border: none; border-radius: 0; padding: 0; margin-bottom: 28px; position: relative; }
+  .chart-title { display: none; }
+  .chart-controls { display: flex; gap: 6px; margin-bottom: 12px; z-index: 2; align-items: center; }
   .chart-btn-group { display: flex; gap: 4px; }
   .chart-btn-group + .chart-btn-group { margin-left: 8px; padding-left: 10px; border-left: 1px solid var(--border2); }
   .chart-btn { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border2); color: var(--muted); background: transparent; cursor: pointer; transition: all 0.2s; }
   .chart-btn:hover { border-color: var(--green); color: var(--white); }
   .chart-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
-  #chart-container { width: 100%; min-height: 420px; position: relative; }
+  #chart-container { width: 100%; min-height: 500px; position: relative; }
   .chart-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 12px; color: var(--dim); }
 
   /* Tooltip */
@@ -150,7 +167,7 @@
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
   .landing-nav-left .brand-text { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
-  .landing-nav-left .brand-text span { color: #00ff88; font-weight: 700; font-style: italic; text-transform: lowercase; }
+  .landing-nav-left .brand-text span { color: #00ff88; font-weight: 700; }
   .landing-nav-left .brand-stat { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--muted); margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--border2); }
   .landing-nav-left .brand-stat b { color: var(--white); font-weight: 600; }
   .landing-nav-left .brand-stat .up { color: var(--green); }
@@ -270,16 +287,27 @@
   <!-- Nav -->
   <nav class="nav" id="nav"></nav>
 
-  <div class="sub" id="sub-line">LOADING…</div>
-  <h1 id="title">Loading Dashboard…</h1>
-  <div class="desc" id="desc">Fetching data…</div>
+  <!-- Token header like checkprice: icon + name left, stats right -->
+  <div class="token-header">
+    <div class="token-header-left">
+      <div class="token-header-icon" id="token-icon"></div>
+      <div class="token-header-name">
+        <span class="token-header-title" id="token-title-name"></span>
+        <span class="token-header-ticker" id="token-title-ticker"></span>
+      </div>
+    </div>
+  </div>
 
-  <div class="cards" id="cards"></div>
-  <div class="params" id="params"></div>
-  <div class="params" id="treasury-flow" style="margin-top:8px"></div>
+  <!-- Big price + change like checkprice -->
+  <div class="price-hero">
+    <div class="price-hero-left">
+      <div class="price-hero-value" id="price-hero-val"></div>
+      <div class="price-hero-change" id="price-hero-change"></div>
+    </div>
+  </div>
 
+  <!-- Chart section — dominates the page -->
   <div class="chart-section">
-    <div class="chart-title" id="chart-label"></div>
     <div class="chart-controls" id="chart-controls">
       <div class="chart-btn-group">
         <button class="chart-btn" data-tf="12H">12H</button>
@@ -310,6 +338,17 @@
     </div>
     <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
+
+  <!-- Key metrics below chart -->
+  <div class="cards" id="cards"></div>
+  <div class="params" id="params"></div>
+  <div class="params" id="treasury-flow" style="margin-top:8px"></div>
+
+  <!-- Hidden elements for compat -->
+  <div class="sub" id="sub-line" style="display:none"></div>
+  <h1 id="title" style="display:none"></h1>
+  <div class="desc" id="desc" style="display:none"></div>
+  <div class="chart-title" id="chart-label" style="display:none"></div>
 
   <!-- Address section -->
   <div class="addr-section" id="addr-section"></div>
@@ -807,7 +846,7 @@ document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
 // Build nav — dim non-live tokens
 const navEl = document.getElementById('nav');
 const LIVE_KEYS = new Set(Object.entries(TOKENS).filter(([k,v]) => v.live).map(([k]) => k));
-let navHTML = '<a href="index.html" class="nav-brand"><svg width="22" height="14" viewBox="0 0 160 100" style="flex-shrink:0"><ellipse cx="80" cy="50" rx="55" ry="30" fill="none" stroke="#00e5a0" stroke-width="6"/><ellipse cx="80" cy="50" rx="7" ry="26" fill="#00e5a0"/></svg> NAV<span>gator</span></a><span class="nav-sep">·</span><div class="nav-tokens">';
+let navHTML = '<a href="index.html" class="nav-brand">NAV<span>gator</span></a><span class="nav-sep">·</span><div class="nav-tokens">';
 for (const [key, tok] of Object.entries(TOKENS)) {
   const isLive = LIVE_KEYS.has(key);
   const dimStyle = !isLive ? 'opacity:0.35;pointer-events:none;' : '';
@@ -1832,26 +1871,47 @@ function renderUI(isLive) {
   const discPct = strike > 0 ? ((CFG.spot - strike) / strike * 100) : 0;
   const isDiscount = discPct < 0;
 
+  // Token header — icon + name + ticker
+  var iconEl = document.getElementById('token-icon');
+  if (iconEl) {
+    if (CFG.logo) {
+      iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '">';
+    } else {
+      iconEl.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
+    }
+  }
+  var titleEl = document.getElementById('token-title-name');
+  if (titleEl) titleEl.textContent = CFG.name;
+  var tickerEl = document.getElementById('token-title-ticker');
+  if (tickerEl) tickerEl.textContent = CFG.ticker;
+
+  // Big price hero
+  var priceVal = document.getElementById('price-hero-val');
+  if (priceVal) priceVal.textContent = fmt$(CFG.spot);
+  var priceChange = document.getElementById('price-hero-change');
+  if (priceChange) {
+    var changePct = discPct;
+    priceChange.textContent = (isDiscount ? '' : '+') + changePct.toFixed(2) + '% vs NAV';
+    priceChange.className = 'price-hero-change ' + (isDiscount ? 'down' : 'up');
+  }
+
+  // Hidden compat elements
   document.getElementById('sub-line').innerHTML = CFG.pair + ' \u00b7 FUTARCHY CPMM \u00b7 <span class="data-tag">' + (isLive ? 'LIVE' : 'SNAPSHOT') + '</span>';
   document.getElementById('title').textContent = CFG.ticker + ' \u2014 ' + (itm ? 'Trading Below Treasury Floor' : 'Trading Above Treasury Floor');
-  document.getElementById('desc').innerHTML =
-    CFG.ticker + ' is trading at <b>' + fmt$(CFG.spot) + '</b>, ' + (itm ? 'below' : 'above') + ' the <b>' + fmt$(strike) + '</b> treasury floor (treasury/token). ' +
-    'Token holders can vote for dissolution and claim their pro-rata share of the treasury. ' +
-    (itm ? 'Currently trading at a <span class="hl-orange">' + Math.abs(discPct).toFixed(1) + '%</span> discount \u2014 each token is backed by more than its market price.' : '');
+  document.getElementById('desc').innerHTML = '';
 
   document.getElementById('cards').innerHTML =
     '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">' + fmtM(CFG.monthlyBurn) + '/mo burn</div></div>' +
-    '<div class="card"><div class="card-label">Spot Price</div><div class="card-value" style="color:var(--white)">' + fmt$(CFG.spot) + '</div><div class="card-sub">current market price</div></div>' +
-    '<div class="card"><div class="card-label">Backing / Token</div><div class="card-value" style="color:var(--white)">' + fmt$(strike) + '</div><div class="card-sub">treasury \u00f7 holder supply</div></div>' +
-    '<div class="card" onclick="togglePremiumFormat()" style="cursor:pointer"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" id="prem-val" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub" id="prem-sub">' + (isDiscount ? 'below treasury floor' : 'above treasury floor') + ' · tap to toggle</div></div>' +
-    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">at current burn rate</div></div>';
+    '<div class="card"><div class="card-label">NAV / Token</div><div class="card-value" style="color:var(--white)">' + fmt$(strike) + '</div><div class="card-sub">treasury \u00f7 holder supply</div></div>' +
+    '<div class="card" onclick="togglePremiumFormat()" style="cursor:pointer"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" id="prem-val" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub" id="prem-sub">' + (isDiscount ? 'below NAV' : 'above NAV') + '</div></div>' +
+    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">at current burn rate</div></div>' +
+    '<div class="card"><div class="card-label">MCap</div><div class="card-value" style="color:var(--white)">' + fmtM(CFG.spot * supplyForNAV) + '</div><div class="card-sub">' + (supplyForNAV / 1e6).toFixed(1) + 'M supply</div></div>';
 
   document.getElementById('params').innerHTML =
     '<span>Raise <b>' + fmtM(CFG.raise) + '</b></span>' +
-    '<span>Supply <b>' + (supplyForNAV / 1e6).toFixed(1) + 'M</b></span>' +
     '<span>S\u2080 <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
     '<span>NAV <span class="hl">' + fmt$(strike) + '</span></span>' +
-    '<span>Spot now <span class="spot">' + fmt$(CFG.spot) + '</span></span>' +
+    '<span>Spot <span class="spot">' + fmt$(CFG.spot) + '</span></span>' +
     '<span>ATH <b>' + fmt$(CFG.ath) + '</b></span>' +
     '<span>Burn <b>' + fmtBurn(CFG.monthlyBurn) + '/mo</b></span>';
 
