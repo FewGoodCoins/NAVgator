@@ -1266,6 +1266,9 @@ function drawChart() {
   vMin -= vPad;
   vMax += vPad;
 
+  // Store base range before zoom for drag limits
+  _chart._vBaseRange = vMax - vMin;
+
   // Apply Y-axis manual zoom/offset (from dragging the price scale)
   if (_chart.yZoom !== 1 || _chart.yOffset !== 0) {
     var vMid = (vMin + vMax) / 2 + _chart.yOffset;
@@ -1756,13 +1759,20 @@ function attachChartEvents(container) {
       return;
     }
 
-    // X-axis zoom — pinned to right edge
+    // X-axis zoom — centered on mouse position
+    var mxNorm = (e.clientX - rect.left) / rect.width;
     var zoomFactor = e.deltaY > 0 ? 1.03 : 0.97;
     var range = _chart.viewEnd - _chart.viewStart;
     var newRange = Math.min(1, Math.max(0.2, range * zoomFactor));
-    // Pin right edge at 1 (most recent data)
-    _chart.viewEnd = 1;
-    _chart.viewStart = Math.max(0, 1 - newRange);
+    var center = _chart.viewStart + mxNorm * range;
+    var newStart = center - mxNorm * newRange;
+    var newEnd = newStart + newRange;
+    // Clamp: small left overscroll allowed, no right overscroll
+    var leftPad = newRange * 0.05;
+    if (newStart < -leftPad) { newStart = -leftPad; newEnd = newStart + newRange; }
+    if (newEnd > 1) { newEnd = 1; newStart = newEnd - newRange; }
+    _chart.viewStart = newStart;
+    _chart.viewEnd = newEnd;
     drawChart();
   }, { passive: false });
 
@@ -1792,7 +1802,7 @@ function attachChartEvents(container) {
     _chart.dragStartViewEnd = _chart.viewEnd;
     _chart.dragRange = _chart.viewEnd - _chart.viewStart;
     _chart.dragStartYOffset = _chart.yOffset;
-    _chart.dragYSensitivity = (_chart._vMax - _chart._vMin) || 1;
+    _chart.dragYSensitivity = (_chart._vBaseRange || (_chart._vMax - _chart._vMin)) || 1;
     canvas.style.cursor = 'grabbing';
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
     e.preventDefault();
