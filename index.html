@@ -175,13 +175,13 @@
   .tt-change { font-size: 11px; font-weight: 500; margin-top: 2px; }
   .tt-change.up { color: var(--green); }
   .tt-change.down { color: #e84057; }
-  .tt-sparkline { width: 140px; height: 40px; }
+  .tt-sparkline { width: 200px; height: 50px; }
   .tt-coming { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; opacity: 0.6; }
 
   @media (max-width: 768px) {
     .token-table td:nth-child(6), .token-table th:nth-child(6),
     .token-table td:nth-child(7), .token-table th:nth-child(7) { display: none; }
-    .tt-sparkline { width: 80px; }
+    .tt-sparkline { width: 120px; }
   }
   @media (max-width: 500px) {
     .token-table td:nth-child(4), .token-table th:nth-child(4),
@@ -533,28 +533,31 @@ if (!_hasToken) {
     var h = canvas.height = canvas.offsetHeight * 2;
     ctx.clearRect(0, 0, w, h);
 
-    // Combine all values to get shared min/max
-    var allVals = (priceData || []).concat(navData || []);
-    var min = Math.min(...allVals), max = Math.max(...allVals);
-    var range = max - min || 1;
+    var pad = 4; // padding top/bottom in pixels
 
-    // Calculate price change % for glow intensity
+    // Scale Y-axis to PRICE data only so price movement is visible
+    // NAV gets its own separate scaling
     var mainData = priceData && priceData.length >= 2 ? priceData : navData;
+    var pMin = Math.min(...mainData), pMax = Math.max(...mainData);
+    var pRange = pMax - pMin || pMax * 0.01 || 1;
+    // Add 5% padding to range so lines don't touch edges
+    pMin -= pRange * 0.05;
+    pMax += pRange * 0.05;
+    pRange = pMax - pMin;
+
     var first = mainData[0], last = mainData[mainData.length - 1];
-    var changePct = Math.abs((last - first) / first * 100);
-    // Glow intensity: 0 at 0% change, max at 30%+ change
-    var glowIntensity = Math.min(changePct / 30, 1);
     var isUp = last >= first;
     var lineColor = isUp ? '#00e5a0' : '#e84057';
-    var glowBlur = 4 + glowIntensity * 12; // 4px to 16px blur
-    var glowAlpha = 0.2 + glowIntensity * 0.6; // 0.2 to 0.8 opacity
 
-    function getPath(data) {
+    function priceToY(val) {
+      return h - pad - ((val - pMin) / pRange) * (h - pad * 2);
+    }
+
+    function getPath(data, yFn) {
       var pts = [];
       for (var i = 0; i < data.length; i++) {
         var x = (i / (data.length - 1)) * w;
-        var y = h - ((data[i] - min) / range) * (h - 4) - 2;
-        pts.push([x, y]);
+        pts.push([x, yFn(data[i])]);
       }
       return pts;
     }
@@ -563,6 +566,8 @@ if (!_hasToken) {
       ctx.beginPath();
       ctx.strokeStyle = color;
       ctx.lineWidth = width;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
       if (dash) ctx.setLineDash(dash);
       else ctx.setLineDash([]);
       for (var i = 0; i < pts.length; i++) {
@@ -572,48 +577,49 @@ if (!_hasToken) {
       ctx.setLineDash([]);
     }
 
-    // NAV line (behind), dashed, dimmer
-    if (navData && navData.length >= 2) {
-      var navPts = getPath(navData);
-      strokePath(navPts, 'rgba(232,64,87,0.5)', 1.5, [4, 3]);
+    // NAV line — blue staircase, behind price, using price Y-scale
+    // so you can see relative position (above/below price)
+    if (navData && navData.length >= 2 && priceData && priceData.length >= 2) {
+      // Build staircase path (horizontal steps)
+      var navStairPts = [];
+      for (var i = 0; i < navData.length; i++) {
+        var x = (i / (navData.length - 1)) * w;
+        var y = priceToY(navData[i]);
+        // Clamp Y to canvas bounds
+        y = Math.max(0, Math.min(h, y));
+        if (i > 0) navStairPts.push([x, navStairPts[navStairPts.length - 1][1]]); // horizontal
+        navStairPts.push([x, y]); // vertical step
+      }
+      strokePath(navStairPts, 'rgba(100,149,237,0.6)', 1.5, null);
     }
 
-    // Price line with glow
+    // Price line
     if (priceData && priceData.length >= 2) {
-      var pricePts = getPath(priceData);
-      // Glow layer
-      if (glowIntensity > 0.05) {
-        ctx.save();
-        ctx.shadowColor = lineColor;
-        ctx.shadowBlur = glowBlur;
-        ctx.globalAlpha = glowAlpha;
-        strokePath(pricePts, lineColor, 2.5, null);
-        // Double pass for stronger glow
-        if (glowIntensity > 0.4) strokePath(pricePts, lineColor, 2, null);
-        ctx.restore();
-      }
-      // Crisp line on top
+      var pricePts = getPath(priceData, priceToY);
+
+      // Glow effect
+      ctx.save();
+      ctx.shadowColor = lineColor;
+      ctx.shadowBlur = 8;
+      ctx.globalAlpha = 0.5;
+      strokePath(pricePts, lineColor, 2.5, null);
+      ctx.restore();
+
+      // Crisp line
       strokePath(pricePts, lineColor, 2, null);
 
-      // Fill under the line with faint gradient
-      if (glowIntensity > 0.1) {
-        ctx.beginPath();
-        for (var i = 0; i < pricePts.length; i++) {
-          i === 0 ? ctx.moveTo(pricePts[i][0], pricePts[i][1]) : ctx.lineTo(pricePts[i][0], pricePts[i][1]);
-        }
-        ctx.lineTo(pricePts[pricePts.length - 1][0], h);
-        ctx.lineTo(pricePts[0][0], h);
-        ctx.closePath();
-        var grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, lineColor.replace(')', ',' + (glowAlpha * 0.3) + ')').replace('rgb', 'rgba').replace('#00e5a0', 'rgba(0,229,160,' + (glowAlpha * 0.3) + ')').replace('#e84057', 'rgba(232,64,87,' + (glowAlpha * 0.3) + ')'));
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        // Simpler fill approach
-        ctx.fillStyle = isUp ? 'rgba(0,229,160,' + (glowIntensity * 0.15) + ')' : 'rgba(232,64,87,' + (glowIntensity * 0.15) + ')';
-        ctx.fill();
+      // Fill under price line
+      ctx.beginPath();
+      for (var i = 0; i < pricePts.length; i++) {
+        i === 0 ? ctx.moveTo(pricePts[i][0], pricePts[i][1]) : ctx.lineTo(pricePts[i][0], pricePts[i][1]);
       }
+      ctx.lineTo(pricePts[pricePts.length - 1][0], h);
+      ctx.lineTo(pricePts[0][0], h);
+      ctx.closePath();
+      ctx.fillStyle = isUp ? 'rgba(0,229,160,0.12)' : 'rgba(232,64,87,0.12)';
+      ctx.fill();
     } else if (navData && navData.length >= 2) {
-      // Only NAV data — draw plain line, no glow
-      var navPts2 = getPath(navData);
+      var navPts2 = getPath(navData, priceToY);
       var navFirst = navData[0], navLast = navData[navData.length - 1];
       var navColor = navLast >= navFirst ? '#00e5a0' : '#e84057';
       strokePath(navPts2, navColor, 2, null);
@@ -730,14 +736,36 @@ if (!_hasToken) {
     for (const t of landingTokens) {
       if (!t.live) continue;
       try {
-        const res = await fetch(API_BASE + '/api/history?token=' + t.key + '&days=30');
-        const data = await res.json();
-        if (data.history && data.history.length > 1) {
-          const prices = data.history.map(h => h.spot).filter(s => s > 0);
-          const navs = data.history.map(h => h.nav).filter(n => n > 0);
-          const canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
-          if (canvas) drawSparkline(canvas, prices, navs);
+        // Fetch OHLCV 12H candles for granular price data (30 days = ~60 candles)
+        var ohlcvRes = await fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H');
+        var ohlcvData = await ohlcvRes.json();
+        var prices = [];
+        if (ohlcvData && ohlcvData.data && ohlcvData.data.items && ohlcvData.data.items.length > 1) {
+          // Take last 60 candles (~30 days of 12H data)
+          var items = ohlcvData.data.items.slice(-60);
+          prices = items.map(function(c) { return c.c; }).filter(function(p) { return p > 0; });
         }
+        // Also fetch NAV history for the NAV line
+        var navs = [];
+        try {
+          var histRes = await fetch(API_BASE + '/api/history?token=' + t.key + '&days=30');
+          var histData = await histRes.json();
+          if (histData.history && histData.history.length > 1) {
+            navs = histData.history.map(function(h) { return h.nav; }).filter(function(n) { return n > 0; });
+          }
+        } catch (e2) {}
+        // Fallback: if OHLCV failed, use history spot prices
+        if (prices.length < 2) {
+          try {
+            var histRes2 = await fetch(API_BASE + '/api/history?token=' + t.key + '&days=30');
+            var histData2 = await histRes2.json();
+            if (histData2.history && histData2.history.length > 1) {
+              prices = histData2.history.map(function(h) { return h.spot; }).filter(function(s) { return s > 0; });
+            }
+          } catch (e3) {}
+        }
+        var canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
+        if (canvas && (prices.length >= 2 || navs.length >= 2)) drawSparkline(canvas, prices, navs);
       } catch (e) {}
     }
   }
@@ -1482,16 +1510,6 @@ function drawChart() {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Thin vertical dashed line down from NAV dot for visibility
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(232,64,87,0.25)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
-        ctx.moveTo(ex, eyNav + 6);
-        ctx.lineTo(ex, pad.top + plotH);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
         eventPts.push({ x: ex, y: eyNav, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow, color: '#e84057' });
       }
     }
@@ -1715,13 +1733,7 @@ function drawCrosshair(mx, my) {
         var fmtK = function(v) { return v >= 1000000 ? (v / 1000000).toFixed(2) + 'M' : Math.round(v).toLocaleString(); };
 
         var html = '<div class="tt-date">' + dateStr + '</div>';
-        if (nearEvent.outflow > 0) {
-          html += '<div class="tt-line" style="color:#ff8c42;font-weight:600">Withdrawn: -' + fmtM(nearEvent.outflow) + '</div>';
-        }
-        html += '<div style="border-top:1px solid rgba(255,140,66,0.2);margin:4px 0 3px"></div>';
-        html += '<div class="tt-line" style="color:rgba(255,255,255,0.7);font-size:10px">Treasury: ' + fmtM(nearEvent.treasury) + '</div>';
-        html += '<div class="tt-line" style="color:rgba(255,255,255,0.7);font-size:10px">Eff. Supply: ' + fmtK(nearEvent.supply) + '</div>';
-        html += '<div class="tt-line" style="color:rgba(255,255,255,0.7);font-size:10px">NAV: ' + fmt(nearEvent.value) + '</div>';
+        html += '<div class="tt-line" style="color:#e84057;font-weight:600">Withdraw: -' + fmtM(nearEvent.outflow) + '</div>';
 
         tooltip.innerHTML = html;
         tooltip.style.display = 'block';
