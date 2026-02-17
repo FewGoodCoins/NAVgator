@@ -429,13 +429,9 @@ if (!_hasToken) {
   function drawSparkline(canvas, priceData, navData) {
     if ((!priceData || priceData.length < 2) && (!navData || navData.length < 2)) return;
     var ctx = canvas.getContext('2d');
-    var targetW = canvas.offsetWidth * 2;
-    var targetH = canvas.offsetHeight * 2;
-    // Only resize if needed — setting canvas.width clears ALL canvases in table reflow
-    if (canvas.width !== targetW) canvas.width = targetW;
-    if (canvas.height !== targetH) canvas.height = targetH;
     var w = canvas.width;
     var h = canvas.height;
+    if (w === 0 || h === 0) return;
     ctx.clearRect(0, 0, w, h);
 
     var pad = 4; // padding top/bottom in pixels
@@ -638,8 +634,16 @@ if (!_hasToken) {
   var _sparkCache = {};
 
   async function loadSparklines() {
-    // Fetch all data in parallel
-    await Promise.all(landingTokens.filter(function(t) { return t.live; }).map(async function(t) {
+    // Pre-size all canvases before any drawing
+    document.querySelectorAll('canvas.tt-sparkline').forEach(function(c) {
+      c.width = c.offsetWidth * 2;
+      c.height = c.offsetHeight * 2;
+    });
+
+    // Fetch OHLCV data SEQUENTIALLY to avoid Birdeye rate limits
+    var liveTokens = landingTokens.filter(function(t) { return t.live; });
+    for (var i = 0; i < liveTokens.length; i++) {
+      var t = liveTokens[i];
       try {
         var ohlcvRes = await fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H');
         var ohlcvData = await ohlcvRes.json();
@@ -657,13 +661,24 @@ if (!_hasToken) {
         if (t.strike > 0 && prices.length >= 2) {
           navs = prices.map(function() { return t.strike; });
         }
-        if (prices.length >= 2) _sparkCache[t.key] = { prices: prices, navs: navs };
+        if (prices.length >= 2) {
+          _sparkCache[t.key] = { prices: prices, navs: navs };
+          // Draw immediately as each one loads
+          var canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
+          if (canvas && canvas.offsetWidth > 0) {
+            drawSparkline(canvas, prices, navs);
+          }
+        }
       } catch (e) {}
-    }));
-    drawAllSparklines();
+    }
   }
 
   function drawAllSparklines() {
+    // Pre-size all canvases
+    document.querySelectorAll('canvas.tt-sparkline').forEach(function(c) {
+      c.width = c.offsetWidth * 2;
+      c.height = c.offsetHeight * 2;
+    });
     Object.keys(_sparkCache).forEach(function(key) {
       var canvas = document.querySelector('canvas[data-token="' + key + '"]');
       if (canvas && canvas.offsetWidth > 0) {
