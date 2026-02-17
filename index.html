@@ -333,7 +333,6 @@
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
       <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><polyline points="0,4 3,1 6,7 9,1 12,7 15,1 18,4 20,4" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/></svg></span> NAV <span id="leg-strike">…</span></span>
-      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><polyline points="0,4 3,1 6,7 9,1 12,7 15,1 18,4 20,4" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/></svg></span> Est. NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
       <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><polyline points="0,4 3,1 6,7 9,1 12,7 15,1 18,4 20,4" fill="none" stroke="#e84057" stroke-width="1.5"/></svg></span> Withdrawal</span>
@@ -656,7 +655,32 @@ if (!_hasToken) {
         if (i > 0) navStairPts.push([x, navStairPts[navStairPts.length - 1][1]]); // horizontal
         navStairPts.push([x, y]); // vertical step
       }
-      strokePath(navStairPts, 'rgba(255,255,255,0.5)', 1.5, [4, 3]);
+      // Draw zigzag NAV staircase
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.lineJoin = 'round';
+      // Walk along staircase segments and draw zigzag
+      for (var si = 1; si < navStairPts.length; si++) {
+        var sx1 = navStairPts[si - 1][0], sy1 = navStairPts[si - 1][1];
+        var sx2 = navStairPts[si][0], sy2 = navStairPts[si][1];
+        var sdx = sx2 - sx1, sdy = sy2 - sy1;
+        var sLen = Math.sqrt(sdx * sdx + sdy * sdy);
+        if (sLen < 1) continue;
+        var sux = sdx / sLen, suy = sdy / sLen;
+        var spx = -suy, spy = sux;
+        var zStep = 3, zAmp = 1.5;
+        var zSteps = Math.max(1, Math.floor(sLen / zStep));
+        if (si === 1) ctx.moveTo(sx1, sy1);
+        for (var zi = 1; zi <= zSteps; zi++) {
+          var zt = zi / zSteps;
+          var zbx = sx1 + sdx * zt, zby = sy1 + sdy * zt;
+          var zdir = (zi % 2 === 1) ? 1 : -1;
+          if (zi === zSteps) ctx.lineTo(sx2, sy2);
+          else ctx.lineTo(zbx + spx * zAmp * zdir, zby + spy * zAmp * zdir);
+        }
+      }
+      ctx.stroke();
     }
 
     // Price line
@@ -1485,47 +1509,7 @@ function drawChart() {
     ctx.fill();
   }
 
-  // Draw estimated NAV diagonal (dashed white line from TGE to first accurate point)
-  // Clip to visible range so it shows when zoomed in
-  var estData = _chart.estimatedNav || [];
-  if (estData.length >= 2) {
-    var eT0 = estData[0].time, eV0 = estData[0].value;
-    var eT1 = estData[estData.length - 1].time, eV1 = estData[estData.length - 1].value;
-    // Only draw if the estimated range overlaps the visible range
-    if (eT0 < tMax && eT1 > tMin) {
-      // Interpolate to get NAV value at any time in the estimated range
-      function estNavAt(t) {
-        var p = (t - eT0) / (eT1 - eT0);
-        return eV0 + p * (eV1 - eV0);
-      }
-      var drawT0 = Math.max(eT0, tMin);
-      var drawT1 = Math.min(eT1, tMax);
-      var ex1 = tx(drawT0), ey1 = ty(estNavAt(drawT0));
-      var ex2 = tx(drawT1), ey2 = ty(estNavAt(drawT1));
-      var edx = ex2 - ex1, edy = ey2 - ey1;
-      var eLen = Math.sqrt(edx * edx + edy * edy);
-      if (eLen > 2) {
-        var eux = edx / eLen, euy = edy / eLen;
-        var epx = -euy, epy = eux;
-        var eZigSize = 2, eZigStep = 4;
-        var eSteps = Math.max(1, Math.floor(eLen / eZigStep));
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(ex1, ey1);
-        for (var ezi = 1; ezi <= eSteps; ezi++) {
-          var et = ezi / eSteps;
-          var ebX = ex1 + edx * et, ebY = ey1 + edy * et;
-          var eDir = (ezi % 2 === 1) ? 1 : -1;
-          if (ezi === eSteps) { ctx.lineTo(ex2, ey2); }
-          else { ctx.lineTo(ebX + epx * eZigSize * eDir, ebY + epy * eZigSize * eDir); }
-        }
-        ctx.stroke();
-      }
-    }
-  }
-
-  // Draw NAV line — dashed white staircase, same weight as price line
+  // Draw NAV line — zigzag white staircase, same weight as price line
   // Dashes turn red near withdrawal events
   if (navPts.length > 1) {
     var lastPriceX = (pricePts.length > 0) ? pricePts[pricePts.length - 1].x : (pad.left + plotW);
