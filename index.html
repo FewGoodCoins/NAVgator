@@ -94,7 +94,7 @@
   .tt-date { font-family: 'Inter', sans-serif; font-size: 10px; color: var(--dim); margin-top: 6px; }
 
   /* Legend */
-  .legend { display: flex; flex-wrap: wrap; gap: 18px; padding: 4px 4px 0; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: -8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; padding: 4px 4px 0; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: -20px; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-line { display: inline-block; width: 18px; height: 2.5px; border-radius: 2px; }
   .legend-fill { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
@@ -327,7 +327,7 @@
     </div>
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="4" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="7" y1="1.5" x2="11" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="14" y1="1.5" x2="18" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/></svg></span> <span id="leg-nav-label">NAV</span> <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="4" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="7" y1="1.5" x2="11" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="14" y1="1.5" x2="18" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/></svg></span> <span id="leg-nav-label">NAV</span></span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
     </div>
@@ -1546,12 +1546,15 @@ function renderUI(isLive) {
   document.getElementById('title').textContent = CFG.ticker + ' \u2014 ' + (itm ? 'Trading Below Treasury Floor' : 'Trading Above Treasury Floor');
   document.getElementById('desc').innerHTML = '';
 
+  var circulatingSupply = (CFG.onChainSupply || supplyForNAV) - (CFG.lockTokenBalance || 0);
+  if (circulatingSupply <= 0) circulatingSupply = supplyForNAV;
+
   document.getElementById('cards').innerHTML =
-    '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">' + fmtM(burn) + '/mo allowance</div></div>' +
+    '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">DAO + AMMs</div></div>' +
     '<div class="card"><div class="card-label">NAV / Token</div><div class="card-value" style="color:var(--white)">' + fmt$(strike) + '</div><div class="card-sub">treasury \u00f7 holder supply</div></div>' +
     '<div class="card" onclick="togglePremiumFormat()" style="cursor:pointer"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" id="prem-val" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub" id="prem-sub">' + (isDiscount ? 'below NAV' : 'above NAV') + '</div></div>' +
-    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">at current allowance</div></div>' +
-    '<div class="card"><div class="card-label">MCap</div><div class="card-value" style="color:var(--white)">' + fmtM(CFG.spot * supplyForNAV) + '</div><div class="card-sub">' + (supplyForNAV / 1e6).toFixed(1) + 'M supply</div></div>';
+    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">' + fmtM(burn) + '/month</div></div>' +
+    '<div class="card"><div class="card-label">MCap</div><div class="card-value" style="color:var(--white)">' + fmtM(CFG.spot * circulatingSupply) + '</div><div class="card-sub">' + (circulatingSupply / 1e6).toFixed(1) + 'M circulating</div></div>';
 
   document.getElementById('params').innerHTML =
     '<span>ICO <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
@@ -1567,7 +1570,6 @@ function renderUI(isLive) {
   document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price vs NAV';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
   document.getElementById('leg-nav-label').textContent = CFG.ticker + ' NAV';
-  document.getElementById('leg-strike').textContent = '';
 
   return strike;
 }
