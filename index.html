@@ -78,7 +78,7 @@
   @media (max-width: 500px) { .price-hero-value { font-size: 30px; } }
 
   /* Chart section — clean, no box */
-  .chart-section { background: transparent; border: none; border-radius: 0; padding: 0; margin-bottom: 28px; position: relative; }
+  .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 28px; margin-bottom: 28px; position: relative; }
   .chart-title { display: none; }
   .chart-controls { display: flex; gap: 6px; margin-bottom: 12px; z-index: 2; align-items: center; }
   .chart-btn-group { display: flex; gap: 4px; }
@@ -962,7 +962,7 @@ var _chart = {
   viewStart: 0, viewEnd: 1, // 0-1 range for zoom/pan
   isDragging: false, dragStartX: 0, dragStartView: 0,
   width: 0, height: 420,
-  padding: { top: 20, right: 70, bottom: 30, left: 10 },
+  padding: { top: 20, right: 60, bottom: 30, left: 70 },
 };
 
 // Fetch historical NAV data from backend
@@ -1278,8 +1278,8 @@ function drawChart() {
     }
     ctx.fillStyle = '#555560';
     ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('$' + gVal.toFixed(gVal >= 1 ? 2 : 4), w - pad.right + 6, gy + 3);
+    ctx.textAlign = 'right';
+    ctx.fillText('$' + gVal.toFixed(gVal >= 1 ? 2 : 4), pad.left - 8, gy + 3);
   }
 
   // Time labels
@@ -1602,6 +1602,78 @@ function drawChart() {
     _chart._eventPts = eventPts;
   }
 
+  // ── Live price badge on right edge (checkprice style) ──
+  if (pricePts.length > 0) {
+    var lastPt = pricePts[pricePts.length - 1];
+    var lastY = lastPt.y;
+    var lastVal = CFG.spot;
+    var isDown = lastVal < (CFG.icoPrice || lastVal);
+    var badgeColor = '#e84057'; // default red
+    if (_chart.navData && _chart.navData.length > 0) {
+      var lastNavVal = _chart.navData[_chart.navData.length - 1].value;
+      badgeColor = lastVal >= lastNavVal ? '#00e5a0' : '#e84057';
+    }
+
+    // Horizontal dashed line at current price
+    ctx.beginPath();
+    ctx.strokeStyle = badgeColor;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.globalAlpha = 0.5;
+    ctx.moveTo(pad.left, lastY);
+    ctx.lineTo(w - pad.right, lastY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    // Price badge on right edge
+    var badgeText = '$' + lastVal.toFixed(lastVal >= 1 ? 2 : 4);
+    ctx.font = 'bold 10px Inter, sans-serif';
+    var badgeW = ctx.measureText(badgeText).width + 12;
+    var badgeH = 18;
+    var badgeX = w - pad.right + 2;
+    var badgeY = lastY - badgeH / 2;
+
+    // Badge background
+    ctx.fillStyle = badgeColor;
+    ctx.beginPath();
+    ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3);
+    ctx.fill();
+
+    // Badge text
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'left';
+    ctx.fillText(badgeText, badgeX + 6, lastY + 3.5);
+  }
+
+  // ── NAV badge on right edge ──
+  if (navPts.length > 0) {
+    var lastNavPt = navPts[navPts.length - 1];
+    var navY = lastNavPt.y;
+    var navVal = _chart.navData[_chart.navData.length - 1].value;
+
+    // Only draw if NAV badge won't overlap price badge (>20px apart)
+    var priceY = pricePts.length > 0 ? pricePts[pricePts.length - 1].y : -100;
+    if (Math.abs(navY - priceY) > 22) {
+      // Badge
+      var navText = '$' + navVal.toFixed(navVal >= 1 ? 2 : 4);
+      ctx.font = 'bold 10px Inter, sans-serif';
+      var navBadgeW = ctx.measureText(navText).width + 12;
+      var navBadgeH = 18;
+      var navBadgeX = w - pad.right + 2;
+      var navBadgeY = navY - navBadgeH / 2;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath();
+      ctx.roundRect(navBadgeX, navBadgeY, navBadgeW, navBadgeH, 3);
+      ctx.fill();
+
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'left';
+      ctx.fillText(navText, navBadgeX + 6, navY + 3.5);
+    }
+  }
+
   // Store pixel data for crosshair
   _chart._pricePts = pricePts;
   _chart._navPts = navPts;
@@ -1891,7 +1963,7 @@ function renderUI(isLive) {
   var priceChange = document.getElementById('price-hero-change');
   if (priceChange) {
     var changePct = discPct;
-    priceChange.textContent = (isDiscount ? '' : '+') + changePct.toFixed(2) + '% vs NAV';
+    priceChange.textContent = (isDiscount ? '' : '+') + changePct.toFixed(2) + '% (NAV ' + fmt$(strike) + ')';
     priceChange.className = 'price-hero-change ' + (isDiscount ? 'down' : 'up');
   }
 
