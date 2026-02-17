@@ -212,6 +212,8 @@
   .tt-change.up { color: var(--green); }
   .tt-change.down { color: #e84057; }
   .tt-sparkline { width: 200px; height: 50px; }
+  .token-table thead th:last-child { text-align: center; }
+  .token-table td:last-child { text-align: center; }
   .tt-coming { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; opacity: 0.6; }
 
   @media (max-width: 768px) {
@@ -258,12 +260,12 @@
           <tr>
             <th>#</th>
             <th style="text-align:left">Name</th>
-            <th>Price</th>
+            <th>Price 7D</th>
             <th>NAV</th>
             <th>vs NAV</th>
             <th>Treasury</th>
             <th>MCap</th>
-            <th>7D Trend</th>
+            <th>Trend 7D</th>
           </tr>
         </thead>
         <tbody id="token-tbody"></tbody>
@@ -526,7 +528,7 @@ if (!_hasToken) {
     const sorted = [...landingTokens].sort((a, b) => {
       let va, vb;
       if (currentSort === 'treasury') { va = a.treasury; vb = b.treasury; }
-      else if (currentSort === 'price') { va = a.spot; vb = b.spot; }
+      else if (currentSort === 'price') { va = a.change7d || 0; vb = b.change7d || 0; }
       else if (currentSort === 'nav') { va = a.strike; vb = b.strike; }
       else if (currentSort === 'vsNav') {
         va = a.strike > 0 ? (a.spot - a.strike) / a.strike : -999;
@@ -1174,11 +1176,11 @@ function drawChart() {
   if (navLineY !== null) {
     ctx.beginPath();
     ctx.strokeStyle = '#e8e6e3';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([3, 5]);
-    ctx.lineCap = 'round';
-    ctx.moveTo(pad.left, navLineY);
-    ctx.lineTo(w - pad.right, navLineY);
+    ctx.lineWidth = 1;
+    ctx.setLineDash([8, 4]);
+    ctx.lineCap = 'butt';
+    ctx.moveTo(pad.left, Math.round(navLineY) + 0.5);
+    ctx.lineTo(w - pad.right, Math.round(navLineY) + 0.5);
     ctx.stroke();
     ctx.setLineDash([]);
 
