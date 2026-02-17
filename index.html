@@ -913,6 +913,13 @@ function buildChart(candles, navPerToken) {
     });
   }
 
+  // Prepend ICO price as first point so chart starts at TGE
+  if (CFG.icoPrice > 0 && priceData.length > 0) {
+    var firstTime = priceData[0].time;
+    // Insert TGE point 1 day before first candle
+    priceData.unshift({ time: firstTime - 86400, value: CFG.icoPrice });
+  }
+
   _chart.priceData = priceData;
 
   // Append live spot price so price line extends to current time
