@@ -7,7 +7,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display&family=JetBrains+Mono:wght@300;400;500&display=swap');
   :root {
-    --bg: #0c0c10; --bg2: #141418; --bg3: #1a1a20;
+    --bg: #000000; --bg2: #0a0a0a; --bg3: #111111;
     --border: #222228; --border2: #2a2a32;
     --dim: #555560; --muted: #77778a; --text: #a0a0b0; --bright: #d0d0dd; --white: #eeeef2;
     --green: #00e5a0; --green-dim: rgba(0,229,160,0.10);
@@ -224,22 +224,13 @@
       <div class="landing-nav">
         <div class="landing-nav-left">
           <a href="index.html" class="brand">
-            <div class="brand-logo"><svg width="28" height="18" viewBox="0 0 160 100"><ellipse cx="80" cy="50" rx="55" ry="30" fill="none" stroke="#00e5a0" stroke-width="6"/><ellipse cx="80" cy="50" rx="7" ry="26" fill="#00e5a0"/></svg></div>
             <div class="brand-text">NAV<span>gator</span></div>
           </a>
-          <div class="brand-stat" id="landing-total-treasury">tokens: <b id="landing-token-count">—</b></div>
+          <div class="brand-stat" id="landing-total-treasury">nav: <b id="landing-nav-total">—</b></div>
         </div>
         <div class="landing-nav-right">
           <a href="https://metadao.fi" target="_blank">MetaDAO</a>
           <a href="submit.html" class="submit-btn">+ Submit Token</a>
-        </div>
-      </div>
-      <div class="landing-filter-row">
-        <div class="landing-filter-left">
-          <div class="filter-tab active">All Tokens</div>
-        </div>
-        <div class="landing-filter-right">
-          <div class="tf-btn active">30D</div>
         </div>
       </div>
     </div>
@@ -752,9 +743,9 @@ if (!_hasToken) {
       renderTable();
       loadSparklines();
       // Update header stats
-      var liveCount = landingTokens.filter(function(t) { return t.live; }).length;
-      var el = document.getElementById('landing-token-count');
-      if (el) el.textContent = liveCount + ' live';
+      var totalTreasury = landingTokens.filter(function(t) { return t.live; }).reduce(function(sum, t) { return sum + (t.treasury || 0); }, 0);
+      var el = document.getElementById('landing-nav-total');
+      if (el) el.textContent = totalTreasury >= 1e6 ? '$' + (totalTreasury / 1e6).toFixed(2) + 'M' : '$' + Math.round(totalTreasury).toLocaleString();
       console.log('NAVgator landing: live data loaded from API');
     } catch (e) { console.warn('API fetch failed:', e.message); }
   }
