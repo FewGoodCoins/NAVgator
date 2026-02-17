@@ -51,7 +51,7 @@
   .price-hero-change { display: none; }
 
   /* Metric cards — compact inline next to price */
-  .cards { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; justify-content: flex-end; margin-bottom: 0; }
+  .cards { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; justify-content: flex-end; margin-bottom: 0; transition: opacity 0.3s; }
   .card { border: 1px solid var(--card-border); border-radius: 8px; padding: 6px 10px; background: var(--card-bg); }
   .card-label { font-family: 'Inter', sans-serif; font-size: 8px; font-weight: 500; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
   .card-value { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; line-height: 1.1; color: var(--white); }
@@ -60,7 +60,7 @@
   @media (max-width: 500px) { .price-hero-value { font-size: 28px; } }
 
   /* Params bar */
-  .params { display: flex; flex-wrap: wrap; gap: 6px 24px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; color: var(--dim); padding: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  .params { display: flex; flex-wrap: wrap; gap: 6px 24px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; color: var(--dim); padding: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 28px; transition: opacity 0.3s; }
   .params b { color: var(--text); font-weight: 600; }
   .params .hl { color: var(--green); font-weight: 600; }
   .params .spot { color: var(--red); font-weight: 600; }
@@ -837,7 +837,7 @@ var _chart = {
   isYDragging: false, yDragStartY: 0, yDragStartZoom: 1, yDragStartOffset: 0,
   yZoom: 1, yOffset: 0, // Y-axis zoom (1=auto) and vertical offset
   width: 0, height: 420,
-  padding: { top: 20, right: 70, bottom: 30, left: 10 },
+  padding: { top: 20, right: 70, bottom: 30, left: 30 },
 };
 
 // Fetch historical NAV data from backend
@@ -1836,8 +1836,30 @@ function renderAllowance(data) {
 (async function main() {
   if (!CFG.live) return;
   CFG.effectiveSupply = CFG.supply;
-  var navPerToken = renderUI(false);
+
+  // Don't render UI with zeros — show loading state
+  var priceEl = document.getElementById('price-hero-val');
+  if (priceEl) priceEl.textContent = '—';
+  var cardsEl = document.getElementById('cards');
+  if (cardsEl) cardsEl.style.opacity = '0';
+  var paramsEl = document.getElementById('params');
+  if (paramsEl) paramsEl.style.opacity = '0';
+
+  // Set token header immediately (name/icon don't need API)
+  var iconEl = document.getElementById('token-icon');
+  if (iconEl) {
+    if (CFG.logo) iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '">';
+    else iconEl.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
+  }
+  var titleEl = document.getElementById('token-title-name');
+  if (titleEl) titleEl.textContent = CFG.name;
+  var tickerEl = document.getElementById('token-title-ticker');
+  if (tickerEl) tickerEl.textContent = CFG.ticker;
+  document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price vs NAV';
+  document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
+
   renderAddresses();
+  var navPerToken = 0;
 
   try {
     // Fetch allowance data for chart markers
@@ -1853,6 +1875,9 @@ function renderAllowance(data) {
     var ohlcv = results[0], apiOk = results[1];
     var isLive = !!(ohlcv || apiOk);
     navPerToken = renderUI(isLive);
+    // Fade in cards/params
+    if (cardsEl) cardsEl.style.opacity = '1';
+    if (paramsEl) paramsEl.style.opacity = '1';
     renderBalances();
 
     var chartData = (ohlcv && ohlcv.length > 0) ? ohlcv : [];
