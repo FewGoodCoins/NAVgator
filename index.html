@@ -849,7 +849,7 @@ var _chart = {
 
 
 async function fetchCandlesForTF(tf) {
-  if (_allCandles[tf]) return _allCandles[tf];
+  if (_allCandles[tf] && _allCandles[tf].length > 0) return _allCandles[tf];
   if (!CFG.mint) return [];
   try {
     var now = new Date();
@@ -862,7 +862,7 @@ async function fetchCandlesForTF(tf) {
     var candles = json.data.items.map(function(c) {
       return { date: new Date(c.unixTime * 1000), time: c.unixTime, open: c.o, high: c.h, low: c.l, close: c.c, price: c.c };
     });
-    _allCandles[tf] = candles;
+    if (candles.length > 0) _allCandles[tf] = candles;
     return candles;
   } catch (e) { return []; }
 }
@@ -1465,16 +1465,17 @@ function drawCrosshair(mx, my) {
   var dateLabel = months[cursorDate.getUTCMonth()] + ' ' + cursorDate.getUTCDate();
   ctx.font = '10px Inter, sans-serif';
 
-  // Date label with grey background
+  // Date label at bottom of chart area (above time scale)
   ctx.textAlign = 'center';
   var dateMeasure = ctx.measureText(dateLabel);
   var datePadX = 6, datePadY = 4;
+  var dateY = h - pad.bottom;
   ctx.fillStyle = '#333';
   ctx.beginPath();
-  ctx.roundRect(mx - dateMeasure.width / 2 - datePadX, h - 16 - datePadY, dateMeasure.width + datePadX * 2, 14 + datePadY, 3);
+  ctx.roundRect(mx - dateMeasure.width / 2 - datePadX, dateY - 14 - datePadY, dateMeasure.width + datePadX * 2, 14 + datePadY, 3);
   ctx.fill();
   ctx.fillStyle = '#ccc';
-  ctx.fillText(dateLabel, mx, h - 6);
+  ctx.fillText(dateLabel, mx, dateY - 4);
 
   // Price label with grey background
   var vRange = _chart._vMax - _chart._vMin || 1;
@@ -1529,10 +1530,17 @@ function initChart(rawCandles, navPerToken) {
     controls.addEventListener('click', async function(e) {
       var btn = e.target.closest('.chart-btn');
       if (!btn || !btn.dataset.tf) return;
+      if (btn.dataset.tf === _chartTF) return;
 
       controls.querySelectorAll('[data-tf]').forEach(function(b) { b.classList.remove('active'); });
       btn.classList.add('active');
       _chartTF = btn.dataset.tf;
+      
+      _chart.viewStart = 0;
+      _chart.viewEnd = 1;
+      _chart.yZoom = 1;
+      _chart.yOffset = 0;
+      
       var candles = await fetchCandlesForTF(_chartTF);
       if (candles.length === 0) candles = rawCandles;
       buildChart(candles, _navPerToken);
