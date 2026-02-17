@@ -556,7 +556,7 @@ if (!_hasToken) {
       return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
         '<td>' + (i + 1) + '</td>' +
         '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
-        '<td><div class="tt-price">' + (noData ? '—' : lfmt$(t.spot)) + '</div></td>' +
+        '<td><div class="tt-price">' + (noData ? '—' : lfmt$(t.spot)) + (t.change7d !== undefined ? '<div style="font-size:11px;margin-top:2px;color:' + (t.change7d >= 0 ? 'var(--green)' : '#e84057') + '">' + (t.change7d >= 0 ? '▲' : '▼') + ' ' + Math.abs(t.change7d).toFixed(2) + '%</div>' : '') + '</div></td>' +
         '<td style="color:var(--text)">' + (noData ? '—' : (t.strike > 0 ? lfmt$(t.strike) : '—')) + '</td>' +
         '<td style="color:' + discColor + ';font-weight:500">' + (noData ? '—' : discLabel) + '</td>' +
         '<td style="color:var(--text)">' + (noData ? '—' : lfmtK(t.treasury)) + '</td>' +
@@ -654,9 +654,17 @@ if (!_hasToken) {
         var lastNav = items[items.length - 1].n || t.strike || 0;
         if (prices.length >= 2) {
           _sparkCache[t.key] = { prices: prices, nav: lastNav };
+          // Calculate 7D price change
+          var firstPrice = prices[0];
+          var lastPrice = prices[prices.length - 1];
+          t.change7d = ((lastPrice - firstPrice) / firstPrice) * 100;
           drawSVGSparkline(t.key, prices, lastNav);
         }
       }
+      // Re-render table to show 7D change
+      renderTable();
+      // Redraw sparklines on new table elements
+      drawAllSparklines();
     } catch (e) {
       if (attempt < 2) { setTimeout(function() { loadSparklines(attempt + 1); }, 2000); }
     }
