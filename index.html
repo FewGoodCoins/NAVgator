@@ -275,12 +275,11 @@
     </div>
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:rgba(100,149,237,0.85)"></span> NAV <span id="leg-strike">…</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:rgba(100,149,237,0.4)"></span> Est. NAV</span>
+      <span class="legend-item"><span class="legend-dash" style="border-color:rgba(255,255,255,0.7)"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-dash" style="border-color:rgba(255,255,255,0.3)"></span> Est. NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
-      <span class="legend-item"><span style="color:#e84057;font-size:13px;line-height:1">↓</span> Withdrawal</span>
-      <span class="legend-item"><span style="color:#00e5a0;font-size:13px;line-height:1">↑</span> NAV increase</span>
+      <span class="legend-item"><span class="legend-dash" style="border-color:#e84057"></span> Withdrawal</span>
     </div>
     <div class="nav-stats-bar" id="nav-stats-bar"></div>
   </div>
@@ -1408,7 +1407,7 @@ function drawChart() {
     ctx.lineTo(navPts[navPts.length - 1].x, bottomY);
     ctx.lineTo(navPts[0].x, bottomY);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(100,149,237,0.04)';
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
     ctx.fill();
   }
 
@@ -1428,7 +1427,7 @@ function drawChart() {
       var drawT0 = Math.max(eT0, tMin);
       var drawT1 = Math.min(eT1, tMax);
       ctx.beginPath();
-      ctx.strokeStyle = 'rgba(100,149,237,0.4)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
       ctx.lineWidth = 1.5;
       ctx.moveTo(tx(drawT0), ty(estNavAt(drawT0)));
       ctx.lineTo(tx(drawT1), ty(estNavAt(drawT1)));
@@ -1436,24 +1435,61 @@ function drawChart() {
     }
   }
 
-  // Draw NAV line (continuous staircase — horizontal steps with vertical transitions)
+  // Draw NAV line — dashed white staircase, same weight as price line
+  // Dashes turn red near withdrawal events
   if (navPts.length > 1) {
     var lastPriceX = (pricePts.length > 0) ? pricePts[pricePts.length - 1].x : (pad.left + plotW);
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(100,149,237,0.85)';
-    ctx.lineWidth = 1.5;
-    ctx.moveTo(navPts[0].x, navPts[0].y);
-    for (var i = 1; i < navPts.length; i++) {
-      // Horizontal to next point's x at current y, then vertical to new y
-      ctx.lineTo(navPts[i].x, navPts[i - 1].y);
-      ctx.lineTo(navPts[i].x, navPts[i].y);
+
+    // Build list of withdrawal X positions for coloring
+    var withdrawXs = [];
+    if (_chart.navEvents) {
+      for (var ei = 0; ei < _chart.navEvents.length; ei++) {
+        var evt = _chart.navEvents[ei];
+        if (evt.time >= tMin && evt.time <= tMax) {
+          withdrawXs.push(tx(evt.time));
+        }
+      }
     }
-    // Extend last segment to last price candle
+
+    // Check if an X position is near a withdrawal (within 15px)
+    function isNearWithdraw(x) {
+      for (var wi = 0; wi < withdrawXs.length; wi++) {
+        if (Math.abs(x - withdrawXs[wi]) < 15) return true;
+      }
+      return false;
+    }
+
+    // Draw staircase segment by segment with dashed style
+    // Each segment: horizontal from prev to next X, then vertical step
+    var allSegments = [];
+    // First point
+    allSegments.push({ x1: navPts[0].x, y1: navPts[0].y, x2: navPts[0].x, y2: navPts[0].y });
+    for (var i = 1; i < navPts.length; i++) {
+      // Horizontal segment at previous Y
+      allSegments.push({ x1: navPts[i - 1].x, y1: navPts[i - 1].y, x2: navPts[i].x, y2: navPts[i - 1].y });
+      // Vertical step to new Y
+      allSegments.push({ x1: navPts[i].x, y1: navPts[i - 1].y, x2: navPts[i].x, y2: navPts[i].y });
+    }
+    // Extend to last price candle
     var lastNav = navPts[navPts.length - 1];
     if (lastNav.x < lastPriceX) {
-      ctx.lineTo(lastPriceX, lastNav.y);
+      allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: lastPriceX, y2: lastNav.y });
     }
-    ctx.stroke();
+
+    // Draw each segment — red dashes near withdrawals, white dashes elsewhere
+    for (var si = 0; si < allSegments.length; si++) {
+      var seg = allSegments[si];
+      var midX = (seg.x1 + seg.x2) / 2;
+      var isRed = isNearWithdraw(midX);
+      ctx.beginPath();
+      ctx.strokeStyle = isRed ? 'rgba(232,64,87,0.9)' : 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.moveTo(seg.x1, seg.y1);
+      ctx.lineTo(seg.x2, seg.y2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   }
 
   // White circle at the start of accurate NAV data
@@ -1465,7 +1501,7 @@ function drawChart() {
       ctx.arc(acX, acY, 4, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(100,149,237,0.85)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
       ctx.lineWidth = 1.5;
       ctx.stroke();
     }
@@ -1491,25 +1527,14 @@ function drawChart() {
     }
   }
 
-  // Treasury event markers — colored vertical connectors between NAV levels
+  // Treasury event markers — store positions for tooltip hover (dots replaced by red dashes on NAV line)
   if (_chart.navEvents && _chart.navEvents.length > 0) {
     var eventPts = [];
     for (var i = 0; i < _chart.navEvents.length; i++) {
       var evt = _chart.navEvents[i];
       if (evt.time >= tMin && evt.time <= tMax) {
         var ex = tx(evt.time);
-        // Place dot on the NAV line at this time
         var eyNav = navYAtX ? navYAtX(ex) : ty(evt.value);
-
-        // Small red dot on NAV line
-        ctx.beginPath();
-        ctx.arc(ex, eyNav, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#e84057';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(232,64,87,0.4)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
         eventPts.push({ x: ex, y: eyNav, time: evt.time, value: evt.value, treasury: evt.treasury, supply: evt.supply, outflow: evt.outflow, color: '#e84057' });
       }
     }
