@@ -1564,14 +1564,19 @@ function drawChart() {
     ctx.restore();
   }
 
-  // Draw price line (white)
+  // Draw price line — green above NAV, red below NAV
   if (pricePts.length > 1) {
-    ctx.beginPath();
-    ctx.strokeStyle = '#e8e6e3';
     ctx.lineWidth = 2;
-    ctx.moveTo(pricePts[0].x, pricePts[0].y);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     for (var i = 1; i < pricePts.length; i++) {
+      var navY = hasNav ? navYAtX(pricePts[i].x) : null;
+      var aboveNav = navY !== null ? pricePts[i].y <= navY : true;
+      ctx.beginPath();
+      ctx.strokeStyle = aboveNav ? '#00e5a0' : '#e84057';
+      ctx.moveTo(pricePts[i - 1].x, pricePts[i - 1].y);
       ctx.lineTo(pricePts[i].x, pricePts[i].y);
+      ctx.stroke();
     }
     ctx.stroke();
   }
