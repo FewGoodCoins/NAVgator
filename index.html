@@ -54,10 +54,10 @@
 
   /* Metric cards — compact inline next to price */
   .cards { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end; margin-bottom: 0; }
-  .card { border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 14px; background: var(--card-bg); }
-  .card-label { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .card-value { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.1; color: var(--white); }
-  .card-sub { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; color: var(--dim); margin-top: 3px; }
+  .card { border: 1px solid var(--card-border); border-radius: 10px; padding: 12px 16px; background: var(--card-bg); }
+  .card-label { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card-value { font-family: 'Inter', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.1; color: var(--white); }
+  .card-sub { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; color: var(--dim); margin-top: 4px; }
   @media (max-width: 800px) { .price-metrics-row { flex-wrap: wrap; } .cards { justify-content: flex-start; } }
   @media (max-width: 500px) { .price-hero-value { font-size: 30px; } .price-metrics-row { flex-direction: column; align-items: flex-start; } }
 
@@ -1564,15 +1564,10 @@ function drawChart() {
     ctx.restore();
   }
 
-  // Draw price line — colored by current price vs NAV
+  // Draw price line (white)
   if (pricePts.length > 1) {
-    var currentAboveNav = true;
-    if (_chart.navData && _chart.navData.length > 0) {
-      var lastNavVal = _chart.navData[_chart.navData.length - 1].value;
-      currentAboveNav = CFG.spot >= lastNavVal;
-    }
     ctx.beginPath();
-    ctx.strokeStyle = currentAboveNav ? '#00e5a0' : '#e84057';
+    ctx.strokeStyle = '#e8e6e3';
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
@@ -1599,19 +1594,22 @@ function drawChart() {
     ctx.fill();
   }
 
-  // Draw simulated NAV line from TGE to first accurate point
+  // Draw simulated NAV line from TGE to first accurate point (dotted)
   var estData = _chart.estimatedNav || [];
   if (estData.length >= 2) {
     var estPtsVis = toPixels(estData);
     if (estPtsVis.length >= 2) {
       ctx.beginPath();
       ctx.strokeStyle = '#e8e6e3';
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 5]);
+      ctx.lineCap = 'round';
       ctx.moveTo(estPtsVis[0].x, estPtsVis[0].y);
       for (var i = 1; i < estPtsVis.length; i++) {
         ctx.lineTo(estPtsVis[i].x, estPtsVis[i].y);
       }
       ctx.stroke();
+      ctx.setLineDash([]);
     }
   }
 
@@ -1657,15 +1655,18 @@ function drawChart() {
       allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: lastPriceX, y2: lastNav.y });
     }
 
-    // Draw each segment — same style as price line (solid white, thinner)
+    // Draw each segment — dotted white
     for (var si = 0; si < allSegments.length; si++) {
       var seg = allSegments[si];
       ctx.beginPath();
       ctx.strokeStyle = '#e8e6e3';
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 5]);
+      ctx.lineCap = 'round';
       ctx.moveTo(seg.x1, seg.y1);
       ctx.lineTo(seg.x2, seg.y2);
       ctx.stroke();
+      ctx.setLineDash([]);
     }
   }
 
