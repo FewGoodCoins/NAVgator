@@ -920,6 +920,13 @@ function buildChart(candles, navPerToken) {
     priceData.unshift({ time: firstTime - 86400, value: CFG.icoPrice });
   }
 
+  // Fallback: if no candles but we have spot + icoPrice, create minimal line
+  if (priceData.length === 0 && CFG.spot > 0 && CFG.icoPrice > 0) {
+    var nowTs = Math.floor(Date.now() / 1000);
+    priceData.push({ time: nowTs - 86400 * 90, value: CFG.icoPrice });
+    priceData.push({ time: nowTs, value: CFG.spot });
+  }
+
   _chart.priceData = priceData;
 
   // Append live spot price so price line extends to current time
