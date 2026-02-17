@@ -1341,21 +1341,13 @@ function drawChart() {
 
     // Draw above-NAV fill
     ctx.beginPath();
-    // Determine shared X range (price and NAV may end at different X positions)
-    var fillXMin = pricePts[0].x;
-    var fillXMax = pricePts[pricePts.length - 1].x;
-    if (navPts.length > 0) {
-      fillXMax = Math.min(fillXMax, navPts[navPts.length - 1].x);
-    }
     for (var i = 0; i < pricePts.length; i++) {
-      if (pricePts[i].x > fillXMax) break;
       var navY = navYAtX(pricePts[i].x);
       var clippedY = Math.min(pricePts[i].y, navY);
       if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
       else ctx.lineTo(pricePts[i].x, clippedY);
     }
     for (var i = pricePts.length - 1; i >= 0; i--) {
-      if (pricePts[i].x > fillXMax) continue;
       ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
@@ -1365,14 +1357,12 @@ function drawChart() {
     // Draw below-NAV fill
     ctx.beginPath();
     for (var i = 0; i < pricePts.length; i++) {
-      if (pricePts[i].x > fillXMax) break;
       var navY = navYAtX(pricePts[i].x);
       var clippedY = Math.max(pricePts[i].y, navY);
       if (i === 0) ctx.moveTo(pricePts[i].x, clippedY);
       else ctx.lineTo(pricePts[i].x, clippedY);
     }
     for (var i = pricePts.length - 1; i >= 0; i--) {
-      if (pricePts[i].x > fillXMax) continue;
       ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
@@ -1575,12 +1565,14 @@ function attachChartEvents(container) {
     var mx = (e.clientX - rect.left) / _chart.width;
     var zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
     var range = _chart.viewEnd - _chart.viewStart;
-    var newRange = Math.min(1, Math.max(0.05, range * zoomFactor));
+    var newRange = Math.min(1.6, Math.max(0.05, range * zoomFactor));
     var center = _chart.viewStart + mx * range;
-    _chart.viewStart = Math.max(0, center - mx * newRange);
-    _chart.viewEnd = Math.min(1, _chart.viewStart + newRange);
-    if (_chart.viewEnd > 1) { _chart.viewEnd = 1; _chart.viewStart = Math.max(0, 1 - newRange); }
-    if (_chart.viewStart < 0) { _chart.viewStart = 0; _chart.viewEnd = Math.min(1, newRange); }
+    _chart.viewStart = center - mx * newRange;
+    _chart.viewEnd = _chart.viewStart + newRange;
+    // Allow overscroll up to 30% past data on each side
+    var overscroll = newRange * 0.3;
+    if (_chart.viewStart < -overscroll) { _chart.viewStart = -overscroll; _chart.viewEnd = _chart.viewStart + newRange; }
+    if (_chart.viewEnd > 1 + overscroll) { _chart.viewEnd = 1 + overscroll; _chart.viewStart = _chart.viewEnd - newRange; }
     drawChart();
   }, { passive: false });
 
@@ -1603,9 +1595,10 @@ function attachChartEvents(container) {
     var dx = e.clientX - _chart.dragStartX;
     var shift = -(dx / canvasW) * _chart.dragRange;
     var newStart = _chart.dragStartViewStart + shift;
-    // Clamp
-    if (newStart < 0) newStart = 0;
-    if (newStart + _chart.dragRange > 1) newStart = 1 - _chart.dragRange;
+    // Allow overscroll up to 30% past data on each side
+    var overscroll = _chart.dragRange * 0.3;
+    if (newStart < -overscroll) newStart = -overscroll;
+    if (newStart + _chart.dragRange > 1 + overscroll) newStart = 1 + overscroll - _chart.dragRange;
     _chart.viewStart = newStart;
     _chart.viewEnd = newStart + _chart.dragRange;
     drawChart();
