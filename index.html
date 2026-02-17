@@ -98,9 +98,9 @@
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-line { display: inline-block; width: 18px; height: 2.5px; border-radius: 2px; }
   .legend-fill { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
-  .legend-dash { display: inline-block; width: 20px; height: 8px; position: relative; }
+  .legend-dash { display: inline-flex; align-items: center; width: 20px; height: 2.5px; position: relative; }
   .legend-dash::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 0; background: none; border: none; }
-  .legend-dash svg { width: 20px; height: 8px; }
+  .legend-dash svg { width: 20px; height: 2.5px; display: block; }
 
   /* Address section */
   .nav-stats-bar { display: flex; gap: 0; margin-top: 12px; border-radius: 10px; overflow: hidden; font-family: 'Inter', sans-serif; font-size: 12px; }
@@ -327,7 +327,7 @@
     </div>
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><line x1="0" y1="4" x2="4" y2="4" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="4" x2="11" y2="4" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/><line x1="14" y1="4" x2="18" y2="4" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/></svg></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="4" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="7" y1="1.5" x2="11" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="14" y1="1.5" x2="18" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/></svg></span> <span id="leg-nav-label">NAV</span> <span id="leg-strike">…</span></span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
     </div>
@@ -1566,7 +1566,8 @@ function renderUI(isLive) {
 
   document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price vs NAV';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
-  document.getElementById('leg-strike').textContent = fmt$(strike);
+  document.getElementById('leg-nav-label').textContent = CFG.ticker + ' NAV';
+  document.getElementById('leg-strike').textContent = '';
 
   return strike;
 }
@@ -1844,8 +1845,8 @@ function renderAllowance(data) {
   if (tickerEl) tickerEl.textContent = CFG.ticker;
   document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price vs NAV';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
-
-  renderAddresses();
+  var legNavLabel = document.getElementById('leg-nav-label');
+  if (legNavLabel) legNavLabel.textContent = CFG.ticker + ' NAV';
   var navPerToken = 0;
 
   try {
