@@ -616,7 +616,8 @@ if (!_hasToken) {
         if (t.treasuryUSDC > 0 && t.effectiveSupply > 0) { lt.treasury = t.treasuryUSDC; lt.strike = t.treasuryUSDC / t.effectiveSupply; lt.effectiveSupply = t.effectiveSupply; }
       }
       renderTable();
-      loadSparklines();
+      // Wait for browser layout before drawing sparklines
+      setTimeout(function() { loadSparklines(); }, 50);
       // Update header stats
       var totalTreasury = landingTokens.filter(function(t) { return t.live; }).reduce(function(sum, t) { return sum + (t.treasury || 0); }, 0);
       var el = document.getElementById('landing-nav-total');
@@ -635,6 +636,12 @@ if (!_hasToken) {
         if (ohlcvData && ohlcvData.data && ohlcvData.data.items && ohlcvData.data.items.length > 1) {
           var items = ohlcvData.data.items.slice(-60);
           prices = items.map(function(c) { return c.c; }).filter(function(p) { return p > 0; });
+          // Filter outliers: remove any price > 5x the median (handles ICO spike artifacts)
+          if (prices.length > 4) {
+            var sorted = prices.slice().sort(function(a, b) { return a - b; });
+            var median = sorted[Math.floor(sorted.length / 2)];
+            prices = prices.filter(function(p) { return p < median * 5 && p > median * 0.1; });
+          }
         }
         // NAV is a flat line at current value
         var navs = [];
@@ -642,14 +649,20 @@ if (!_hasToken) {
           navs = prices.map(function() { return t.strike; });
         }
         var canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
-        if (canvas && prices.length >= 2) drawSparkline(canvas, prices, navs);
-      } catch (e) {}
+        if (canvas && prices.length >= 2) {
+          // If canvas has no width, wait for layout
+          if (canvas.offsetWidth === 0) {
+            await new Promise(function(r) { setTimeout(r, 100); });
+            canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
+          }
+          if (canvas && canvas.offsetWidth > 0) drawSparkline(canvas, prices, navs);
+        }
+      } catch (e) { console.warn('Sparkline error for ' + t.key, e); }
     });
     await Promise.all(promises);
   }
 
   fetchLandingData();
-  loadSparklines();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
