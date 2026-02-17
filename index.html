@@ -629,36 +629,23 @@ if (!_hasToken) {
   async function loadSparklines() {
     var promises = landingTokens.filter(function(t) { return t.live; }).map(async function(t) {
       try {
-        var [ohlcvRes, histRes] = await Promise.all([
-          fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H'),
-          fetch(API_BASE + '/api/history?token=' + t.key + '&days=30')
-        ]);
+        var ohlcvRes = await fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H');
         var ohlcvData = await ohlcvRes.json();
-        var histData = await histRes.json();
         var prices = [];
         if (ohlcvData && ohlcvData.data && ohlcvData.data.items && ohlcvData.data.items.length > 1) {
           var items = ohlcvData.data.items.slice(-60);
           prices = items.map(function(c) { return c.c; }).filter(function(p) { return p > 0; });
         }
+        // NAV is a flat line at current value
         var navs = [];
-        if (histData.history && histData.history.length > 1) {
-          navs = histData.history.map(function(h) { return h.nav; }).filter(function(n) { return n > 0; });
-        }
-        // Fallback: use history spot prices if OHLCV failed
-        if (prices.length < 2 && histData.history && histData.history.length > 1) {
-          prices = histData.history.map(function(h) { return h.spot; }).filter(function(s) { return s > 0; });
-        }
-        // Update table data with live values
-        if (histData.latest) {
-          if (histData.latest.spot > 0) { t.spot = histData.latest.spot; t.mcap = histData.latest.spot * (t.effectiveSupply || TOKENS[t.key].supply); }
-          if (histData.latest.treasuryUSDC > 0 && histData.latest.effectiveSupply > 0) { t.treasury = histData.latest.treasuryUSDC; t.strike = histData.latest.treasuryUSDC / histData.latest.effectiveSupply; t.effectiveSupply = histData.latest.effectiveSupply; }
+        if (t.strike > 0 && prices.length >= 2) {
+          navs = prices.map(function() { return t.strike; });
         }
         var canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
-        if (canvas && (prices.length >= 2 || navs.length >= 2)) drawSparkline(canvas, prices, navs);
+        if (canvas && prices.length >= 2) drawSparkline(canvas, prices, navs);
       } catch (e) {}
     });
     await Promise.all(promises);
-    renderTable();
   }
 
   fetchLandingData();
@@ -751,7 +738,6 @@ async function fetchFromAPI() {
 // ═══════════════════════════════════════════════════════════════════════
 var _allCandles = {};
 var _navPerToken = 0;
-var _navHistory = [];
 var _chartTF = '1D';
 var _allowancePayments = [];
 var _chartScale = 'linear'; // 'linear' or 'log'
@@ -802,30 +788,6 @@ var _chart = {
   padding: { top: 20, right: 70, bottom: 30, left: 30 },
 };
 
-// Fetch historical NAV data from backend
-async function fetchNAVHistory() {
-  try {
-    var res = await fetch(API_BASE_DASH + '/api/history?token=' + tokenKey + '&days=365');
-    var json = await res.json();
-    if (json.history && json.history.length > 0) {
-      _navHistory = json.history.map(function(h) {
-        return {
-          time: Math.floor(new Date(h.date).getTime() / 1000),
-          value: h.nav,
-          treasury: h.treasury,
-          supply: h.supply,
-        };
-      });
-      var seen = {};
-      _navHistory = _navHistory.filter(function(h) {
-        if (seen[h.time]) return false;
-        seen[h.time] = true;
-        return true;
-      });
-      _navHistory.sort(function(a, b) { return a.time - b.time; });
-    }
-  } catch (e) { console.error('NAV history fetch error:', e); }
-}
 
 async function fetchCandlesForTF(tf) {
   if (_allCandles[tf]) return _allCandles[tf];
