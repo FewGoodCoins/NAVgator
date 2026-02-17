@@ -263,7 +263,7 @@
             <th>vs NAV</th>
             <th>Treasury</th>
             <th>MCap</th>
-            <th>30D Trend</th>
+            <th>7D Trend</th>
           </tr>
         </thead>
         <tbody id="token-tbody"></tbody>
@@ -646,15 +646,11 @@ if (!_hasToken) {
         if (!items || items.length < 2) continue;
 
         var prices = items.map(function(c) { return c.p; }).filter(function(p) { return p > 0; });
-        if (prices.length > 4) {
-          var sorted = prices.slice().sort(function(a, b) { return a - b; });
-          var median = sorted[Math.floor(sorted.length / 2)];
-          prices = prices.filter(function(p) { return p < median * 5 && p > median * 0.1; });
-        }
-        var navVal = t.strike > 0 ? t.strike : 0;
+        // Use NAV from snapshots if available, otherwise fall back to current strike
+        var lastNav = items[items.length - 1].n || t.strike || 0;
         if (prices.length >= 2) {
-          _sparkCache[t.key] = { prices: prices, nav: navVal };
-          drawSVGSparkline(t.key, prices, navVal);
+          _sparkCache[t.key] = { prices: prices, nav: lastNav };
+          drawSVGSparkline(t.key, prices, lastNav);
         }
       }
     } catch (e) { console.warn('Sparklines fetch error:', e); }
