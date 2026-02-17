@@ -332,7 +332,7 @@
     </div>
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><polyline points="0,4 3,1 6,7 9,1 12,7 15,1 18,4 20,4" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/></svg></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-line" style="background:rgba(255,255,255,0.7)"></span> NAV <span id="leg-strike">…</span></span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
       <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><polyline points="0,4 3,1 6,7 9,1 12,7 15,1 18,4 20,4" fill="none" stroke="#e84057" stroke-width="1.5"/></svg></span> Withdrawal</span>
@@ -1509,6 +1509,25 @@ function drawChart() {
     ctx.fill();
   }
 
+  // Thin straight line from TGE to first accurate NAV point
+  var estData = _chart.estimatedNav || [];
+  if (estData.length >= 2) {
+    var eT0 = estData[0].time, eV0 = estData[0].value;
+    var eT1 = estData[estData.length - 1].time, eV1 = estData[estData.length - 1].value;
+    if (eT0 < tMax && eT1 > tMin) {
+      var drawT0 = Math.max(eT0, tMin);
+      var drawT1 = Math.min(eT1, tMax);
+      var p0 = (drawT0 - eT0) / (eT1 - eT0);
+      var p1 = (drawT1 - eT0) / (eT1 - eT0);
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(tx(drawT0), ty(eV0 + p0 * (eV1 - eV0)));
+      ctx.lineTo(tx(drawT1), ty(eV0 + p1 * (eV1 - eV0)));
+      ctx.stroke();
+    }
+  }
+
   // Draw NAV line — zigzag white staircase, same weight as price line
   // Dashes turn red near withdrawal events
   if (navPts.length > 1) {
@@ -1551,7 +1570,7 @@ function drawChart() {
       allSegments.push({ x1: lastNav.x, y1: lastNav.y, x2: lastPriceX, y2: lastNav.y });
     }
 
-    // Draw each segment — red dashes near withdrawals, white dashes elsewhere
+    // Draw each segment — red near withdrawals, white elsewhere (solid line)
     for (var si = 0; si < allSegments.length; si++) {
       var seg = allSegments[si];
       var midX = (seg.x1 + seg.x2) / 2;
@@ -1559,34 +1578,8 @@ function drawChart() {
       ctx.beginPath();
       ctx.strokeStyle = isRed ? 'rgba(232,64,87,0.9)' : 'rgba(255,255,255,0.7)';
       ctx.lineWidth = 1.5;
-
-      // Draw zigzag along the segment
-      var dx = seg.x2 - seg.x1;
-      var dy = seg.y2 - seg.y1;
-      var segLen = Math.sqrt(dx * dx + dy * dy);
-      if (segLen < 2) { si++; continue; }
-
-      var zigSize = 2; // amplitude of zigzag
-      var zigStep = 4; // width of each zig
-      var steps = Math.max(1, Math.floor(segLen / zigStep));
-      // Direction along segment
-      var ux = dx / segLen, uy = dy / segLen;
-      // Perpendicular
-      var px = -uy, py = ux;
-
       ctx.moveTo(seg.x1, seg.y1);
-      for (var zi = 1; zi <= steps; zi++) {
-        var t = zi / steps;
-        var baseX = seg.x1 + dx * t;
-        var baseY = seg.y1 + dy * t;
-        var zigDir = (zi % 2 === 1) ? 1 : -1;
-        if (zi === steps) {
-          // End on the line
-          ctx.lineTo(seg.x2, seg.y2);
-        } else {
-          ctx.lineTo(baseX + px * zigSize * zigDir, baseY + py * zigSize * zigDir);
-        }
-      }
+      ctx.lineTo(seg.x2, seg.y2);
       ctx.stroke();
     }
   }
@@ -1836,9 +1829,11 @@ function attachChartEvents(container) {
     _chart.viewStart = newStart;
     _chart.viewEnd = newStart + _chart.dragRange;
 
-    // Y-axis pan — drag up moves chart down (see lower prices), drag down moves chart up
+    // Y-axis pan — limited to 30% of visible range
     var sensitivity = (_chart._vMax - _chart._vMin) || 1;
-    _chart.yOffset = _chart.dragStartYOffset + (dy / rect.height) * sensitivity;
+    var rawOffset = _chart.dragStartYOffset + (dy / rect.height) * sensitivity;
+    var maxOffset = sensitivity * 0.3;
+    _chart.yOffset = Math.max(-maxOffset, Math.min(maxOffset, rawOffset));
 
     drawChart();
   });
