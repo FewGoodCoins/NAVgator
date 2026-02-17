@@ -633,9 +633,14 @@ if (!_hasToken) {
   // Load sparklines from NAV history (shows both price + NAV)
   var _sparkCache = {};
 
-  async function loadSparklines() {
+  async function loadSparklines(attempt) {
+    attempt = attempt || 0;
     try {
       var res = await fetch(API_BASE + '/api/sparklines');
+      if (!res.ok) {
+        if (attempt < 2) { setTimeout(function() { loadSparklines(attempt + 1); }, 2000); return; }
+        return;
+      }
       var data = await res.json();
       if (!data.sparklines) return;
 
@@ -646,14 +651,15 @@ if (!_hasToken) {
         if (!items || items.length < 2) continue;
 
         var prices = items.map(function(c) { return c.p; }).filter(function(p) { return p > 0; });
-        // Use NAV from snapshots if available, otherwise fall back to current strike
         var lastNav = items[items.length - 1].n || t.strike || 0;
         if (prices.length >= 2) {
           _sparkCache[t.key] = { prices: prices, nav: lastNav };
           drawSVGSparkline(t.key, prices, lastNav);
         }
       }
-    } catch (e) { console.warn('Sparklines fetch error:', e); }
+    } catch (e) {
+      if (attempt < 2) { setTimeout(function() { loadSparklines(attempt + 1); }, 2000); }
+    }
   }
 
   function drawSVGSparkline(key, prices, navVal) {
