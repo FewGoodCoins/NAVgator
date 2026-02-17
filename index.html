@@ -383,21 +383,17 @@ const TOKENS = {
     mint: 'SoLo9oxzLDpcq1dpqAgMwgce5WqkRDtNXK7EPnbmeta',
     usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     daoWallet: '98SPcyUZ2rqM2dgjCqqSXS4gJrNTLSNUAAVCF38xYj9u',
-    ammWallet: 'DzYtzoNvPbyFCzwZA6cSm9eDEEmxEB9f8AGkJXUXgnSA',
-    ammWallet2: '2zsbECzM7roqnDcuv2TNGpfv5PAnuqGmMo5YPtqmUz5p',
     lockWallet: 'Bo24B7DDVtpa9VxZ4LN8FrAT7TM3cgkri41a5GjFg5Dk',
     gtPool: 'o5rJFXSKTsuws58rBMNPG8jdKdnY4Z7ouU29dyohE4g',
-    raise: 8_000_000, supply: 10_000_000, icoPrice: 0.80, ath: 1.09,
-    monthlyBurn: 100_000, monthlyAllowance: 100_000, realizedVol: 99, tradingDays: 85,
-    genesisStrike: 0.62, genesisPut: 0.300,
-    spot: 0.55, treasuryUSDC: 7_420_000, ammUSDCFixed: null,
-    tge: '2025-11-18',
-    draws: [
-      { date: '2025-11-20', amount: 30_000, label: 'Draw #1a' },
-      { date: '2025-12-17', amount: 70_000, label: 'Draw #1b' },
-      { date: '2025-12-24', amount: 100_000, label: 'Draw #2' },
-      { date: '2026-01-26', amount: 100_000, label: 'Draw #3' },
+    // Futarchy pools — USDC counts toward treasury, SOLO subtracted from supply
+    pools: [
+      { name: 'futarchy1', wallet: 'DzYtzoNvPbyFCzwZA6cSm9eDEEmxEB9f8AGkJXUXgnSA' },
+      { name: 'futarchy2', soloAccount: 'HaFkQ6qEYzU7fXxSdMgLJH9LQ2piNa58WpbK8uyLRL1e', usdcAccount: '6suP5vppzxwp141dSguWLeVeeKzBYpS8iuWNM3SqmBmh' },
     ],
+    totalMinted: 25_800_000, icoPrice: 0.80, ath: 1.09,
+    monthlyBurn: 100_000, monthlyAllowance: 100_000,
+    spot: 0.55, treasuryUSDC: 7_371_448,
+    supply: 9_480_848, // holderSupply = totalMinted - lockWallet - pool SOLO
   },
   zkfg: { live: true,
     name: 'ZKLSOL', ticker: 'ZKFG', pair: 'ZKFG/USDC',
@@ -407,16 +403,10 @@ const TOKENS = {
     daoWallet: 'BNvDfXYG2FAyBDYD71Xr9GhKE18MbmhtjsLKsCuXho6z',
     ammWallet: '5FPGRzY9ArJFwY2Hp2y2eqMzVewyWCBox7esmpuZfCvE',
     gtPool: 'JDuK4Wp3MQM6d9QKDNDNgoELHkfAMSqbbqzbmkz19vis',
-    raise: 970_000, supply: 10_000_000, icoPrice: 0.097, ath: 0.145,
-    monthlyBurn: 50_000, realizedVol: 120, tradingDays: 107,
-    genesisStrike: 0.097, genesisPut: 0.055,
-    spot: 0.0654, treasuryUSDC: 820_000, ammUSDCFixed: null,
-    tge: '2025-10-24',
-    draws: [
-      { date: '2025-11-24', amount: 50_000, label: 'Draw #1' },
-      { date: '2025-12-24', amount: 50_000, label: 'Draw #2' },
-      { date: '2026-01-24', amount: 50_000, label: 'Draw #3' },
-    ],
+    icoPrice: 0.097, ath: 0.145,
+    monthlyBurn: 50_000,
+    spot: 0.0654, treasuryUSDC: 820_000,
+    supply: 10_000_000,
   },
   umbra: { live: true,
     name: 'Umbra', ticker: 'UMBRA', pair: 'UMBRA/USDC',
@@ -429,17 +419,10 @@ const TOKENS = {
     lockWallet: '3kX3EWm9iPB6oxFS2NJ71L6v5wzFZ8rQMEG6HC8QHJtF',
     gtPool: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
     gtPoolLegacy: 'BLkBSE96kQys7SrMioKxeMiVbeo4Ckk2Y4n1JphKxYnv',
-    raise: 3_000_000, supply: 10_000_000, icoPrice: 0.30, ath: 2.43,
-    monthlyBurn: 34_000, monthlyAllowance: 100_000, realizedVol: 110, tradingDays: 122,
-    genesisStrike: 0.24, genesisPut: 0.12,
-    spot: 0.76, treasuryUSDC: 3_360_000, ammUSDCFixed: null,
-    tge: '2025-10-10',
-    draws: [
-      { date: '2025-11-10', amount: 34_000, label: 'Draw #1' },
-      { date: '2025-12-10', amount: 34_000, label: 'Draw #2' },
-      { date: '2026-01-10', amount: 34_000, label: 'Draw #3' },
-      { date: '2026-02-10', amount: 34_000, label: 'Draw #4' },
-    ],
+    icoPrice: 0.30, ath: 2.43,
+    monthlyBurn: 34_000, monthlyAllowance: 100_000,
+    spot: 0.76, treasuryUSDC: 3_360_000,
+    supply: 10_000_000,
   },
   avici: { live: true,
     name: 'Avici', ticker: 'AVICI', pair: 'AVICI/USDC',
@@ -451,16 +434,10 @@ const TOKENS = {
     ammWallet2: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     gtPool: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     gtPoolLegacy: '3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn',
-    raise: 3_500_000, supply: 12_900_000, icoPrice: 0.35, ath: 7.57,
-    monthlyBurn: 45_000, monthlyAllowance: 100_000, realizedVol: 130, tradingDays: 114,
-    genesisStrike: 0.22, genesisPut: 0.11,
-    spot: 1.08, treasuryUSDC: 3_300_000, ammUSDCFixed: null,
-    tge: '2025-10-18',
-    draws: [
-      { date: '2025-11-18', amount: 45_000, label: 'Draw #1' },
-      { date: '2025-12-18', amount: 45_000, label: 'Draw #2' },
-      { date: '2026-01-18', amount: 45_000, label: 'Draw #3' },
-    ],
+    icoPrice: 0.35, ath: 7.57,
+    monthlyBurn: 45_000, monthlyAllowance: 100_000,
+    spot: 1.08, treasuryUSDC: 3_300_000,
+    supply: 12_900_000,
   },
   loyal: { live: true,
     name: 'Loyal', ticker: 'LOYAL', pair: 'LOYAL/USDC',
@@ -473,16 +450,10 @@ const TOKENS = {
     buybackWallet: 'AfGAjj7TQByC2WQtCNRhsyq1WeZqmQ7oNRoGb2JbgoQg',
     gtPool: 'BGg7WsK98rhqtTp2uSKMa2yETqgwShFAjyf1RmYqCF7n',
     gtPoolLegacy: 'GxpJkPEsPmuRCCTNnfZaDKg4X3gf4ZPgmqgFqtibaPtK',
-    raise: 500_000, supply: 10_000_000, icoPrice: 0.05, ath: 0.37,
-    monthlyBurn: 45_000, realizedVol: 140, tradingDays: 114,
-    genesisStrike: 0.038, genesisPut: 0.02,
-    spot: 0.13, treasuryUSDC: 420_000, ammUSDCFixed: null,
-    tge: '2025-10-23',
-    draws: [
-      { date: '2025-11-23', amount: 45_000, label: 'Draw #1' },
-      { date: '2025-12-23', amount: 45_000, label: 'Draw #2' },
-      { date: '2026-01-23', amount: 45_000, label: 'Draw #3' },
-    ],
+    icoPrice: 0.05, ath: 0.37,
+    monthlyBurn: 45_000,
+    spot: 0.13, treasuryUSDC: 420_000,
+    supply: 10_000_000,
   },
   paystream: { live: false,
     name: 'Paystream', ticker: 'PAY', pair: 'PAY/USDC',
@@ -495,16 +466,10 @@ const TOKENS = {
     buybackWallet: '3BAUsXfhhK2H1KH18GYNhUvLUsPrKWcePEA5N2UKP6VL',
     gtPool: '6F88Y6iukU9GuL8CMWnx6YT832vBymNPicJBikQWeYe4',
     gtPoolLegacy: '6FRXzTe3HajL8Fwmmkupp8g3y3wn3g3QEjj8sABndre3',
-    raise: 300_000, supply: 10_000_000, icoPrice: 0.03, ath: 0.04,
-    monthlyBurn: 15_000, realizedVol: 100, tradingDays: 100,
-    genesisStrike: 0.024, genesisPut: 0.012,
-    spot: 0.021, treasuryUSDC: 255_000, ammUSDCFixed: null,
-    tge: '2025-10-27',
-    draws: [
-      { date: '2025-11-27', amount: 15_000, label: 'Draw #1' },
-      { date: '2025-12-27', amount: 15_000, label: 'Draw #2' },
-      { date: '2026-01-27', amount: 15_000, label: 'Draw #3' },
-    ],
+    icoPrice: 0.03, ath: 0.04,
+    monthlyBurn: 15_000,
+    spot: 0.021, treasuryUSDC: 255_000,
+    supply: 10_000_000,
   },
   omfg: { live: true,
     name: 'Omnipair', ticker: 'OMFG', pair: 'OMFG/USDC',
@@ -516,17 +481,10 @@ const TOKENS = {
     ammWallet2: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
     gtPool: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
     gtPoolLegacy: '2WNhaB6TPyZ3ynJjAUM4ZZ1Hdeep8FJ3A76FjGjTVjjS',
-    raise: 500_000, supply: 10_000_000, icoPrice: 0.05, ath: 0.83,
-    monthlyBurn: 25_000, monthlyAllowance: 50_000, realizedVol: 120, tradingDays: 130,
-    genesisStrike: 0.04, genesisPut: 0.02,
-    spot: 0.32, treasuryUSDC: 400_000, ammUSDCFixed: null,
-    tge: '2025-07-28',
-    draws: [
-      { date: '2025-11-02', amount: 25_000, label: 'Draw #1' },
-      { date: '2025-12-02', amount: 25_000, label: 'Draw #2' },
-      { date: '2026-01-02', amount: 25_000, label: 'Draw #3' },
-      { date: '2026-02-02', amount: 25_000, label: 'Draw #4' },
-    ],
+    icoPrice: 0.05, ath: 0.83,
+    monthlyBurn: 25_000, monthlyAllowance: 50_000,
+    spot: 0.32, treasuryUSDC: 400_000,
+    supply: 10_000_000,
   },
   meta: { live: false,
     name: 'MetaDAO', ticker: 'META', pair: 'META/USDC',
@@ -538,12 +496,10 @@ const TOKENS = {
     ammWallet2: 'EXpXkwcWDhjEYyC5pfNfxsu8fUtK4CDCYTZR4ApQNRzo',
     gtPool: 'EXpXkwcWDhjEYyC5pfNfxsu8fUtK4CDCYTZR4ApQNRzo',
     gtPoolLegacy: 'CUPoiqkK4hxyCiJcLC4yE9AtJP1MoV1vFV2vx3jqwWeS',
-    raise: 0, supply: 22_080_000, icoPrice: 0.17, ath: 10.69,
-    monthlyBurn: 0, realizedVol: 95, tradingDays: 300,
-    genesisStrike: 0, genesisPut: 0,
-    spot: 3.78, treasuryUSDC: 0, ammUSDCFixed: null,
-    tge: '2025-04-09',
-    draws: [],
+    icoPrice: 0.17, ath: 10.69,
+    monthlyBurn: 0,
+    spot: 3.78, treasuryUSDC: 0,
+    supply: 22_080_000,
     note: 'Platform token — no ICO treasury structure. Treasury analytics are approximate.',
   },
   rngr: { live: true,
@@ -557,14 +513,10 @@ const TOKENS = {
     lockWallet: 'F35JE1HZMtZXXWdy3koSPRe1gGFQyqd5kpbPw2xNcjR8',
     gtPool: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
     gtPoolLegacy: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
-    raise: 8_000_000, supply: 10_000_000, icoPrice: 0.80, ath: 0.865,
-    monthlyBurn: 250_000, monthlyAllowance: 250_000, realizedVol: 90, tradingDays: 32,
-    genesisStrike: 0.47, genesisPut: 0.18,
-    spot: 0.54, treasuryUSDC: 5_750_000, ammUSDCFixed: null,
-    tge: '2026-01-10',
-    draws: [
-      { date: '2026-02-10', amount: 250_000, label: 'Draw #1' },
-    ],
+    icoPrice: 0.80, ath: 0.865,
+    monthlyBurn: 250_000, monthlyAllowance: 250_000,
+    spot: 0.54, treasuryUSDC: 5_750_000,
+    supply: 10_000_000,
   },
 };
 // ═══════════════════════════════════════════════════════════════════════
@@ -573,7 +525,7 @@ const TOKENS = {
 if (!_hasToken) {
   const landingTokens = Object.entries(TOKENS).map(([key, t]) => ({
     key, ticker: t.ticker, name: t.name, color: t.color, logo: t.logo || null,
-    spot: t.spot, strike: t.raise > 0 ? t.treasuryUSDC / t.supply : 0,
+    spot: t.spot, strike: t.treasuryUSDC > 0 ? t.treasuryUSDC / t.supply : 0,
     treasury: t.treasuryUSDC, mcap: t.spot * t.supply, live: t.live,
     supply: t.supply, effectiveSupply: t.supply,
     monthlyAllowance: t.monthlyAllowance || 0,
@@ -1013,10 +965,10 @@ async function fetchCandlesForTF(tf) {
   if (_allCandles[tf]) return _allCandles[tf];
   if (!CFG.mint) return [];
   try {
-    var tge = new Date(CFG.tge || '2025-01-01');
     var now = new Date();
+    var sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
     var birdeyeTF = { '12H': '12H', '1D': '1D', '1W': '1W', '1M': '1M' }[tf] || '1D';
-    var url = API_BASE_DASH + '/api/ohlcv?token=' + tokenKey + '&tf=' + birdeyeTF + '&time_from=' + Math.floor(tge.getTime() / 1000) + '&time_to=' + Math.floor(now.getTime() / 1000);
+    var url = API_BASE_DASH + '/api/ohlcv?token=' + tokenKey + '&tf=' + birdeyeTF + '&time_from=' + Math.floor(sixMonthsAgo.getTime() / 1000) + '&time_to=' + Math.floor(now.getTime() / 1000);
     var resp = await fetch(url);
     var json = await resp.json();
     if (!json.data || !json.data.items) return [];
@@ -1049,22 +1001,12 @@ function buildChart(candles, navPerToken) {
   _chart.tooltip = tooltip;
   _chart.width = w;
 
-  // Build price data array with TGE start
+  // Build price data array
   var priceData = [];
   if (candles && candles.length > 0) {
     priceData = candles.map(function(c) {
       return { time: c.time || Math.floor(c.date.getTime() / 1000), value: c.close || c.price };
     });
-  }
-
-  // Inject TGE point
-  if (CFG.tge && CFG.icoPrice > 0) {
-    var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
-    if (priceData.length > 0 && tgeTs <= priceData[0].time) {
-      priceData.unshift({ time: tgeTs, value: CFG.icoPrice });
-    } else if (priceData.length === 0) {
-      priceData.push({ time: tgeTs, value: CFG.icoPrice });
-    }
   }
 
   _chart.priceData = priceData;
@@ -1078,155 +1020,6 @@ function buildChart(candles, navPerToken) {
     }
   }
 
-  // Cap NAV history with current live NAV
-  var navData = _navHistory.slice();
-  if (navPerToken > 0 && navData.length > 0) {
-    var nowTs = Math.floor(Date.now() / 1000);
-    navData.push({ time: nowTs, value: navPerToken, treasury: CFG.treasuryUSDC, supply: CFG.effectiveSupply || CFG.supply });
-  }
-
-  // Split into estimated (pre-accurate) and accurate data
-  // Accurate data starts Feb 15 2026 when cron snapshots became reliable
-  var accurateCutoff = Math.floor(new Date('2026-02-15T00:00:00Z').getTime() / 1000);
-  var estimatedNav = []; // TGE → first accurate point (diagonal)
-  var accurateNav = []; // real cron snapshots (staircase)
-
-  for (var i = 0; i < navData.length; i++) {
-    if (navData[i].time < accurateCutoff) {
-      // Skip pre-accurate points, we'll use TGE as start
-    } else {
-      accurateNav.push(navData[i]);
-    }
-  }
-  // Build simulated NAV from TGE to first accurate point
-  // Uses constant-product AMM model: as price changes, USDC in AMM rebalances
-  if (CFG.tge && CFG.icoPrice > 0 && accurateNav.length > 0) {
-    var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
-    var firstAccTs = accurateNav[0].time;
-
-    // AMM setup: 20% of raise paired with tokens
-    var ammPct = 0.20;
-    var initialAmmUsdc = CFG.raise * ammPct;
-    var initialAmmTokens = 2_900_000; // SOLO-specific for now
-    var ammK = initialAmmUsdc * initialAmmTokens; // constant product k
-    var idleUsdc = CFG.raise * (1 - ammPct);
-    var holderSupply = CFG.supply || 10_000_000;
-    var monthlyBurn = CFG.monthlyBurn || 0;
-
-    // Only use AMM simulation for tokens that have AMM data
-    if (CFG.raise && _chart.priceData.length > 0) {
-      // Build draw schedule as timestamps
-      var drawEvents = [];
-      if (CFG.draws) {
-        for (var di = 0; di < CFG.draws.length; di++) {
-          var drawTs = Math.floor(new Date(CFG.draws[di].date + 'T00:00:00Z').getTime() / 1000);
-          if (drawTs > tgeTs && drawTs < firstAccTs) {
-            drawEvents.push({ time: drawTs, amount: CFG.draws[di].amount });
-          }
-        }
-        drawEvents.sort(function(a, b) { return a.time - b.time; });
-      }
-
-      // Walk through price data points between TGE and first accurate NAV
-      var simPoints = [];
-      var cumulativeDraws = 0;
-      var drawIdx = 0;
-
-      // Add TGE point
-      var tgeAmmUsdc = initialAmmUsdc;
-      var tgeNav = (idleUsdc + tgeAmmUsdc) / holderSupply;
-      simPoints.push({ time: tgeTs, value: tgeNav });
-
-      for (var pi = 0; pi < _chart.priceData.length; pi++) {
-        var pt = _chart.priceData[pi];
-        if (pt.time <= tgeTs || pt.time >= firstAccTs) continue;
-
-        // Apply any draws that occurred before this price point
-        while (drawIdx < drawEvents.length && drawEvents[drawIdx].time <= pt.time) {
-          cumulativeDraws += drawEvents[drawIdx].amount;
-          drawIdx++;
-          // Insert a NAV drop point at the draw time
-          var drawTime = drawEvents[drawIdx - 1].time;
-          var prevPrice = pt.value; // approximate with current price
-          // Find closest price before draw
-          for (var pj = pi - 1; pj >= 0; pj--) {
-            if (_chart.priceData[pj].time <= drawTime) { prevPrice = _chart.priceData[pj].value; break; }
-          }
-          var drawIdle = Math.max(0, idleUsdc - cumulativeDraws);
-          var drawAmm = Math.sqrt(ammK * prevPrice);
-          drawAmm = Math.min(drawAmm, CFG.raise * 0.8);
-          drawAmm = Math.max(drawAmm, initialAmmUsdc * 0.1);
-          simPoints.push({ time: drawTime, value: (drawIdle + drawAmm) / holderSupply });
-        }
-
-        var currentIdle = Math.max(0, idleUsdc - cumulativeDraws);
-
-        // AMM rebalance: at price P, USDC in pool = sqrt(k * P)
-        var price = pt.value;
-        var ammUsdc = Math.sqrt(ammK * price);
-        ammUsdc = Math.min(ammUsdc, CFG.raise * 0.8);
-        ammUsdc = Math.max(ammUsdc, initialAmmUsdc * 0.1);
-
-        var nav = (currentIdle + ammUsdc) / holderSupply;
-        simPoints.push({ time: pt.time, value: nav });
-      }
-
-      // Connect to first accurate point
-      if (simPoints.length > 0) {
-        simPoints.push(accurateNav[0]);
-      }
-      estimatedNav = simPoints;
-    } else {
-      // Fallback: straight line
-      estimatedNav.push({ time: tgeTs, value: CFG.icoPrice });
-      estimatedNav.push(accurateNav[0]);
-    }
-  }
-
-  // Deduplicate accurate NAV to only keep points where value changes (clean staircase)
-  var cleanNav = [];
-  for (var i = 0; i < accurateNav.length; i++) {
-    if (i === 0) { cleanNav.push(accurateNav[i]); continue; }
-    if (Math.abs(accurateNav[i].value - accurateNav[i - 1].value) > 0.000001) {
-      if (cleanNav[cleanNav.length - 1].time !== accurateNav[i - 1].time) {
-        cleanNav.push(accurateNav[i - 1]);
-      }
-      cleanNav.push(accurateNav[i]);
-    }
-  }
-  // Always include the last point
-  if (accurateNav.length > 0 && (cleanNav.length === 0 || cleanNav[cleanNav.length - 1].time !== accurateNav[accurateNav.length - 1].time)) {
-    cleanNav.push(accurateNav[accurateNav.length - 1]);
-  }
-
-  // Store event markers — use actual USDC transfers from allowance API, not snapshot diffs
-  // _allowancePayments contains real DAO wallet withdrawals from the usdc_transfers table
-  _chart.navEvents = [];
-  if (_allowancePayments && _allowancePayments.length > 0) {
-    for (var i = 0; i < _allowancePayments.length; i++) {
-      var pay = _allowancePayments[i];
-      var payTs = Math.floor(new Date(pay.date + 'T12:00:00Z').getTime() / 1000);
-      // Find the NAV value closest to this payment date
-      var navAtTime = navPerToken;
-      for (var ni = accurateNav.length - 1; ni >= 0; ni--) {
-        if (accurateNav[ni].time <= payTs) {
-          navAtTime = accurateNav[ni].value;
-          break;
-        }
-      }
-      _chart.navEvents.push({
-        time: payTs,
-        value: navAtTime,
-        treasury: 0,
-        supply: 0,
-        outflow: pay.amount
-      });
-    }
-  }
-  _chart.navEvents.sort(function(a, b) { return a.time - b.time; });
-
-  _chart.estimatedNav = estimatedNav;
-  _chart.navData = cleanNav;
   _chart.currentNav = navPerToken;
   _chart.viewStart = 0;
   _chart.viewEnd = 1;
@@ -1417,31 +1210,6 @@ function drawChart() {
   }
 
   // For NAV staircase: include the last point before visible range so the line extends in
-  function toPixelsNav(data) {
-    var pts = [];
-    var lastBefore = null;
-    for (var i = 0; i < data.length; i++) {
-      if (data[i].time < tMin) {
-        lastBefore = data[i];
-      } else if (data[i].time <= tMax) {
-        pts.push({ x: tx(data[i].time), y: ty(data[i].value), value: data[i].value, time: data[i].time });
-      }
-    }
-    // Inject the last point before visible range at the left edge
-    if (lastBefore) {
-      pts.unshift({ x: tx(tMin), y: ty(lastBefore.value), value: lastBefore.value, time: tMin });
-    }
-    // Extend the last visible point to the last price data point (not chart edge)
-    if (pts.length > 0 && _chart.priceData && _chart.priceData.length > 0) {
-      var lastPriceTime = _chart.priceData[_chart.priceData.length - 1].time;
-      var last = pts[pts.length - 1];
-      var extendTo = Math.min(tMax, lastPriceTime);
-      if (last.time < extendTo) {
-        pts.push({ x: tx(extendTo), y: last.y, value: last.value, time: extendTo });
-      }
-    }
-    return pts;
-  }
 
 
   var pricePts = toPixels(_chart.priceData);
@@ -1557,19 +1325,6 @@ function drawChart() {
   _chart._tMax = tMax;
   _chart._vMin = vMin;
   _chart._vMax = vMax;
-}
-
-function interpolateNav(navPts, px) {
-  if (navPts.length === 0) return null;
-  if (px <= navPts[0].x) return navPts[0].y;
-  if (px >= navPts[navPts.length - 1].x) return navPts[navPts.length - 1].y;
-  for (var i = 0; i < navPts.length - 1; i++) {
-    if (px >= navPts[i].x && px <= navPts[i + 1].x) {
-      // Step interpolation: use left value
-      return navPts[i].y;
-    }
-  }
-  return navPts[navPts.length - 1].y;
 }
 
 function attachChartEvents(container) {
