@@ -589,7 +589,7 @@ if (!_hasToken) {
         if (i > 0) navStairPts.push([x, navStairPts[navStairPts.length - 1][1]]); // horizontal
         navStairPts.push([x, y]); // vertical step
       }
-      strokePath(navStairPts, 'rgba(100,149,237,0.6)', 1.5, null);
+      strokePath(navStairPts, 'rgba(255,255,255,0.5)', 1.5, [4, 3]);
     }
 
     // Price line
@@ -1428,10 +1428,12 @@ function drawChart() {
       var drawT1 = Math.min(eT1, tMax);
       ctx.beginPath();
       ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 6]);
       ctx.moveTo(tx(drawT0), ty(estNavAt(drawT0)));
       ctx.lineTo(tx(drawT1), ty(estNavAt(drawT1)));
       ctx.stroke();
+      ctx.setLineDash([]);
     }
   }
 
@@ -1484,7 +1486,7 @@ function drawChart() {
       ctx.beginPath();
       ctx.strokeStyle = isRed ? 'rgba(232,64,87,0.9)' : 'rgba(255,255,255,0.7)';
       ctx.lineWidth = 2;
-      ctx.setLineDash([6, 4]);
+      ctx.setLineDash([10, 6]);
       ctx.moveTo(seg.x1, seg.y1);
       ctx.lineTo(seg.x2, seg.y2);
       ctx.stroke();
