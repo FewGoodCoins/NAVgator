@@ -1507,7 +1507,7 @@ function drawChart() {
       if (eLen > 2) {
         var eux = edx / eLen, euy = edy / eLen;
         var epx = -euy, epy = eux;
-        var eZigSize = 4, eZigStep = 6;
+        var eZigSize = 2, eZigStep = 4;
         var eSteps = Math.max(1, Math.floor(eLen / eZigStep));
         ctx.beginPath();
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
@@ -1582,8 +1582,8 @@ function drawChart() {
       var segLen = Math.sqrt(dx * dx + dy * dy);
       if (segLen < 2) { si++; continue; }
 
-      var zigSize = 4; // amplitude of zigzag
-      var zigStep = 6; // width of each zig
+      var zigSize = 2; // amplitude of zigzag
+      var zigStep = 4; // width of each zig
       var steps = Math.max(1, Math.floor(segLen / zigStep));
       // Direction along segment
       var ux = dx / segLen, uy = dy / segLen;
@@ -1844,12 +1844,11 @@ function attachChartEvents(container) {
     var dx = e.clientX - _chart.dragStartX;
     var dy = e.clientY - _chart.dragStartY;
 
-    // X-axis pan
+    // X-axis pan — no overscroll, clamp to data bounds
     var shift = -(dx / canvasW) * _chart.dragRange;
     var newStart = _chart.dragStartViewStart + shift;
-    var overscroll = _chart.dragRange * 0.3;
-    if (newStart < -overscroll) newStart = -overscroll;
-    if (newStart + _chart.dragRange > 1 + overscroll) newStart = 1 + overscroll - _chart.dragRange;
+    if (newStart < 0) newStart = 0;
+    if (newStart + _chart.dragRange > 1) newStart = 1 - _chart.dragRange;
     _chart.viewStart = newStart;
     _chart.viewEnd = newStart + _chart.dragRange;
 
