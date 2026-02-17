@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1018,8 +1019,10 @@ function buildChart(candles, navPerToken) {
   }
 
   // Store event markers — only from accurate data
+  // Only flag significant treasury changes, not snapshot-to-snapshot noise
   var rawEvents = [];
   var todayDayKey = Math.floor(Date.now() / 1000 / 86400);
+  var minOutflow = Math.max(5000, (CFG.monthlyAllowance || 50000) * 0.10); // at least 10% of monthly allowance or $5K
   for (var i = 1; i < accurateNav.length - 1; i++) {
     var p = accurateNav[i];
     var pDayKey = Math.floor(p.time / 86400);
@@ -1027,10 +1030,12 @@ function buildChart(candles, navPerToken) {
     if (p.treasury > 0) {
       var prevTreasury = accurateNav[i - 1].treasury || 0;
       var outflow = prevTreasury - p.treasury;
-      rawEvents.push({
-        time: p.time, value: p.value, treasury: p.treasury, supply: p.supply,
-        outflow: outflow > 0 ? outflow : 0
-      });
+      if (Math.abs(outflow) >= minOutflow) {
+        rawEvents.push({
+          time: p.time, value: p.value, treasury: p.treasury, supply: p.supply,
+          outflow: outflow > 0 ? outflow : 0
+        });
+      }
     }
   }
   // Deduplicate: max one event per week
@@ -1329,15 +1334,10 @@ function drawChart() {
 
     ctx.save();
 
-    // Above NAV fill (green)
-    var aboveGrad = ctx.createLinearGradient(0, minPriceY, 0, maxNavY);
-    aboveGrad.addColorStop(0, 'rgba(0,229,160,0.30)');
-    aboveGrad.addColorStop(1, 'rgba(0,229,160,0.0)');
-
-    // Below NAV fill (red)
-    var belowGrad = ctx.createLinearGradient(0, maxPriceY, 0, minNavY);
-    belowGrad.addColorStop(0, 'rgba(232,64,87,0.30)');
-    belowGrad.addColorStop(1, 'rgba(232,64,87,0.0)');
+    // Use flat semi-transparent fills instead of gradients
+    // This prevents discoloration bands at NAV step boundaries
+    var aboveColor = 'rgba(0,229,160,0.15)';
+    var belowColor = 'rgba(232,64,87,0.15)';
 
     // Draw above-NAV fill
     ctx.beginPath();
@@ -1351,7 +1351,7 @@ function drawChart() {
       ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
-    ctx.fillStyle = aboveGrad;
+    ctx.fillStyle = aboveColor;
     ctx.fill();
 
     // Draw below-NAV fill
@@ -1366,7 +1366,7 @@ function drawChart() {
       ctx.lineTo(pricePts[i].x, navYAtX(pricePts[i].x));
     }
     ctx.closePath();
-    ctx.fillStyle = belowGrad;
+    ctx.fillStyle = belowColor;
     ctx.fill();
 
     ctx.restore();
@@ -1483,7 +1483,17 @@ function drawChart() {
   if (_chart.navEvents && _chart.navEvents.length > 0) {
     var eventPts = [];
     // Build a lookup of NAV values from navPts to find previous level
-    var prevNav = CFG.icoPrice || 0;
+    // Start from first accurate NAV, not ICO price, to avoid wrong color on first events
+    var prevNav = _chart.navEvents.length > 0 ? _chart.navEvents[0].value : (CFG.icoPrice || 0);
+    // Find the NAV value just before the first event
+    if (_chart.navData && _chart.navData.length > 0 && _chart.navEvents.length > 0) {
+      for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
+        if (_chart.navData[ni].time < _chart.navEvents[0].time) {
+          prevNav = _chart.navData[ni].value;
+          break;
+        }
+      }
+    }
     for (var i = 0; i < _chart.navEvents.length; i++) {
       var evt = _chart.navEvents[i];
       var navDropped = evt.value < prevNav;
@@ -1491,7 +1501,7 @@ function drawChart() {
         var ex = tx(evt.time);
         var eyOld = ty(prevNav);
         var eyNew = ty(evt.value);
-        var color = navDropped ? '#e84057' : '#00e5a0';
+        var color = evt.outflow > 0 ? '#e84057' : '#00e5a0';
 
         // Vertical line connecting old NAV level to new NAV level
         ctx.beginPath();
