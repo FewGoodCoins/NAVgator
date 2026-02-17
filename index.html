@@ -633,7 +633,7 @@ if (!_hasToken) {
   var _sparkCache = {};
 
   async function loadSparklines() {
-    // Collect all data first
+    // Fetch all data in parallel
     await Promise.all(landingTokens.filter(function(t) { return t.live; }).map(async function(t) {
       try {
         var ohlcvRes = await fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H');
@@ -659,11 +659,15 @@ if (!_hasToken) {
   }
 
   function drawAllSparklines() {
-    Object.keys(_sparkCache).forEach(function(key) {
-      var canvas = document.querySelector('canvas[data-token="' + key + '"]');
-      if (canvas && canvas.offsetWidth > 0) {
-        drawSparkline(canvas, _sparkCache[key].prices, _sparkCache[key].navs);
-      }
+    // Draw one at a time with small delay between each to avoid canvas conflicts
+    var keys = Object.keys(_sparkCache);
+    keys.forEach(function(key, i) {
+      setTimeout(function() {
+        var canvas = document.querySelector('canvas[data-token="' + key + '"]');
+        if (canvas && canvas.offsetWidth > 0) {
+          drawSparkline(canvas, _sparkCache[key].prices, _sparkCache[key].navs);
+        }
+      }, i * 20);
     });
   }
 
