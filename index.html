@@ -586,45 +586,20 @@ if (!_hasToken) {
       ctx.setLineDash([]);
     }
 
-    // NAV line — blue staircase, behind price, using price Y-scale
-    // so you can see relative position (above/below price)
+    // NAV line — flat dotted horizontal line at current NAV value
     if (navData && navData.length >= 2 && priceData && priceData.length >= 2) {
-      // Build staircase path (horizontal steps)
-      var navStairPts = [];
-      for (var i = 0; i < navData.length; i++) {
-        var x = (i / (navData.length - 1)) * w;
-        var y = priceToY(navData[i]);
-        // Clamp Y to canvas bounds
-        y = Math.max(0, Math.min(h, y));
-        if (i > 0) navStairPts.push([x, navStairPts[navStairPts.length - 1][1]]); // horizontal
-        navStairPts.push([x, y]); // vertical step
-      }
-      // Draw zigzag NAV staircase
+      var currentNavVal = navData[navData.length - 1];
+      var navY = priceToY(currentNavVal);
+      navY = Math.max(0, Math.min(h, navY));
       ctx.beginPath();
       ctx.strokeStyle = 'rgba(255,255,255,0.5)';
       ctx.lineWidth = 1;
-      ctx.lineJoin = 'round';
-      // Walk along staircase segments and draw zigzag
-      for (var si = 1; si < navStairPts.length; si++) {
-        var sx1 = navStairPts[si - 1][0], sy1 = navStairPts[si - 1][1];
-        var sx2 = navStairPts[si][0], sy2 = navStairPts[si][1];
-        var sdx = sx2 - sx1, sdy = sy2 - sy1;
-        var sLen = Math.sqrt(sdx * sdx + sdy * sdy);
-        if (sLen < 1) continue;
-        var sux = sdx / sLen, suy = sdy / sLen;
-        var spx = -suy, spy = sux;
-        var zStep = 3, zAmp = 1.5;
-        var zSteps = Math.max(1, Math.floor(sLen / zStep));
-        if (si === 1) ctx.moveTo(sx1, sy1);
-        for (var zi = 1; zi <= zSteps; zi++) {
-          var zt = zi / zSteps;
-          var zbx = sx1 + sdx * zt, zby = sy1 + sdy * zt;
-          var zdir = (zi % 2 === 1) ? 1 : -1;
-          if (zi === zSteps) ctx.lineTo(sx2, sy2);
-          else ctx.lineTo(zbx + spx * zAmp * zdir, zby + spy * zAmp * zdir);
-        }
-      }
+      ctx.setLineDash([3, 4]);
+      ctx.lineCap = 'round';
+      ctx.moveTo(0, navY);
+      ctx.lineTo(w, navY);
       ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     // Price line
@@ -760,41 +735,38 @@ if (!_hasToken) {
 
   // Load sparklines from NAV history (shows both price + NAV)
   async function loadSparklines() {
-    for (const t of landingTokens) {
-      if (!t.live) continue;
+    var promises = landingTokens.filter(function(t) { return t.live; }).map(async function(t) {
       try {
-        // Fetch OHLCV 12H candles for granular price data (30 days = ~60 candles)
-        var ohlcvRes = await fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H');
+        var [ohlcvRes, histRes] = await Promise.all([
+          fetch(API_BASE + '/api/ohlcv?token=' + t.key + '&tf=12H'),
+          fetch(API_BASE + '/api/history?token=' + t.key + '&days=30')
+        ]);
         var ohlcvData = await ohlcvRes.json();
+        var histData = await histRes.json();
         var prices = [];
         if (ohlcvData && ohlcvData.data && ohlcvData.data.items && ohlcvData.data.items.length > 1) {
-          // Take last 60 candles (~30 days of 12H data)
           var items = ohlcvData.data.items.slice(-60);
           prices = items.map(function(c) { return c.c; }).filter(function(p) { return p > 0; });
         }
-        // Also fetch NAV history for the NAV line
         var navs = [];
-        try {
-          var histRes = await fetch(API_BASE + '/api/history?token=' + t.key + '&days=30');
-          var histData = await histRes.json();
-          if (histData.history && histData.history.length > 1) {
-            navs = histData.history.map(function(h) { return h.nav; }).filter(function(n) { return n > 0; });
-          }
-        } catch (e2) {}
-        // Fallback: if OHLCV failed, use history spot prices
-        if (prices.length < 2) {
-          try {
-            var histRes2 = await fetch(API_BASE + '/api/history?token=' + t.key + '&days=30');
-            var histData2 = await histRes2.json();
-            if (histData2.history && histData2.history.length > 1) {
-              prices = histData2.history.map(function(h) { return h.spot; }).filter(function(s) { return s > 0; });
-            }
-          } catch (e3) {}
+        if (histData.history && histData.history.length > 1) {
+          navs = histData.history.map(function(h) { return h.nav; }).filter(function(n) { return n > 0; });
+        }
+        // Fallback: use history spot prices if OHLCV failed
+        if (prices.length < 2 && histData.history && histData.history.length > 1) {
+          prices = histData.history.map(function(h) { return h.spot; }).filter(function(s) { return s > 0; });
+        }
+        // Update table data with live values
+        if (histData.latest) {
+          if (histData.latest.spot > 0) { t.spot = histData.latest.spot; t.mcap = histData.latest.spot * (t.effectiveSupply || TOKENS[t.key].supply); }
+          if (histData.latest.treasuryUSDC > 0 && histData.latest.effectiveSupply > 0) { t.treasury = histData.latest.treasuryUSDC; t.strike = histData.latest.treasuryUSDC / histData.latest.effectiveSupply; t.effectiveSupply = histData.latest.effectiveSupply; }
         }
         var canvas = document.querySelector('canvas[data-token="' + t.key + '"]');
         if (canvas && (prices.length >= 2 || navs.length >= 2)) drawSparkline(canvas, prices, navs);
       } catch (e) {}
-    }
+    });
+    await Promise.all(promises);
+    renderTable();
   }
 
   fetchLandingData();
@@ -1314,6 +1286,20 @@ function drawChart() {
   }
 
   _chart._eventPts = [];
+
+  // TGE circle at start of price line
+  if (pricePts.length > 0 && CFG.icoPrice > 0) {
+    var firstPt = pricePts[0];
+    ctx.beginPath();
+    ctx.arc(firstPt.x, firstPt.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    // Label
+    ctx.fillStyle = '#888';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('TGE $' + (CFG.icoPrice >= 1 ? CFG.icoPrice.toFixed(2) : CFG.icoPrice.toFixed(2)), firstPt.x + 10, firstPt.y + 4);
+  }
 
   // Store pixel data for crosshair
   _chart._pricePts = pricePts;
