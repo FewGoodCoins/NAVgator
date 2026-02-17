@@ -385,14 +385,6 @@ const TOKENS = {
     icoPrice: 0.80, monthlyAllowance: 100_000,
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
-  zkfg: { live: true,
-    name: 'ZKLSOL', ticker: 'ZKFG', pair: 'ZKFG/USDC',
-    color: '#9f8cfc',
-    mint: 'ZKFHiLAfAFMTcDAuCtjNW54VzpERvoe7PBF9mYgmeta',
-    gtPool: 'JDuK4Wp3MQM6d9QKDNDNgoELHkfAMSqbbqzbmkz19vis',
-    icoPrice: 0.097, monthlyAllowance: 0,
-    spot: 0, treasuryUSDC: 0, supply: 0,
-  },
   umbra: { live: true,
     name: 'Umbra', ticker: 'UMBRA', pair: 'UMBRA/USDC',
     color: '#00c2ff', logo: 'logos/umbra.jpg',
@@ -409,43 +401,12 @@ const TOKENS = {
     icoPrice: 0.35, monthlyAllowance: 100_000,
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
-  loyal: { live: true,
-    name: 'Loyal', ticker: 'LOYAL', pair: 'LOYAL/USDC',
-    color: '#ffd700',
-    mint: 'LoyALuiy1mRSpjRBRw3iCp88T7xSD4kxTL6uYdpAmeta',
-    gtPool: 'BGg7WsK98rhqtTp2uSKMa2yETqgwShFAjyf1RmYqCF7n',
-    icoPrice: 0.05, monthlyAllowance: 0,
-    spot: 0, treasuryUSDC: 0, supply: 0,
-  },
-  paystream: { live: false,
-    name: 'Paystream', ticker: 'PAY', pair: 'PAY/USDC',
-    color: '#44ddaa',
-    mint: '',
-    icoPrice: 0.03, monthlyAllowance: 0,
-    spot: 0, treasuryUSDC: 0, supply: 0,
-  },
   omfg: { live: true,
     name: 'Omnipair', ticker: 'OMFG', pair: 'OMFG/USDC',
     color: '#ff8855', logo: 'logos/omfg.png',
     mint: 'omfgRBnxHsNJh6YeGbGAmWenNkenzsXyBXm3WDhmeta',
     gtPool: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
     icoPrice: 0.05, monthlyAllowance: 50_000,
-    spot: 0, treasuryUSDC: 0, supply: 0,
-  },
-  meta: { live: false,
-    name: 'MetaDAO', ticker: 'META', pair: 'META/USDC',
-    color: '#ff5533',
-    mint: 'METAwkXcqyXKy1AtsSgJ8JiUHwGCafnZL38n3vYmeta',
-    icoPrice: 0.17, monthlyAllowance: 0,
-    spot: 0, treasuryUSDC: 0, supply: 0,
-    note: 'Platform token — no ICO treasury structure.',
-  },
-  rngr: { live: true,
-    name: 'Ranger', ticker: 'RNGR', pair: 'RNGR/USDC',
-    color: '#22dd88', logo: 'logos/rngr.jpg',
-    mint: 'RNGRtJMbCveqCp7AC6U95KmrdKecFckaJZiWbPGmeta',
-    gtPool: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
-    icoPrice: 0.80, monthlyAllowance: 250_000,
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
 };
@@ -589,15 +550,16 @@ if (!_hasToken) {
       var discLabel = t.strike === 0 ? '—' : (isDiscount ? '-' + Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(1) + '%');
       var discColor = t.strike === 0 ? 'var(--dim)' : (isDiscount ? '#e84057' : 'var(--green)');
       var allowLabel = t.monthlyAllowance > 0 ? lfmtK(t.monthlyAllowance) + '/mo' : '—';
+      var noData = t.spot === 0;
 
       return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
         '<td>' + (i + 1) + '</td>' +
         '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
-        '<td><div class="tt-price">' + lfmt$(t.spot) + '</div></td>' +
-        '<td style="color:var(--text)">' + (t.strike > 0 ? lfmt$(t.strike) : '—') + '</td>' +
-        '<td style="color:' + discColor + ';font-weight:500">' + discLabel + '</td>' +
-        '<td style="color:var(--text)">' + lfmtK(t.treasury) + '</td>' +
-        '<td style="color:var(--text)">' + lfmtK(t.mcap) + '</td>' +
+        '<td><div class="tt-price">' + (noData ? '—' : lfmt$(t.spot)) + '</div></td>' +
+        '<td style="color:var(--text)">' + (noData ? '—' : (t.strike > 0 ? lfmt$(t.strike) : '—')) + '</td>' +
+        '<td style="color:' + discColor + ';font-weight:500">' + (noData ? '—' : discLabel) + '</td>' +
+        '<td style="color:var(--text)">' + (noData ? '—' : lfmtK(t.treasury)) + '</td>' +
+        '<td style="color:var(--text)">' + (noData ? '—' : lfmtK(t.mcap)) + '</td>' +
         '<td><canvas class="tt-sparkline" data-token="' + t.key + '"></canvas></td>' +
         '</tr>';
     }).join('');
@@ -1233,20 +1195,6 @@ function drawChart() {
 
   _chart._eventPts = [];
 
-  // TGE circle at start of price line
-  if (pricePts.length > 0 && CFG.icoPrice > 0) {
-    var firstPt = pricePts[0];
-    ctx.beginPath();
-    ctx.arc(firstPt.x, firstPt.y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    // Label
-    ctx.fillStyle = '#888';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('TGE $' + (CFG.icoPrice >= 1 ? CFG.icoPrice.toFixed(2) : CFG.icoPrice.toFixed(2)), firstPt.x + 10, firstPt.y + 4);
-  }
-
   // Store pixel data for crosshair
   _chart._pricePts = pricePts;
   _chart._navPts = [];
@@ -1847,10 +1795,20 @@ function renderAllowance(data) {
   // Don't render UI with zeros — show loading state
   var priceEl = document.getElementById('price-hero-val');
   if (priceEl) priceEl.textContent = '—';
+  var priceChangeEl = document.getElementById('price-hero-change');
+  if (priceChangeEl) priceChangeEl.textContent = '';
   var cardsEl = document.getElementById('cards');
   if (cardsEl) cardsEl.style.opacity = '0';
   var paramsEl = document.getElementById('params');
   if (paramsEl) paramsEl.style.opacity = '0';
+  var subLine = document.getElementById('sub-line');
+  if (subLine) subLine.textContent = '';
+  var titleLine = document.getElementById('title');
+  if (titleLine) titleLine.textContent = '';
+  var descLine = document.getElementById('desc');
+  if (descLine) descLine.textContent = '';
+  var treasuryFlow = document.getElementById('treasury-flow');
+  if (treasuryFlow) treasuryFlow.style.opacity = '0';
 
   // Set token header immediately (name/icon don't need API)
   var iconEl = document.getElementById('token-icon');
@@ -1869,22 +1827,14 @@ function renderAllowance(data) {
   var navPerToken = 0;
 
   try {
-    // Fetch allowance data for chart markers
-    var allowancePromise = fetch(API_BASE_DASH + '/api/allowance?token=' + tokenKey)
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d && d.cycles) {
-          _allowancePayments = d.cycles.map(function(c) { return { date: c.startDate, amount: c.amount }; });
-        }
-      }).catch(function() {});
-
-    var results = await Promise.all([fetchOHLCV(), fetchFromAPI(), fetchNAVHistory(), allowancePromise]);
+    var results = await Promise.all([fetchOHLCV(), fetchFromAPI()]);
     var ohlcv = results[0], apiOk = results[1];
     var isLive = !!(ohlcv || apiOk);
     navPerToken = renderUI(isLive);
     // Fade in cards/params
     if (cardsEl) cardsEl.style.opacity = '1';
     if (paramsEl) paramsEl.style.opacity = '1';
+    if (treasuryFlow) treasuryFlow.style.opacity = '1';
     renderBalances();
 
     var chartData = (ohlcv && ohlcv.length > 0) ? ohlcv : [];
@@ -1915,8 +1865,7 @@ function renderAllowance(data) {
 
     console.log('NAVgator ' + CFG.ticker + ' | Live: ' + isLive + ' | OHLCV: ' + (ohlcv ? ohlcv.length + ' candles' : 'none') + ' | Spot: $' + CFG.spot + ' | Treasury: $' + CFG.treasuryUSDC.toLocaleString() + ' | EffSupply: ' + (CFG.effectiveSupply || CFG.supply).toLocaleString() + ' | NAV: $' + navPerToken.toFixed(6));
 
-    // Fetch and render allowance data
-    fetchAllowance();
+    console.log('NAVgator ' + CFG.ticker + ' | Live: ' + isLive);
   } catch (err) {
     console.error('NAVgator init error:', err);
     var loadEl2 = document.getElementById('chart-loading');
