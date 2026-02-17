@@ -307,7 +307,7 @@
     <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
     <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
       <div class="chart-btn-group">
-        <button class="chart-btn" data-tf="1H">1H</button>
+        <button class="chart-btn" data-tf="6H">6H</button>
         <button class="chart-btn" data-tf="12H">12H</button>
         <button class="chart-btn active" data-tf="1D">1D</button>
       </div>
@@ -854,7 +854,7 @@ async function fetchCandlesForTF(tf) {
   try {
     var now = new Date();
     var sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
-    var birdeyeTF = { '12H': '12H', '1D': '1D', '1W': '1W', '1M': '1M' }[tf] || '1D';
+    var birdeyeTF = { '6H': '6H', '12H': '12H', '1D': '1D', '1W': '1W', '1M': '1M' }[tf] || '1D';
     var url = API_BASE_DASH + '/api/ohlcv?token=' + tokenKey + '&tf=' + birdeyeTF + '&time_from=' + Math.floor(sixMonthsAgo.getTime() / 1000) + '&time_to=' + Math.floor(now.getTime() / 1000);
     var resp = await fetch(url);
     var json = await resp.json();
