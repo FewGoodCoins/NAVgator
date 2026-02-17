@@ -1105,11 +1105,66 @@ function buildChart(candles, navPerToken) {
       accurateNav.push(navData[i]);
     }
   }
-  // Build diagonal from TGE to first accurate point
+  // Build simulated NAV from TGE to first accurate point
+  // Uses constant-product AMM model: as price changes, USDC in AMM rebalances
   if (CFG.tge && CFG.icoPrice > 0 && accurateNav.length > 0) {
     var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
-    estimatedNav.push({ time: tgeTs, value: CFG.icoPrice });
-    estimatedNav.push(accurateNav[0]); // end of diagonal = start of accurate
+    var firstAccTs = accurateNav[0].time;
+
+    // AMM setup: 20% of raise paired with tokens
+    var ammPct = 0.20;
+    var initialAmmUsdc = CFG.raise * ammPct;
+    var initialAmmTokens = 2_900_000; // SOLO-specific for now
+    var ammK = initialAmmUsdc * initialAmmTokens; // constant product k
+    var idleUsdc = CFG.raise * (1 - ammPct);
+    var holderSupply = CFG.supply || 10_000_000;
+    var monthlyBurn = CFG.monthlyBurn || 0;
+
+    // Only use AMM simulation for tokens that have AMM data
+    if (CFG.raise && _chart.priceData.length > 0) {
+      // Walk through price data points between TGE and first accurate NAV
+      var simPoints = [];
+      var burnPerSec = monthlyBurn / (30.44 * 86400); // burn rate per second
+      var lastBurnTime = tgeTs;
+
+      // Add TGE point
+      var tgeAmmUsdc = initialAmmUsdc;
+      var tgeNav = (idleUsdc + tgeAmmUsdc) / holderSupply;
+      simPoints.push({ time: tgeTs, value: tgeNav });
+
+      for (var pi = 0; pi < _chart.priceData.length; pi++) {
+        var pt = _chart.priceData[pi];
+        if (pt.time <= tgeTs || pt.time >= firstAccTs) continue;
+
+        // Calculate cumulative burn from TGE to this point
+        var elapsed = pt.time - tgeTs;
+        var totalBurned = burnPerSec * elapsed;
+        var currentIdle = Math.max(0, idleUsdc - totalBurned);
+
+        // AMM rebalance: at price P, USDC in pool = sqrt(k * P)
+        // Since k = usdc * tokens, and price = usdc/tokens
+        // usdc_in_amm = sqrt(k * price)
+        var price = pt.value;
+        var ammUsdc = Math.sqrt(ammK * price);
+
+        // Cap AMM USDC at reasonable bounds
+        ammUsdc = Math.min(ammUsdc, CFG.raise * 0.8);
+        ammUsdc = Math.max(ammUsdc, initialAmmUsdc * 0.1);
+
+        var nav = (currentIdle + ammUsdc) / holderSupply;
+        simPoints.push({ time: pt.time, value: nav });
+      }
+
+      // Connect to first accurate point
+      if (simPoints.length > 0) {
+        simPoints.push(accurateNav[0]);
+      }
+      estimatedNav = simPoints;
+    } else {
+      // Fallback: straight line
+      estimatedNav.push({ time: tgeTs, value: CFG.icoPrice });
+      estimatedNav.push(accurateNav[0]);
+    }
   }
 
   // Deduplicate accurate NAV to only keep points where value changes (clean staircase)
@@ -1237,14 +1292,12 @@ function drawChart() {
         navVals.push(_chart.navData[ni].value);
       }
     }
-    // Include estimated NAV at visible range boundaries
+    // Include simulated NAV values in visible range
     var estData = _chart.estimatedNav || [];
-    if (estData.length >= 2 && estData[0].time < tMax && estData[estData.length - 1].time > tMin) {
-      var eT0 = estData[0].time, eV0 = estData[0].value;
-      var eT1 = estData[estData.length - 1].time, eV1 = estData[estData.length - 1].value;
-      var clipT0 = Math.max(eT0, tMin), clipT1 = Math.min(eT1, tMax);
-      navVals.push(eV0 + (clipT0 - eT0) / (eT1 - eT0) * (eV1 - eV0));
-      navVals.push(eV0 + (clipT1 - eT0) / (eT1 - eT0) * (eV1 - eV0));
+    for (var ei = 0; ei < estData.length; ei++) {
+      if (estData[ei].time >= tMin && estData[ei].time <= tMax) {
+        navVals.push(estData[ei].value);
+      }
     }
     // Also include last NAV before visible range
     for (var ni = _chart.navData.length - 1; ni >= 0; ni--) {
@@ -1406,7 +1459,7 @@ function drawChart() {
   var hasNav = (navPts.length > 0 || estPts.length >= 2);
   if (pricePts.length > 1 && hasNav) {
 
-    // NAV Y at any X position — checks estimated diagonal first, then accurate staircase
+    // NAV Y at any X position — checks accurate staircase first, then simulated NAV
     function navYAtX(xPos) {
       // Check accurate staircase first
       if (navPts.length > 0 && xPos >= navPts[0].x) {
@@ -1415,13 +1468,17 @@ function drawChart() {
         }
         return navPts[0].y;
       }
-      // Fall back to estimated diagonal (linear interpolation)
+      // Fall back to simulated NAV (walk through points, interpolate between them)
       if (estPts.length >= 2) {
-        var eStart = estPts[0], eEnd = estPts[estPts.length - 1];
-        if (xPos <= eStart.x) return eStart.y;
-        if (xPos >= eEnd.x) return eEnd.y;
-        var t = (xPos - eStart.x) / (eEnd.x - eStart.x);
-        return eStart.y + t * (eEnd.y - eStart.y);
+        if (xPos <= estPts[0].x) return estPts[0].y;
+        if (xPos >= estPts[estPts.length - 1].x) return estPts[estPts.length - 1].y;
+        for (var ei = 1; ei < estPts.length; ei++) {
+          if (xPos <= estPts[ei].x) {
+            var t = (xPos - estPts[ei - 1].x) / (estPts[ei].x - estPts[ei - 1].x);
+            return estPts[ei - 1].y + t * (estPts[ei].y - estPts[ei - 1].y);
+          }
+        }
+        return estPts[estPts.length - 1].y;
       }
       // Fallback
       if (navPts.length > 0) return navPts[0].y;
@@ -1511,21 +1568,18 @@ function drawChart() {
     ctx.fill();
   }
 
-  // Thin straight line from TGE to first accurate NAV point
+  // Draw simulated NAV line from TGE to first accurate point
   var estData = _chart.estimatedNav || [];
   if (estData.length >= 2) {
-    var eT0 = estData[0].time, eV0 = estData[0].value;
-    var eT1 = estData[estData.length - 1].time, eV1 = estData[estData.length - 1].value;
-    if (eT0 < tMax && eT1 > tMin) {
-      var drawT0 = Math.max(eT0, tMin);
-      var drawT1 = Math.min(eT1, tMax);
-      var p0 = (drawT0 - eT0) / (eT1 - eT0);
-      var p1 = (drawT1 - eT0) / (eT1 - eT0);
+    var estPtsVis = toPixels(estData);
+    if (estPtsVis.length >= 2) {
       ctx.beginPath();
       ctx.strokeStyle = '#e8e6e3';
       ctx.lineWidth = 1;
-      ctx.moveTo(tx(drawT0), ty(eV0 + p0 * (eV1 - eV0)));
-      ctx.lineTo(tx(drawT1), ty(eV0 + p1 * (eV1 - eV0)));
+      ctx.moveTo(estPtsVis[0].x, estPtsVis[0].y);
+      for (var i = 1; i < estPtsVis.length; i++) {
+        ctx.lineTo(estPtsVis[i].x, estPtsVis[i].y);
+      }
       ctx.stroke();
     }
   }
@@ -1580,21 +1634,6 @@ function drawChart() {
       ctx.lineWidth = 1;
       ctx.moveTo(seg.x1, seg.y1);
       ctx.lineTo(seg.x2, seg.y2);
-      ctx.stroke();
-    }
-  }
-
-  // White circle at the start of accurate NAV data
-  if (_chart.navData && _chart.navData.length > 0) {
-    var firstAccurate = _chart.navData[0];
-    if (firstAccurate.time >= tMin && firstAccurate.time <= tMax) {
-      var acX = tx(firstAccurate.time), acY = ty(firstAccurate.value);
-      ctx.beginPath();
-      ctx.arc(acX, acY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
   }
