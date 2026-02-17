@@ -381,142 +381,72 @@ const TOKENS = {
     name: 'Solomon', ticker: 'SOLO', pair: 'SOLO/USDC',
     color: '#00e5a0', logo: 'logos/solo.jpg',
     mint: 'SoLo9oxzLDpcq1dpqAgMwgce5WqkRDtNXK7EPnbmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: '98SPcyUZ2rqM2dgjCqqSXS4gJrNTLSNUAAVCF38xYj9u',
-    lockWallet: 'Bo24B7DDVtpa9VxZ4LN8FrAT7TM3cgkri41a5GjFg5Dk',
     gtPool: 'o5rJFXSKTsuws58rBMNPG8jdKdnY4Z7ouU29dyohE4g',
-    // Futarchy pools — USDC counts toward treasury, SOLO subtracted from supply
-    pools: [
-      { name: 'futarchy1', wallet: 'DzYtzoNvPbyFCzwZA6cSm9eDEEmxEB9f8AGkJXUXgnSA' },
-      { name: 'futarchy2', soloAccount: 'HaFkQ6qEYzU7fXxSdMgLJH9LQ2piNa58WpbK8uyLRL1e', usdcAccount: '6suP5vppzxwp141dSguWLeVeeKzBYpS8iuWNM3SqmBmh' },
-    ],
-    totalMinted: 25_800_000, icoPrice: 0.80, ath: 1.09,
-    monthlyBurn: 100_000, monthlyAllowance: 100_000,
-    spot: 0.55, treasuryUSDC: 7_371_448,
-    supply: 9_480_848, // holderSupply = totalMinted - lockWallet - pool SOLO
+    icoPrice: 0.80, monthlyAllowance: 100_000,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
   zkfg: { live: true,
     name: 'ZKLSOL', ticker: 'ZKFG', pair: 'ZKFG/USDC',
     color: '#9f8cfc',
     mint: 'ZKFHiLAfAFMTcDAuCtjNW54VzpERvoe7PBF9mYgmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: 'BNvDfXYG2FAyBDYD71Xr9GhKE18MbmhtjsLKsCuXho6z',
-    ammWallet: '5FPGRzY9ArJFwY2Hp2y2eqMzVewyWCBox7esmpuZfCvE',
     gtPool: 'JDuK4Wp3MQM6d9QKDNDNgoELHkfAMSqbbqzbmkz19vis',
-    icoPrice: 0.097, ath: 0.145,
-    monthlyBurn: 50_000,
-    spot: 0.0654, treasuryUSDC: 820_000,
-    supply: 10_000_000,
+    icoPrice: 0.097, monthlyAllowance: 0,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
   umbra: { live: true,
     name: 'Umbra', ticker: 'UMBRA', pair: 'UMBRA/USDC',
     color: '#00c2ff', logo: 'logos/umbra.jpg',
     mint: 'PRVT6TB7uss3FrUd2D9xs2zqDBsa3GbMJMwCQsgmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: '6VsC8PuKkXm5xo54c2vbrAaSfQipkpGHqNuKTxXFySx6',
-    ammWallet: 'BLkBSE96kQys7SrMioKxeMiVbeo4Ckk2Y4n1JphKxYnv',
-    ammWallet2: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
-    lockWallet: '3kX3EWm9iPB6oxFS2NJ71L6v5wzFZ8rQMEG6HC8QHJtF',
     gtPool: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
-    gtPoolLegacy: 'BLkBSE96kQys7SrMioKxeMiVbeo4Ckk2Y4n1JphKxYnv',
-    icoPrice: 0.30, ath: 2.43,
-    monthlyBurn: 34_000, monthlyAllowance: 100_000,
-    spot: 0.76, treasuryUSDC: 3_360_000,
-    supply: 10_000_000,
+    icoPrice: 0.30, monthlyAllowance: 100_000,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
   avici: { live: true,
     name: 'Avici', ticker: 'AVICI', pair: 'AVICI/USDC',
     color: '#ff6b9d', logo: 'logos/avici.jpg',
     mint: 'BANKJmvhT8tiJRsBSS1n2HryMBPvT5Ze4HU95DUAmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: 'DGgYoUcu1aDZt4GEL5NQiducwHRGbkMWsUzsXh2j622G',
-    ammWallet: '3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn',
-    ammWallet2: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     gtPool: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
-    gtPoolLegacy: '3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn',
-    icoPrice: 0.35, ath: 7.57,
-    monthlyBurn: 45_000, monthlyAllowance: 100_000,
-    spot: 1.08, treasuryUSDC: 3_300_000,
-    supply: 12_900_000,
+    icoPrice: 0.35, monthlyAllowance: 100_000,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
   loyal: { live: true,
     name: 'Loyal', ticker: 'LOYAL', pair: 'LOYAL/USDC',
     color: '#ffd700',
     mint: 'LoyALuiy1mRSpjRBRw3iCp88T7xSD4kxTL6uYdpAmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: 'AQyyTwCKemeeMu8ZPZFxrXMbVwAYTSbBhi1w4PBrhvYE',
-    ammWallet: 'GxpJkPEsPmuRCCTNnfZaDKg4X3gf4ZPgmqgFqtibaPtK',
-    ammWallet2: 'BGg7WsK98rhqtTp2uSKMa2yETqgwShFAjyf1RmYqCF7n',
-    buybackWallet: 'AfGAjj7TQByC2WQtCNRhsyq1WeZqmQ7oNRoGb2JbgoQg',
     gtPool: 'BGg7WsK98rhqtTp2uSKMa2yETqgwShFAjyf1RmYqCF7n',
-    gtPoolLegacy: 'GxpJkPEsPmuRCCTNnfZaDKg4X3gf4ZPgmqgFqtibaPtK',
-    icoPrice: 0.05, ath: 0.37,
-    monthlyBurn: 45_000,
-    spot: 0.13, treasuryUSDC: 420_000,
-    supply: 10_000_000,
+    icoPrice: 0.05, monthlyAllowance: 0,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
   paystream: { live: false,
     name: 'Paystream', ticker: 'PAY', pair: 'PAY/USDC',
     color: '#44ddaa',
     mint: '',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: 'BpXtB2ASf2Tft97ewTd8PayXCqFQ6Wqod33qrwwfK9Vz',
-    ammWallet: '6FRXzTe3HajL8Fwmmkupp8g3y3wn3g3QEjj8sABndre3',
-    ammWallet2: '6F88Y6iukU9GuL8CMWnx6YT832vBymNPicJBikQWeYe4',
-    buybackWallet: '3BAUsXfhhK2H1KH18GYNhUvLUsPrKWcePEA5N2UKP6VL',
-    gtPool: '6F88Y6iukU9GuL8CMWnx6YT832vBymNPicJBikQWeYe4',
-    gtPoolLegacy: '6FRXzTe3HajL8Fwmmkupp8g3y3wn3g3QEjj8sABndre3',
-    icoPrice: 0.03, ath: 0.04,
-    monthlyBurn: 15_000,
-    spot: 0.021, treasuryUSDC: 255_000,
-    supply: 10_000_000,
+    icoPrice: 0.03, monthlyAllowance: 0,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
   omfg: { live: true,
     name: 'Omnipair', ticker: 'OMFG', pair: 'OMFG/USDC',
     color: '#ff8855', logo: 'logos/omfg.png',
     mint: 'omfgRBnxHsNJh6YeGbGAmWenNkenzsXyBXm3WDhmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: '34rned2SLUcYjUrM9meQkuyJY4QDBcKhkcUPXCgGuXD9',
-    ammWallet: '2WNhaB6TPyZ3ynJjAUM4ZZ1Hdeep8FJ3A76FjGjTVjjS',
-    ammWallet2: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
     gtPool: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
-    gtPoolLegacy: '2WNhaB6TPyZ3ynJjAUM4ZZ1Hdeep8FJ3A76FjGjTVjjS',
-    icoPrice: 0.05, ath: 0.83,
-    monthlyBurn: 25_000, monthlyAllowance: 50_000,
-    spot: 0.32, treasuryUSDC: 400_000,
-    supply: 10_000_000,
+    icoPrice: 0.05, monthlyAllowance: 50_000,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
   meta: { live: false,
     name: 'MetaDAO', ticker: 'META', pair: 'META/USDC',
     color: '#ff5533',
     mint: 'METAwkXcqyXKy1AtsSgJ8JiUHwGCafnZL38n3vYmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: 'BfzJzFUeE54zv6Q2QdAZR4yx7UXuYRsfkeeirrRcxDvk',
-    ammWallet: 'CUPoiqkK4hxyCiJcLC4yE9AtJP1MoV1vFV2vx3jqwWeS',
-    ammWallet2: 'EXpXkwcWDhjEYyC5pfNfxsu8fUtK4CDCYTZR4ApQNRzo',
-    gtPool: 'EXpXkwcWDhjEYyC5pfNfxsu8fUtK4CDCYTZR4ApQNRzo',
-    gtPoolLegacy: 'CUPoiqkK4hxyCiJcLC4yE9AtJP1MoV1vFV2vx3jqwWeS',
-    icoPrice: 0.17, ath: 10.69,
-    monthlyBurn: 0,
-    spot: 3.78, treasuryUSDC: 0,
-    supply: 22_080_000,
-    note: 'Platform token — no ICO treasury structure. Treasury analytics are approximate.',
+    icoPrice: 0.17, monthlyAllowance: 0,
+    spot: 0, treasuryUSDC: 0, supply: 0,
+    note: 'Platform token — no ICO treasury structure.',
   },
   rngr: { live: true,
     name: 'Ranger', ticker: 'RNGR', pair: 'RNGR/USDC',
     color: '#22dd88', logo: 'logos/rngr.jpg',
     mint: 'RNGRtJMbCveqCp7AC6U95KmrdKecFckaJZiWbPGmeta',
-    usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    daoWallet: '55H1Q1YrHJQ93uhG4jqrBBHx3a8H7TCM8kvf2UM2g5q3',
-    ammWallet: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
-    ammWallet2: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
-    lockWallet: 'F35JE1HZMtZXXWdy3koSPRe1gGFQyqd5kpbPw2xNcjR8',
     gtPool: '59WuweKV7DAg8aUgRhNytScQxioaFYNJdWnox5FxAXFq',
-    gtPoolLegacy: '1PAwyDkWNFCcR96GhEReXHJBv3YEFVazCaQgNicVuKv',
-    icoPrice: 0.80, ath: 0.865,
-    monthlyBurn: 250_000, monthlyAllowance: 250_000,
-    spot: 0.54, treasuryUSDC: 5_750_000,
-    supply: 10_000_000,
+    icoPrice: 0.80, monthlyAllowance: 250_000,
+    spot: 0, treasuryUSDC: 0, supply: 0,
   },
 };
 // ═══════════════════════════════════════════════════════════════════════
@@ -770,7 +700,7 @@ if (!_hasToken) {
   }
 
   fetchLandingData();
-  setTimeout(loadSparklines, 500);
+  loadSparklines();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -842,6 +772,8 @@ async function fetchFromAPI() {
     if (data.meteoraPoolUSDC >= 0) CFG.metAmmUSDC = data.meteoraPoolUSDC;
     if (data.futAmmUSDC >= 0) CFG.futAmmUSDC = data.futAmmUSDC;
     if (data.daoUSDC >= 0) CFG.daoUSDC = data.daoUSDC;
+    if (data.nav > 0) CFG.nav = data.nav;
+    if (data.monthlyAllowance > 0) CFG.monthlyAllowance = data.monthlyAllowance;
     console.log('API data:', data);
     return true;
   } catch (e) { console.warn('API fetch failed:', e.message); return false; }
@@ -882,8 +814,8 @@ function togglePremiumFormat() {
   var el = document.getElementById('prem-val');
   var sub = document.getElementById('prem-sub');
   if (!el || !CFG) return;
-  var supplyForNAV = CFG.effectiveSupply || CFG.supply;
-  var strike = CFG.treasuryUSDC / supplyForNAV;
+  var supplyForNAV = CFG.effectiveSupply || CFG.supply || 1;
+  var strike = supplyForNAV > 0 ? CFG.treasuryUSDC / supplyForNAV : 0;
   var ratio = strike > 0 ? CFG.spot / strike : 0;
   var discPct = strike > 0 ? ((CFG.spot - strike) / strike * 100) : 0;
   var isDiscount = discPct < 0;
@@ -1593,10 +1525,11 @@ function initChart(rawCandles, navPerToken) {
 // RENDER UI
 // ═══════════════════════════════════════════════════════════════════════
 function renderUI(isLive) {
-  const supplyForNAV = CFG.effectiveSupply || CFG.supply;
-  const strike = CFG.treasuryUSDC / supplyForNAV;
+  const supplyForNAV = CFG.effectiveSupply || CFG.supply || 1;
+  const strike = supplyForNAV > 1 ? CFG.treasuryUSDC / supplyForNAV : 0;
   const itm = CFG.spot < strike;
-  const monthsLeft = CFG.monthlyBurn > 0 ? Math.floor(CFG.treasuryUSDC / CFG.monthlyBurn) : '\u221e';
+  const burn = CFG.monthlyAllowance || 0;
+  const monthsLeft = burn > 0 ? Math.floor(CFG.treasuryUSDC / burn) : '\u221e';
   const discPct = strike > 0 ? ((CFG.spot - strike) / strike * 100) : 0;
   const isDiscount = discPct < 0;
 
@@ -1630,23 +1563,20 @@ function renderUI(isLive) {
   document.getElementById('desc').innerHTML = '';
 
   document.getElementById('cards').innerHTML =
-    '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">' + fmtM(CFG.monthlyBurn) + '/mo burn</div></div>' +
+    '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">' + fmtM(burn) + '/mo allowance</div></div>' +
     '<div class="card"><div class="card-label">NAV / Token</div><div class="card-value" style="color:var(--white)">' + fmt$(strike) + '</div><div class="card-sub">treasury \u00f7 holder supply</div></div>' +
     '<div class="card" onclick="togglePremiumFormat()" style="cursor:pointer"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" id="prem-val" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub" id="prem-sub">' + (isDiscount ? 'below NAV' : 'above NAV') + '</div></div>' +
-    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">at current burn rate</div></div>' +
+    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">at current allowance</div></div>' +
     '<div class="card"><div class="card-label">MCap</div><div class="card-value" style="color:var(--white)">' + fmtM(CFG.spot * supplyForNAV) + '</div><div class="card-sub">' + (supplyForNAV / 1e6).toFixed(1) + 'M supply</div></div>';
 
   document.getElementById('params').innerHTML =
-    '<span>Raise <b>' + fmtM(CFG.raise) + '</b></span>' +
-    '<span>S\u2080 <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
+    '<span>ICO <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
     '<span>NAV <span class="hl">' + fmt$(strike) + '</span></span>' +
     '<span>Spot <span class="spot">' + fmt$(CFG.spot) + '</span></span>' +
-    '<span>ATH <b>' + fmt$(CFG.ath) + '</b></span>' +
-    '<span>Burn <b>' + fmtBurn(CFG.monthlyBurn) + '/mo</b></span>';
+    '<span>Allowance <b>' + fmtBurn(burn) + '/mo</b></span>';
 
   var daoBalance = CFG.daoUSDC || 0;
   document.getElementById('treasury-flow').innerHTML =
-    '<span>Raised <b style="color:var(--green)">' + fmtM(CFG.raise) + '</b></span>' +
     '<span>DAO Balance <b style="color:var(--white)">' + fmtM(daoBalance) + '</b></span>' +
     '<span>Total Treasury <b style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</b></span>';
 
