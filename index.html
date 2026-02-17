@@ -22,7 +22,7 @@
 
   /* Nav bar */
   .nav { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
-  .nav-brand { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+  .nav-brand { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; display: inline; }
   .nav-brand span { color: #00ff88; font-weight: 700; }
   .nav-brand-icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, var(--green), #00b880); font-family: 'DM Serif Display', serif; font-size: 13px; font-weight: 400; color: #0c0c10; flex-shrink: 0; }
   .nav-sep { color: var(--dim); }
@@ -961,6 +961,8 @@ var _chart = {
   priceData: [], navData: [],
   viewStart: 0, viewEnd: 1, // 0-1 range for zoom/pan
   isDragging: false, dragStartX: 0, dragStartView: 0,
+  isYDragging: false, yDragStartY: 0, yDragStartZoom: 1, yDragStartOffset: 0,
+  yZoom: 1, yOffset: 0, // Y-axis zoom (1=auto) and vertical offset
   width: 0, height: 420,
   padding: { top: 20, right: 60, bottom: 30, left: 70 },
 };
@@ -1069,21 +1071,20 @@ function buildChart(candles, navPerToken) {
   // Split into estimated (pre-accurate) and accurate data
   // Accurate data starts Feb 15 2026 when cron snapshots became reliable
   var accurateCutoff = Math.floor(new Date('2026-02-15T00:00:00Z').getTime() / 1000);
-  var estimatedNav = []; // TGE + first accurate point (diagonal)
+  var estimatedNav = []; // TGE → first accurate point (diagonal)
   var accurateNav = []; // real cron snapshots (staircase)
 
   for (var i = 0; i < navData.length; i++) {
     if (navData[i].time < accurateCutoff) {
-      // Only keep the very first point (TGE) from pre-accurate data
-      if (estimatedNav.length === 0) {
-        estimatedNav.push(navData[i]);
-      }
+      // Skip pre-accurate points, we'll use TGE as start
     } else {
       accurateNav.push(navData[i]);
     }
   }
-  // Connect diagonal: TGE → first accurate point
-  if (estimatedNav.length > 0 && accurateNav.length > 0) {
+  // Build diagonal from TGE to first accurate point
+  if (CFG.tge && CFG.icoPrice > 0 && accurateNav.length > 0) {
+    var tgeTs = Math.floor(new Date(CFG.tge + 'T00:00:00Z').getTime() / 1000);
+    estimatedNav.push({ time: tgeTs, value: CFG.icoPrice });
     estimatedNav.push(accurateNav[0]); // end of diagonal = start of accurate
   }
 
@@ -1240,6 +1241,15 @@ function drawChart() {
   var vPad = (vMax - vMin) * 0.1 || 0.01;
   vMin -= vPad;
   vMax += vPad;
+
+  // Apply Y-axis manual zoom/offset (from dragging the price scale)
+  if (_chart.yZoom !== 1 || _chart.yOffset !== 0) {
+    var vMid = (vMin + vMax) / 2 + _chart.yOffset;
+    var vHalf = ((vMax - vMin) / 2) / _chart.yZoom;
+    vMin = vMid - vHalf;
+    vMax = vMid + vHalf;
+  }
+
   // Ensure vMin > 0 for log scale
   if (_chartScale === 'log' && vMin <= 0) vMin = 0.001;
   var vRange = vMax - vMin || 1;
@@ -1607,24 +1617,11 @@ function drawChart() {
     var lastPt = pricePts[pricePts.length - 1];
     var lastY = lastPt.y;
     var lastVal = CFG.spot;
-    var isDown = lastVal < (CFG.icoPrice || lastVal);
     var badgeColor = '#e84057'; // default red
     if (_chart.navData && _chart.navData.length > 0) {
       var lastNavVal = _chart.navData[_chart.navData.length - 1].value;
       badgeColor = lastVal >= lastNavVal ? '#00e5a0' : '#e84057';
     }
-
-    // Horizontal dashed line at current price
-    ctx.beginPath();
-    ctx.strokeStyle = badgeColor;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.globalAlpha = 0.5;
-    ctx.moveTo(pad.left, lastY);
-    ctx.lineTo(w - pad.right, lastY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
 
     // Price badge on right edge
     var badgeText = '$' + lastVal.toFixed(lastVal >= 1 ? 2 : 4);
@@ -1705,10 +1702,19 @@ function attachChartEvents(container) {
 
   // Crosshair on mouse move (only when not dragging)
   canvas.addEventListener('mousemove', function(e) {
-    if (_chart.isDragging) return;
+    if (_chart.isDragging || _chart.isYDragging) return;
     var rect = canvas.getBoundingClientRect();
     var mx = e.clientX - rect.left;
     var my = e.clientY - rect.top;
+    var mxScaled = mx * (_chart.width / rect.width);
+    var w = _chart.width;
+    var cpad = _chart.padding;
+    // Change cursor on price scale zone
+    if (mxScaled > w - cpad.right - 30) {
+      canvas.style.cursor = 'ns-resize';
+    } else {
+      canvas.style.cursor = 'crosshair';
+    }
     drawChart();
     drawCrosshair(mx, my);
   });
@@ -1718,63 +1724,78 @@ function attachChartEvents(container) {
     if (_chart.tooltip) _chart.tooltip.style.display = 'none';
   });
 
-  // Zoom with scroll
+  // Zoom with scroll — anchored to right edge (most recent data stays pinned right)
+  // Y-axis zoom if on price scale zone
   canvas.addEventListener('wheel', function(e) {
     e.preventDefault();
     var rect = canvas.getBoundingClientRect();
-    var mx = (e.clientX - rect.left) / _chart.width;
+    var mx = (e.clientX - rect.left) * (_chart.width / rect.width);
+    var w = _chart.width;
+    var cpad = _chart.padding;
+
+    // If scrolling on the right price scale zone, zoom Y-axis
+    if (mx > w - cpad.right - 30) {
+      var zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      _chart.yZoom = Math.max(0.2, Math.min(10, _chart.yZoom * zoomFactor));
+      drawChart();
+      return;
+    }
+
+    // X-axis zoom — pinned to right edge
     var zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
     var range = _chart.viewEnd - _chart.viewStart;
-    var newRange = Math.min(1.6, Math.max(0.05, range * zoomFactor));
-    var center = _chart.viewStart + mx * range;
-    _chart.viewStart = center - mx * newRange;
-    _chart.viewEnd = _chart.viewStart + newRange;
-    // Allow overscroll up to 30% past data on each side
-    var overscroll = newRange * 0.3;
-    if (_chart.viewStart < -overscroll) { _chart.viewStart = -overscroll; _chart.viewEnd = _chart.viewStart + newRange; }
-    if (_chart.viewEnd > 1 + overscroll) { _chart.viewEnd = 1 + overscroll; _chart.viewStart = _chart.viewEnd - newRange; }
+    var newRange = Math.min(1, Math.max(0.05, range * zoomFactor));
+    // Pin right edge at 1 (most recent data)
+    _chart.viewEnd = 1;
+    _chart.viewStart = Math.max(0, 1 - newRange);
     drawChart();
   }, { passive: false });
 
-  // Pan with click-drag
+  // Y-axis drag on price scale zone only — no X-axis panning
   canvas.addEventListener('mousedown', function(e) {
-    _chart.isDragging = true;
-    _chart.dragStartX = e.clientX;
-    _chart.dragStartViewStart = _chart.viewStart;
-    _chart.dragStartViewEnd = _chart.viewEnd;
-    _chart.dragRange = _chart.viewEnd - _chart.viewStart;
-    canvas.style.cursor = 'grabbing';
-    if (_chart.tooltip) _chart.tooltip.style.display = 'none';
+    var rect = canvas.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) * (_chart.width / rect.width);
+    var w = _chart.width;
+    var cpad = _chart.padding;
+
+    // Right price scale zone — Y-axis drag
+    if (mx > w - cpad.right - 30) {
+      _chart.isYDragging = true;
+      _chart.yDragStartY = e.clientY;
+      _chart.yDragStartOffset = _chart.yOffset;
+      canvas.style.cursor = 'ns-resize';
+      if (_chart.tooltip) _chart.tooltip.style.display = 'none';
+      e.preventDefault();
+      return;
+    }
     e.preventDefault();
   });
 
   window.addEventListener('mousemove', function(e) {
-    if (!_chart.isDragging) return;
-    var rect = canvas.getBoundingClientRect();
-    var canvasW = rect.width;
-    var dx = e.clientX - _chart.dragStartX;
-    var shift = -(dx / canvasW) * _chart.dragRange;
-    var newStart = _chart.dragStartViewStart + shift;
-    // Allow overscroll up to 30% past data on each side
-    var overscroll = _chart.dragRange * 0.3;
-    if (newStart < -overscroll) newStart = -overscroll;
-    if (newStart + _chart.dragRange > 1 + overscroll) newStart = 1 + overscroll - _chart.dragRange;
-    _chart.viewStart = newStart;
-    _chart.viewEnd = newStart + _chart.dragRange;
-    drawChart();
-  });
-
-  window.addEventListener('mouseup', function() {
-    if (_chart.isDragging) {
-      _chart.isDragging = false;
-      canvas.style.cursor = 'crosshair';
+    // Y-axis dragging
+    if (_chart.isYDragging) {
+      var dy = e.clientY - _chart.yDragStartY;
+      var rect = _chart.canvas.getBoundingClientRect();
+      var sensitivity = (_chart._vMax - _chart._vMin) || 1;
+      _chart.yOffset = _chart.yDragStartOffset + (dy / rect.height) * sensitivity;
+      drawChart();
+      return;
     }
   });
 
-  // Double click to reset zoom
+  window.addEventListener('mouseup', function() {
+    if (_chart.isYDragging) {
+      _chart.isYDragging = false;
+      _chart.canvas.style.cursor = 'crosshair';
+    }
+  });
+
+  // Double click to reset zoom (both axes)
   canvas.addEventListener('dblclick', function() {
     _chart.viewStart = 0;
     _chart.viewEnd = 1;
+    _chart.yZoom = 1;
+    _chart.yOffset = 0;
     drawChart();
   });
 
@@ -1963,7 +1984,7 @@ function renderUI(isLive) {
   var priceChange = document.getElementById('price-hero-change');
   if (priceChange) {
     var changePct = discPct;
-    priceChange.textContent = (isDiscount ? '' : '+') + changePct.toFixed(2) + '% (NAV ' + fmt$(strike) + ')';
+    priceChange.textContent = (isDiscount ? '' : '+') + changePct.toFixed(2) + '% vs NAV (' + fmt$(strike) + ')';
     priceChange.className = 'price-hero-change ' + (isDiscount ? 'down' : 'up');
   }
 
