@@ -45,12 +45,10 @@
   .desc .hl-green { color: var(--green); font-weight: 600; }
 
   /* Price + metrics row */
-  .price-metrics-row { display: flex; align-items: center; gap: 24px; padding: 8px 0 20px; }
-  .price-hero { flex-shrink: 0; }
-  .price-hero-value { font-family: 'Inter', sans-serif; font-size: 42px; font-weight: 700; color: var(--white); letter-spacing: -1px; }
-  .price-hero-change { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; margin-top: 2px; }
-  .price-hero-change.up { color: var(--green); }
-  .price-hero-change.down { color: var(--red); }
+  .price-metrics-row { display: flex; align-items: center; gap: 24px; padding: 8px 0 12px; justify-content: flex-end; }
+  .price-hero-border { position: absolute; top: 16px; left: 28px; z-index: 5; }
+  .price-hero-value { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
+  .price-hero-change { display: none; }
 
   /* Metric cards — compact inline next to price */
   .cards { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end; margin-bottom: 0; }
@@ -58,8 +56,8 @@
   .card-label { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
   .card-value { font-family: 'Inter', sans-serif; font-size: 30px; font-weight: 700; line-height: 1.1; color: var(--white); }
   .card-sub { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; color: var(--dim); margin-top: 4px; }
-  @media (max-width: 800px) { .price-metrics-row { flex-wrap: wrap; } .cards { justify-content: flex-start; } }
-  @media (max-width: 500px) { .price-hero-value { font-size: 30px; } .price-metrics-row { flex-direction: column; align-items: flex-start; } }
+  @media (max-width: 800px) { .price-metrics-row { flex-wrap: wrap; justify-content: flex-start; } .cards { justify-content: flex-start; } }
+  @media (max-width: 500px) { .price-hero-value { font-size: 28px; } }
 
   /* Params bar */
   .params { display: flex; flex-wrap: wrap; gap: 6px 24px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; color: var(--dim); padding: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 28px; }
@@ -67,17 +65,15 @@
   .params .hl { color: var(--green); font-weight: 600; }
   .params .spot { color: var(--red); font-weight: 600; }
 
-  /* Token header */
-  .token-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 4px; }
-  .token-header-left { display: flex; align-items: center; gap: 12px; }
-  .token-header-icon { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .token-header-icon img { width: 100%; height: 100%; object-fit: cover; }
-  .token-header-name { display: flex; align-items: baseline; gap: 10px; }
-  .token-header-title { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 600; color: var(--white); }
-  .token-header-ticker { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--dim); }
+  /* Token header — on chart border */
+  .token-header-border { position: absolute; top: -14px; left: 24px; background: var(--bg); padding: 0 12px; z-index: 5; display: flex; align-items: center; gap: 10px; }
+  .token-header-border .token-header-icon { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .token-header-border .token-header-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .token-header-border .token-header-title { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 600; color: var(--white); }
+  .token-header-border .token-header-ticker { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--dim); }
 
   /* Chart section — clean, no box */
-  .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 28px; margin-bottom: 28px; position: relative; }
+  .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 28px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-title { display: none; }
   .chart-controls { display: flex; gap: 6px; margin-bottom: 12px; z-index: 2; align-items: center; }
   .chart-btn-group { display: flex; gap: 4px; }
@@ -289,27 +285,22 @@
   <nav class="nav" id="nav"></nav>
 
   <!-- Token header like checkprice: icon + name left, stats right -->
-  <div class="token-header">
-    <div class="token-header-left">
-      <div class="token-header-icon" id="token-icon"></div>
-      <div class="token-header-name">
-        <span class="token-header-title" id="token-title-name"></span>
-        <span class="token-header-ticker" id="token-title-ticker"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Price + metrics row -->
+  <!-- Metrics row -->
   <div class="price-metrics-row">
-    <div class="price-hero">
-      <div class="price-hero-value" id="price-hero-val"></div>
-      <div class="price-hero-change" id="price-hero-change"></div>
-    </div>
     <div class="cards" id="cards"></div>
   </div>
 
   <!-- Chart section — dominates the page -->
   <div class="chart-section">
+    <div class="token-header-border">
+      <div class="token-header-icon" id="token-icon"></div>
+      <span class="token-header-title" id="token-title-name"></span>
+      <span class="token-header-ticker" id="token-title-ticker"></span>
+    </div>
+    <div class="price-hero-border">
+      <span class="price-hero-value" id="price-hero-val"></span>
+    </div>
+    <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
     <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
       <div class="chart-btn-group">
         <button class="chart-btn" data-tf="1H">1H</button>
@@ -332,10 +323,9 @@
     </div>
     <div class="legend">
       <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> NAV <span id="leg-strike">…</span></span>
+      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><line x1="0" y1="4" x2="4" y2="4" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="4" x2="11" y2="4" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/><line x1="14" y1="4" x2="18" y2="4" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="round"/></svg></span> NAV <span id="leg-strike">…</span></span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
       <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
-      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 8"><polyline points="0,4 3,1 6,7 9,1 12,7 15,1 18,4 20,4" fill="none" stroke="#e84057" stroke-width="1.5"/></svg></span> Withdrawal</span>
     </div>
   </div>
 
@@ -1399,14 +1389,24 @@ function drawChart() {
   // Time labels
   ctx.fillStyle = '#555560';
   ctx.font = '10px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  var tSteps = Math.max(1, Math.min(6, Math.floor(plotW / 100)));
+  var tSteps = 8;
   for (var i = 0; i <= tSteps; i++) {
     var tVal = tMin + (i / tSteps) * tRange;
     var date = new Date(tVal * 1000);
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var label = months[date.getUTCMonth()] + ' ' + date.getUTCDate();
-    ctx.fillText(label, tx(tVal), h - 6);
+    var xPos = tx(tVal);
+    // Clamp first and last labels so they don't get cut off
+    if (i === 0) {
+      ctx.textAlign = 'left';
+      xPos = Math.max(pad.left, xPos);
+    } else if (i === tSteps) {
+      ctx.textAlign = 'right';
+      xPos = Math.min(w - pad.right, xPos);
+    } else {
+      ctx.textAlign = 'center';
+    }
+    ctx.fillText(label, xPos, h - 6);
   }
 
   // Helper: filter data to visible range and convert to pixel coords
@@ -1973,6 +1973,26 @@ function drawCrosshair(mx, my) {
   ctx.lineTo(w - pad.right, my);
   ctx.stroke();
   ctx.setLineDash([]);
+
+  // Date label at bottom of crosshair
+  var plotW = w - pad.left - pad.right;
+  var plotH = h - pad.top - pad.bottom;
+  var tRange = _chart._tMax - _chart._tMin || 1;
+  var cursorTime = _chart._tMin + ((mx - pad.left) / plotW) * tRange;
+  var cursorDate = new Date(cursorTime * 1000);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var dateLabel = months[cursorDate.getUTCMonth()] + ' ' + cursorDate.getUTCDate();
+  ctx.fillStyle = '#888';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(dateLabel, mx, h - 6);
+
+  // Price label on right of crosshair
+  var vRange = _chart._vMax - _chart._vMin || 1;
+  var cursorPrice = _chart._vMax - ((my - pad.top) / plotH) * vRange;
+  var priceLabel = cursorPrice >= 1 ? '$' + cursorPrice.toFixed(2) : '$' + cursorPrice.toFixed(4);
+  ctx.textAlign = 'left';
+  ctx.fillText(priceLabel, w - pad.right + 4, my + 3);
 
   // Find closest NAV point
   var closest = null, closestDist = Infinity;
