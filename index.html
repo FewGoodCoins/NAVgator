@@ -274,6 +274,27 @@
   .wl-star:hover { color: var(--green); }
   .wl-star.active { color: var(--green); }
   .wl-star svg { width: 15px; height: 15px; fill: currentColor; }
+
+  /* Watchlist sidebar */
+  .wl-sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; }
+  .wl-sidebar.open { display: flex; }
+  .wl-sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
+  .wl-sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .wl-sidebar-close { background: none; border: none; color: var(--dim); font-size: 16px; cursor: pointer; padding: 2px 6px; }
+  .wl-sidebar-close:hover { color: var(--white); }
+  .wl-sidebar-list { flex: 1; overflow-y: auto; }
+  .wl-sidebar-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .wl-sidebar-item:hover { background: rgba(255,255,255,0.03); }
+  .wl-sidebar-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); }
+  .wl-sidebar-name { font-size: 12px; font-weight: 600; color: var(--white); }
+  .wl-sidebar-price { font-size: 11px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .wl-sidebar-change { font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+  .wl-sidebar-empty { padding: 20px 14px; font-size: 11px; color: var(--dim); text-align: center; }
+  .wl-sidebar-toggle { position: fixed; left: 12px; top: 50%; transform: translateY(-50%); z-index: 99; background: var(--bg2); border: 1px solid var(--border2); border-radius: 6px; padding: 8px 6px; cursor: pointer; color: var(--dim); font-size: 11px; transition: all 0.15s; display: none; writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 1px; }
+  .wl-sidebar-toggle:hover { color: var(--green); border-color: var(--green); }
+  .dashboard.has-sidebar { margin-left: 220px; }
+  @media (max-width: 900px) { .wl-sidebar { width: 180px; } .dashboard.has-sidebar { margin-left: 180px; } }
+  @media (max-width: 600px) { .wl-sidebar { width: 100%; } .dashboard.has-sidebar { margin-left: 0; } }
 </style>
 </head>
 <body>
@@ -349,6 +370,16 @@
       <div class="compare-placeholder">Select two tokens above to compare</div>
     </div>
   </div>
+
+  <!-- ══ WATCHLIST SIDEBAR ══ -->
+  <div class="wl-sidebar" id="wl-sidebar">
+    <div class="wl-sidebar-header">
+      <span class="wl-sidebar-title">★ Watchlist</span>
+      <button class="wl-sidebar-close" onclick="toggleSidebar()">✕</button>
+    </div>
+    <div class="wl-sidebar-list" id="wl-sidebar-list"></div>
+  </div>
+  <button class="wl-sidebar-toggle" id="wl-sidebar-toggle" onclick="toggleSidebar()">★ WATCHLIST</button>
 
   <!-- ══ DASHBOARD VIEW ══ -->
   <div class="dashboard" id="dashboard-view">
@@ -979,7 +1010,74 @@ window.toggleDashWatch = function() {
   if (idx === -1) _dashWL.push(tokenKey); else _dashWL.splice(idx, 1);
   localStorage.setItem('navgator_watchlist', JSON.stringify(_dashWL));
   updateDashStar();
+  renderSidebar();
 };
+
+// Sidebar
+var _sidebarOpen = localStorage.getItem('navgator_sidebar') !== 'closed';
+var sidebarEl = document.getElementById('wl-sidebar');
+var sidebarToggle = document.getElementById('wl-sidebar-toggle');
+var dashEl = document.getElementById('dashboard-view');
+
+function toggleSidebar() {
+  _sidebarOpen = !_sidebarOpen;
+  localStorage.setItem('navgator_sidebar', _sidebarOpen ? 'open' : 'closed');
+  updateSidebarUI();
+}
+window.toggleSidebar = toggleSidebar;
+
+function updateSidebarUI() {
+  if (_sidebarOpen && _dashWL.length > 0) {
+    sidebarEl.classList.add('open');
+    sidebarToggle.style.display = 'none';
+    dashEl.classList.add('has-sidebar');
+  } else {
+    sidebarEl.classList.remove('open');
+    sidebarToggle.style.display = _dashWL.length > 0 ? 'block' : 'none';
+    dashEl.classList.remove('has-sidebar');
+  }
+}
+
+async function renderSidebar() {
+  var list = document.getElementById('wl-sidebar-list');
+  if (_dashWL.length === 0) {
+    list.innerHTML = '<div class="wl-sidebar-empty">Star tokens to add them here</div>';
+    updateSidebarUI();
+    return;
+  }
+  // Fetch current prices
+  try {
+    var res = await fetch('https://navgator-api.vercel.app/api/current');
+    var json = await res.json();
+    var priceMap = {};
+    if (json.tokens) json.tokens.forEach(function(t) { priceMap[t.token] = t; });
+
+    list.innerHTML = _dashWL.map(function(key) {
+      var tok = TOKENS[key];
+      if (!tok) return '';
+      var data = priceMap[key] || {};
+      var spot = data.spot || 0;
+      var priceFmt = spot >= 1 ? '$' + spot.toFixed(2) : spot >= 0.01 ? '$' + spot.toFixed(4) : '$' + spot.toFixed(6);
+      var isActive = key === tokenKey;
+      return '<div class="wl-sidebar-item' + (isActive ? ' active' : '') + '" onclick="location.href=\'index.html?token=' + key + '\'">' +
+        '<div><div class="wl-sidebar-name">' + tok.ticker + '</div></div>' +
+        '<div style="text-align:right"><div class="wl-sidebar-price">' + (spot > 0 ? priceFmt : '—') + '</div></div>' +
+      '</div>';
+    }).join('');
+  } catch (e) {
+    list.innerHTML = _dashWL.map(function(key) {
+      var tok = TOKENS[key];
+      if (!tok) return '';
+      var isActive = key === tokenKey;
+      return '<div class="wl-sidebar-item' + (isActive ? ' active' : '') + '" onclick="location.href=\'index.html?token=' + key + '\'">' +
+        '<div class="wl-sidebar-name">' + tok.ticker + '</div>' +
+      '</div>';
+    }).join('');
+  }
+  updateSidebarUI();
+}
+
+renderSidebar();
 
 document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
 
