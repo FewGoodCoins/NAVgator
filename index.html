@@ -295,7 +295,7 @@
   .wl-star svg { width: 15px; height: 15px; fill: currentColor; }
 
   /* Watchlist sidebar */
-  .wl-sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; }
+  .wl-sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; transition: top 0.15s; }
   .wl-sidebar.open { display: flex; }
   .wl-sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
   .wl-sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -1024,7 +1024,8 @@ if (!_hasToken) {
     ctx.scale(dpr, dpr);
 
     var pts = d.prices.map(function(p, i) {
-      return { x: (i / (d.prices.length - 1)) * d.w, y: d.h - ((p - d.pMin) / d.range) * d.h };
+      var pad = 8;
+      return { x: (i / (d.prices.length - 1)) * d.w, y: pad + ((d.h - pad * 2) - ((p - d.pMin) / d.range) * (d.h - pad * 2)) };
     });
 
     // Glow intensity: base from price change (2-8), boosted on hover
@@ -1136,6 +1137,13 @@ function updateSidebarUI() {
     sidebarEl.classList.add('open');
     sidebarToggle.style.display = 'none';
     dashEl.classList.add('has-sidebar');
+    // Align sidebar top with chart
+    var chart = document.querySelector('.chart-layout');
+    if (chart) {
+      var rect = chart.getBoundingClientRect();
+      sidebarEl.style.top = rect.top + 'px';
+      sidebarEl.style.height = 'calc(100vh - ' + rect.top + 'px)';
+    }
   } else {
     sidebarEl.classList.remove('open');
     sidebarToggle.style.display = _dashWL.length > 0 ? 'block' : 'none';
