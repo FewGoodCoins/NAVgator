@@ -399,25 +399,13 @@
   <!-- Nav -->
   <nav class="nav" id="nav"></nav>
 
-  <!-- Token header -->
-  <div class="token-metrics-row">
-    <div class="token-header-above">
-      <div class="token-header-icon" id="token-icon"></div>
-      <div style="display:flex;align-items:baseline;gap:8px">
-        <span class="token-header-title" id="token-title-name"></span>
-        <span class="token-header-ticker" id="token-title-ticker"></span>
-        <span class="wl-star" id="dash-wl-star" style="cursor:pointer" onclick="toggleDashWatch()"><svg viewBox="0 0 20 18" style="width:20px;height:18px"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
-      </div>
-    </div>
-  </div>
-
   <!-- Chart + Metrics Panel -->
   <div class="chart-layout">
     <div class="chart-section">
-      <div class="price-hero-border" id="chart-token-header" style="display:flex;align-items:center;gap:10px">
-        <div id="chart-token-icon" style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
-        <span style="font-family:'Inter',sans-serif;font-size:20px;font-weight:700;color:var(--white)" id="chart-token-name"></span>
-        <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--dim)" id="chart-token-ticker"></span>
+      <div class="price-hero-border" id="chart-token-header" style="display:flex;align-items:baseline;gap:10px">
+        <div id="token-icon" style="width:36px;height:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+        <span class="token-header-title" id="token-title-name"></span>
+        <span class="token-header-ticker" id="token-title-ticker"></span>
       </div>
       <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
       <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
@@ -470,6 +458,10 @@
         <div class="mp-box" id="mp-outflow"></div>
         <div class="mp-box" id="mp-age"></div>
         <div class="mp-box" id="mp-inflow"></div>
+      </div>
+      <div id="mp-watchlist-btn" onclick="toggleDashWatch()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--muted)">
+        <span class="wl-star" id="dash-wl-star" style="padding:0"><svg viewBox="0 0 20 18" style="width:14px;height:14px;fill:currentColor"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+        <span id="mp-wl-label">Watchlist</span>
       </div>
     </div>
   </div>
@@ -1047,7 +1039,15 @@ var _dashWL = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
 var dashStarEl = document.getElementById('dash-wl-star');
 function updateDashStar() {
   var watched = _dashWL.indexOf(tokenKey) !== -1;
-  if (dashStarEl) { dashStarEl.classList.toggle('active', watched); dashStarEl.innerHTML = watched ? '<svg viewBox="0 0 20 18" style="width:20px;height:18px;fill:currentColor"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" stroke-linejoin="round"/></svg>' : '<svg viewBox="0 0 20 18" style="width:20px;height:18px"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'; }
+  var dashStarEl = document.getElementById('dash-wl-star');
+  if (dashStarEl) { 
+    dashStarEl.classList.toggle('active', watched); 
+    dashStarEl.innerHTML = watched ? '<svg viewBox="0 0 20 18" style="width:14px;height:14px;fill:currentColor"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" stroke-linejoin="round"/></svg>' : '<svg viewBox="0 0 20 18" style="width:14px;height:14px"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'; 
+  }
+  var labelEl = document.getElementById('mp-wl-label');
+  if (labelEl) labelEl.textContent = watched ? 'Watchlist' : 'Watchlist';
+  var btnEl = document.getElementById('mp-watchlist-btn');
+  if (btnEl) { btnEl.style.borderColor = watched ? 'var(--green)' : ''; btnEl.style.color = watched ? 'var(--green)' : ''; }
 }
 updateDashStar();
 window.toggleDashWatch = function() {
@@ -2083,7 +2083,7 @@ function renderUI(isLive) {
   if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Supply</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div><div class="mp-sub">circulating</div>';
 
   var mpTreasury = document.getElementById('mp-treasury');
-  if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div>';
+  if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="mp-sub">DAO + AMMs</div>';
 
   var mpRunway = document.getElementById('mp-runway');
   if (mpRunway) mpRunway.innerHTML = '<div class="mp-label">Runway</div><div class="mp-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="mp-sub">' + fmtM(burn) + '/mo</div>';
@@ -2097,7 +2097,7 @@ function renderUI(isLive) {
       var now = new Date();
       ageMo = Math.floor((now - launch) / (30.44 * 24 * 60 * 60 * 1000));
     }
-    mpAge.innerHTML = '<div class="mp-label">Age</div><div class="mp-value">' + ageMo + ' mo</div><div class="mp-sub">since launch</div>';
+    mpAge.innerHTML = '<div class="mp-label">Age</div><div class="mp-value">' + ageMo + ' mo</div><div class="mp-sub">post TGE</div>';
   }
 
   // Outflow & Inflow
@@ -2107,10 +2107,10 @@ function renderUI(isLive) {
   var inflow = 0; // TODO: calculate from AMM yield + fees when available
 
   var mpOutflow = document.getElementById('mp-outflow');
-  if (mpOutflow) mpOutflow.innerHTML = '<div class="mp-label">Outflow</div><div class="mp-value" style="color:var(--red)">' + fmtM(outflow) + '</div><div class="mp-sub">since inception</div>';
+  if (mpOutflow) mpOutflow.innerHTML = '<div class="mp-label">Outflow</div><div class="mp-value" style="color:var(--red)">' + fmtM(outflow) + '</div><div class="mp-sub">accumulative</div>';
 
   var mpInflow = document.getElementById('mp-inflow');
-  if (mpInflow) mpInflow.innerHTML = '<div class="mp-label">Inflow</div><div class="mp-value" style="color:var(--green)">' + fmtM(inflow) + '</div><div class="mp-sub">since inception</div>';
+  if (mpInflow) mpInflow.innerHTML = '<div class="mp-label">Inflow</div><div class="mp-value" style="color:var(--green)">' + fmtM(inflow) + '</div><div class="mp-sub">accumulative</div>';
 
   document.getElementById('params').innerHTML =
     '<span>ICO <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
@@ -2126,20 +2126,6 @@ function renderUI(isLive) {
   document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price vs NAV';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
   document.getElementById('leg-nav-label').textContent = CFG.ticker + ' NAV';
-
-  // Chart token header (logo + name + ticker inside chart)
-  var chartIcon = document.getElementById('chart-token-icon');
-  if (chartIcon) {
-    if (CFG.logo) {
-      chartIcon.innerHTML = '<img src="' + CFG.logo + '" style="width:100%;height:100%;object-fit:cover">';
-    } else {
-      chartIcon.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
-    }
-  }
-  var chartName = document.getElementById('chart-token-name');
-  if (chartName) chartName.textContent = CFG.name;
-  var chartTicker = document.getElementById('chart-token-ticker');
-  if (chartTicker) chartTicker.textContent = CFG.ticker;
 
   return strike;
 }
