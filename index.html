@@ -194,7 +194,7 @@
   .token-table thead th { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 18px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; white-space: nowrap; user-select: none; }
   .token-table thead th:nth-child(1) { width: 36px; text-align: center; }
   .token-table thead th:nth-child(2) { text-align: left; }
-  .token-table thead th:hover { color: var(--green); }
+  .token-table thead th:hover:not(.no-sort) { color: var(--green); }
   .token-table thead th.sorted { color: var(--green); }
   .token-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: background 0.15s; }
   .token-table tbody tr:last-child { border-bottom: none; }
@@ -300,12 +300,12 @@
           <tr>
             <th>#</th>
             <th style="text-align:left">Name</th>
-            <th>Price 7D</th>
+            <th>Price <span style="font-size:8px;color:var(--dim);font-weight:500">7D</span></th>
             <th>NAV</th>
             <th>vs NAV</th>
             <th>Treasury</th>
             <th>MCap</th>
-            <th>Trend 7D</th>
+            <th class="no-sort" style="cursor:default">Trend <span style="font-size:8px;color:var(--dim);font-weight:500">7D</span></th>
           </tr>
         </thead>
         <tbody id="token-tbody"></tbody>
