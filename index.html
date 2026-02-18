@@ -319,7 +319,7 @@
       <div class="landing-nav">
         <div class="landing-nav-left">
           <a href="index.html" class="brand">
-            <div class="brand-text">NAV<span>gator</span></div>
+            <img src="logos/navgator-logo.png" style="width:32px;height:32px;vertical-align:middle;margin-right:8px"><div class="brand-text">NAV<span>gator</span></div>
           </a>
           <div class="brand-stat" id="landing-total-mcap">MCap: <b id="landing-mcap-total">—</b></div>
           <div class="brand-stat" id="landing-total-treasury" style="border-left:none;padding-left:0;margin-left:4px">NAV: <b id="landing-nav-total">—</b></div>
@@ -436,18 +436,6 @@
 
     <!-- Metrics Panel -->
     <div class="metrics-panel" id="metrics-panel">
-      <div class="mp-box" id="mp-pair-header" style="padding:12px 14px;text-align:center">
-        <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--white)">
-          <span id="mp-ticker-label"></span>
-          <span id="mp-mint-copy" style="cursor:pointer;margin-left:4px;color:var(--dim);display:inline-flex;align-items:center;vertical-align:middle" title="Copy address" onclick="copyMint()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 0 1 2 9.5V3.5A1.5 1.5 0 0 1 3.5 2h6A1.5 1.5 0 0 1 11 3.5V5"/></svg></span>
-          <span style="color:var(--dim);font-weight:400"> / USDC</span>
-        </div>
-        <div style="font-size:11px;color:var(--dim);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:4px">
-          <img src="https://cryptologos.cc/logos/solana-sol-logo.png" style="width:14px;height:14px;border-radius:50%"> Solana
-          <span style="margin:0 2px">via</span>
-          <img src="https://app.metadao.fi/favicon.ico" style="width:14px;height:14px;border-radius:50%"> MetaDAO
-        </div>
-      </div>
       <div class="mp-box price-box" id="mp-price"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div class="mp-box" id="mp-chg-1h"></div>
@@ -472,15 +460,19 @@
         <div class="mp-box" id="mp-age"></div>
         <div class="mp-box" id="mp-inflow"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div id="mp-watchlist-btn" onclick="toggleDashWatch()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--muted)">
-          <span class="wl-star" id="dash-wl-star" style="padding:0"><svg viewBox="0 0 20 18" style="width:14px;height:14px;fill:currentColor"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px">
+        <div id="mp-watchlist-btn" onclick="toggleDashWatch()" style="display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--muted)">
+          <span class="wl-star" id="dash-wl-star" style="padding:0"><svg viewBox="0 0 20 18" style="width:13px;height:13px;fill:currentColor"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
           <span id="mp-wl-label">Watchlist</span>
         </div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--muted)">
-          <span style="font-size:14px;font-weight:700;color:currentColor;border:1.5px solid currentColor;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif">!</span>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--muted)">
+          <span style="font-size:13px;font-weight:700;color:currentColor;border:1.5px solid currentColor;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif">!</span>
           <span>Alerts</span>
         </div>
+        <a href="https://metadao.fi" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;text-decoration:none;font-family:'Inter',sans-serif;font-size:9px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:0.3px">
+          <span>via</span>
+          <img src="https://app.metadao.fi/favicon.ico" style="width:16px;height:16px;border-radius:3px">
+        </a>
       </div>
     </div>
   </div>
@@ -541,7 +533,7 @@ const TOKENS = {
     mint: 'SoLo9oxzLDpcq1dpqAgMwgce5WqkRDtNXK7EPnbmeta',
     gtPool: 'o5rJFXSKTsuws58rBMNPG8jdKdnY4Z7ouU29dyohE4g',
     icoPrice: 0.80, monthlyAllowance: 100_000,
-    launchDate: '2024-08-01',
+    launchDate: '2025-11-18',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
   umbra: { live: true,
@@ -550,7 +542,7 @@ const TOKENS = {
     mint: 'PRVT6TB7uss3FrUd2D9xs2zqDBsa3GbMJMwCQsgmeta',
     gtPool: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
     icoPrice: 0.30, monthlyAllowance: 100_000,
-    launchDate: '2024-08-15',
+    launchDate: '2025-10-10',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
   avici: { live: true,
@@ -559,7 +551,7 @@ const TOKENS = {
     mint: 'BANKJmvhT8tiJRsBSS1n2HryMBPvT5Ze4HU95DUAmeta',
     gtPool: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     icoPrice: 0.35, monthlyAllowance: 100_000,
-    launchDate: '2024-08-01',
+    launchDate: '2025-10-18',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
   omfg: { live: true,
@@ -568,7 +560,7 @@ const TOKENS = {
     mint: 'omfgRBnxHsNJh6YeGbGAmWenNkenzsXyBXm3WDhmeta',
     gtPool: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
     icoPrice: 0.05, monthlyAllowance: 50_000,
-    launchDate: '2024-07-28',
+    launchDate: '2025-07-28',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
 };
@@ -1160,7 +1152,7 @@ window.copyMint = function() {
 // Build nav — dim non-live tokens
 const navEl = document.getElementById('nav');
 const LIVE_KEYS = new Set(Object.entries(TOKENS).filter(([k,v]) => v.live).map(([k]) => k));
-let navHTML = '<a href="index.html" class="nav-brand">NAV<span>gator</span></a><span class="nav-sep" style="color:var(--border2);margin:0 8px">|</span><div class="nav-tokens">';
+let navHTML = '<a href="index.html" class="nav-brand"><img src="logos/navgator-logo.png" style="width:28px;height:28px;vertical-align:middle;margin-right:6px">NAV<span>gator</span></a><span class="nav-sep" style="color:var(--border2);margin:0 8px">|</span><div class="nav-tokens">';
 for (const [key, tok] of Object.entries(TOKENS)) {
   const isLive = LIVE_KEYS.has(key);
   const dimStyle = !isLive ? 'opacity:0.35;pointer-events:none;' : '';
@@ -2138,10 +2130,10 @@ function renderUI(isLive) {
   var inflow = 0; // TODO: calculate from AMM yield + fees when available
 
   var mpOutflow = document.getElementById('mp-outflow');
-  if (mpOutflow) mpOutflow.innerHTML = '<div class="mp-label">Outflow</div><div class="mp-value" style="color:var(--red)">' + fmtM(outflow) + '</div><div class="mp-sub">Total</div>';
+  if (mpOutflow) mpOutflow.innerHTML = '<div class="mp-label">Outflow</div><div class="mp-value" style="color:var(--dim)">N/A</div><div class="mp-sub">Total</div>';
 
   var mpInflow = document.getElementById('mp-inflow');
-  if (mpInflow) mpInflow.innerHTML = '<div class="mp-label">Inflow</div><div class="mp-value" style="color:var(--green)">' + fmtM(inflow) + '</div><div class="mp-sub">Total</div>';
+  if (mpInflow) mpInflow.innerHTML = '<div class="mp-label">Inflow</div><div class="mp-value" style="color:var(--dim)">N/A</div><div class="mp-sub">Total</div>';
 
   document.getElementById('params').innerHTML =
     '<span>ICO <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
