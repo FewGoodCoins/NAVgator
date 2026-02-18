@@ -175,7 +175,7 @@
   .dashboard { display: none; }
   .dashboard.active { display: block; }
   .hero { padding: 0; text-align: left; }
-  .landing-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 0; position: relative; }
+  .landing-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 0; position: sticky; top: 0; z-index: 50; background: var(--bg); }
   .landing-nav-left { display: flex; align-items: center; gap: 12px; }
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
@@ -298,53 +298,54 @@
   .wl-star.active { color: var(--green); }
   .wl-star svg { width: 15px; height: 15px; fill: currentColor; }
 
-  /* Watchlist sidebar */
-  .wl-sidebar { position: fixed; left: 0; top: 0; width: 180px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); border-top: 1px solid var(--border2); border-radius: 0 12px 12px 0; z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; transition: top 0.15s; }
-  .wl-sidebar.open { display: flex; }
-  .wl-sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
-  .wl-sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  .wl-sidebar-close { background: none; border: none; color: var(--dim); font-size: 16px; cursor: pointer; padding: 2px 6px; }
-  .wl-sidebar-close:hover { color: var(--white); }
-  .wl-sidebar-list { flex: 1; overflow-y: auto; }
-  .wl-sidebar-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid rgba(255,255,255,0.03); }
-  .wl-sidebar-item:hover { background: rgba(255,255,255,0.03); }
-  .wl-sidebar-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); }
-  .wl-sidebar-name { font-size: 12px; font-weight: 600; color: var(--white); }
-  .wl-sidebar-price { font-size: 11px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
-  .wl-sidebar-change { font-size: 10px; font-family: 'JetBrains Mono', monospace; }
-  .wl-sidebar-empty { padding: 20px 14px; font-size: 11px; color: var(--dim); text-align: center; }
-  .wl-sidebar-toggle { position: fixed; left: 0; top: 50px; z-index: 99; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-radius: 0 6px 6px 0; padding: 8px 6px; cursor: pointer; color: var(--dim); font-size: 14px; transition: all 0.15s; display: none; }
-  .wl-sidebar-toggle:hover { color: var(--white); border-color: var(--green); }
+  /* Token sidebar (dashboard) */
+  .token-sidebar { position: fixed; left: 0; top: 0; width: 180px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); border-radius: 0 12px 12px 0; z-index: 40; display: none; flex-direction: column; overflow-y: auto; font-family: 'Inter', sans-serif; padding-top: 80px; }
+  .token-sidebar.visible { display: flex; }
+  .ts-section { padding: 0; }
+  .ts-title { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 14px 6px; }
+  .ts-list { }
+  .ts-divider { border-top: 1px solid var(--border); margin: 8px 14px; }
+  .ts-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; transition: background 0.1s; text-decoration: none; }
+  .ts-item:hover { background: rgba(255,255,255,0.03); }
+  .ts-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); }
+  .ts-icon { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+  .ts-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .ts-name { font-size: 12px; font-weight: 600; color: var(--white); }
+  .ts-ticker { font-size: 10px; color: var(--dim); }
+  .ts-price { margin-left: auto; font-size: 10px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .ts-empty { padding: 10px 14px; font-size: 10px; color: var(--dim); }
   .dashboard.has-sidebar { margin-left: 180px; }
-  @media (max-width: 900px) { .wl-sidebar { width: 160px; } .dashboard.has-sidebar { margin-left: 160px; } }
-  @media (max-width: 600px) { .wl-sidebar { width: 100%; } .dashboard.has-sidebar { margin-left: 0; } }
+  @media (max-width: 900px) { .token-sidebar { width: 60px; padding-top: 70px; } .token-sidebar .ts-title, .token-sidebar .ts-name, .token-sidebar .ts-price, .token-sidebar .ts-ticker { display: none; } .ts-item { justify-content: center; padding: 8px; } .dashboard.has-sidebar { margin-left: 60px; } }
+  @media (max-width: 600px) { .token-sidebar { display: none !important; } .dashboard.has-sidebar { margin-left: 0; } }
 </style>
 </head>
 <body>
 
 <div class="wrap">
 
+  <!-- ══ GLOBAL NAV BAR ══ -->
+  <div class="landing-nav" id="global-nav">
+    <div class="landing-nav-left">
+      <a href="index.html" class="brand">
+        <div class="brand-text">NAV<span>gator</span></div>
+      </a>
+      <div class="brand-stat" id="landing-total-mcap">mcap: <b id="landing-mcap-total">—</b></div>
+    </div>
+    <div class="landing-nav-center">
+      <a href="#" id="nav-watchlist-btn">Watchlist</a>
+      <a href="index.html" id="nav-markets-btn">Markets</a>
+      <a href="index.html?compare" id="nav-compare-btn">Compare</a>
+    </div>
+    <div class="landing-nav-right">
+      <a href="submit.html" class="submit-nav-btn">+ Submit</a>
+      <a href="#" class="sign-in-btn">Sign In</a>
+      <a href="#" class="user-icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
+    </div>
+  </div>
+
   <!-- ══ LANDING PAGE ══ -->
   <div class="landing" id="landing-view">
     <div class="hero">
-      <div class="landing-nav">
-        <div class="landing-nav-left">
-          <a href="index.html" class="brand">
-            <div class="brand-text">NAV<span>gator</span></div>
-          </a>
-          <div class="brand-stat" id="landing-total-mcap">mcap: <b id="landing-mcap-total">—</b></div>
-        </div>
-        <div class="landing-nav-center">
-          <a href="#" id="nav-watchlist-btn">Watchlist</a>
-          <a href="index.html" class="nav-active">Markets</a>
-          <a href="index.html?compare">Compare</a>
-        </div>
-        <div class="landing-nav-right">
-          <a href="submit.html" class="submit-nav-btn">+ Submit</a>
-          <a href="#" class="sign-in-btn">Sign In</a>
-          <a href="#" class="user-icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
-        </div>
-      </div>
     </div>
 
     <div class="token-table-wrap">
@@ -389,21 +390,24 @@
     </div>
   </div>
 
-  <!-- ══ WATCHLIST SIDEBAR ══ -->
-  <div class="wl-sidebar" id="wl-sidebar">
-    <div class="wl-sidebar-header">
-      <span class="wl-sidebar-title">★ Watchlist</span>
-      <button class="wl-sidebar-close" onclick="toggleSidebar()">«</button>
+  <!-- ══ TOKEN SIDEBAR (visible on dashboard) ══ -->
+  <div class="token-sidebar" id="token-sidebar">
+    <div class="ts-section">
+      <div class="ts-title">Tokens</div>
+      <div class="ts-list" id="ts-all-tokens"></div>
     </div>
-    <div class="wl-sidebar-list" id="wl-sidebar-list"></div>
+    <div class="ts-divider"></div>
+    <div class="ts-section">
+      <div class="ts-title">★ Watchlist</div>
+      <div class="ts-list" id="ts-watchlist"></div>
+    </div>
   </div>
-  <button class="wl-sidebar-toggle" id="wl-sidebar-toggle" onclick="toggleSidebar()">»</button>
 
   <!-- ══ DASHBOARD VIEW ══ -->
   <div class="dashboard" id="dashboard-view">
 
-  <!-- Nav -->
-  <nav class="nav" id="nav"></nav>
+  <!-- Nav (hidden, replaced by sidebar) -->
+  <nav class="nav" id="nav" style="display:none"></nav>
 
   <!-- Chart + Metrics Panel -->
   <div class="chart-layout">
@@ -507,12 +511,16 @@ const _isCompare = _params.has('compare');
 if (_isCompare) {
   document.getElementById('compare-view').classList.add('active');
   document.title = 'NAVgator · Compare Tokens';
+  var cmpBtn = document.getElementById('nav-compare-btn');
+  if (cmpBtn) cmpBtn.classList.add('nav-active');
 } else if (_hasToken) {
   document.getElementById('dashboard-view').classList.add('active');
   document.title = 'NAVgator · Dashboard';
 } else {
   document.getElementById('landing-view').classList.add('active');
   document.title = 'NAVgator — Treasury Analytics for Ownership Tokens';
+  var mktsBtn = document.getElementById('nav-markets-btn');
+  if (mktsBtn) mktsBtn.classList.add('nav-active');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1137,86 +1145,71 @@ window.toggleDashWatch = function() {
   if (idx === -1) _dashWL.push(tokenKey); else _dashWL.splice(idx, 1);
   localStorage.setItem('navgator_watchlist', JSON.stringify(_dashWL));
   updateDashStar();
-  renderSidebar();
+  renderTokenSidebar();
 };
 
-// Sidebar
-var _sidebarOpen = localStorage.getItem('navgator_sidebar') !== 'closed';
-var sidebarEl = document.getElementById('wl-sidebar');
-var sidebarToggle = document.getElementById('wl-sidebar-toggle');
+// Token Sidebar
 var dashEl = document.getElementById('dashboard-view');
+var tokenSidebar = document.getElementById('token-sidebar');
 
-function toggleSidebar() {
-  _sidebarOpen = !_sidebarOpen;
-  localStorage.setItem('navgator_sidebar', _sidebarOpen ? 'open' : 'closed');
-  updateSidebarUI();
-}
-window.toggleSidebar = toggleSidebar;
+async function renderTokenSidebar() {
+  var allList = document.getElementById('ts-all-tokens');
+  var wlList = document.getElementById('ts-watchlist');
+  if (!allList || !tokenSidebar) return;
 
-function updateSidebarUI() {
-  // Get chart-section top for alignment (the bordered area)
-  var targetTop = 0;
-  var chartSection = document.querySelector('.chart-section');
-  if (chartSection) targetTop = chartSection.getBoundingClientRect().top;
+  // Show sidebar and offset dashboard
+  tokenSidebar.classList.add('visible');
+  dashEl.classList.add('has-sidebar');
 
-  if (_sidebarOpen && _dashWL.length > 0) {
-    sidebarEl.classList.add('open');
-    sidebarToggle.style.display = 'none';
-    dashEl.classList.add('has-sidebar');
-    sidebarEl.style.top = targetTop + 'px';
-    sidebarEl.style.height = 'calc(100vh - ' + targetTop + 'px)';
-  } else {
-    sidebarEl.classList.remove('open');
-    if (_dashWL.length > 0) {
-      sidebarToggle.style.display = 'block';
-      sidebarToggle.style.top = targetTop + 'px';
-    } else {
-      sidebarToggle.style.display = 'none';
-    }
-    dashEl.classList.remove('has-sidebar');
-  }
-}
-
-async function renderSidebar() {
-  var list = document.getElementById('wl-sidebar-list');
-  if (_dashWL.length === 0) {
-    list.innerHTML = '<div class="wl-sidebar-empty">Star tokens to add them here</div>';
-    updateSidebarUI();
-    return;
-  }
-  // Fetch current prices
+  // Fetch prices for all tokens
+  var priceMap = {};
   try {
     var res = await fetch('https://navgator-api.vercel.app/api/current');
     var json = await res.json();
-    var priceMap = {};
     if (json.tokens) json.tokens.forEach(function(t) { priceMap[t.token] = t; });
+  } catch (e) {}
 
-    list.innerHTML = _dashWL.map(function(key) {
+  var fmtP = function(n) { return n >= 1 ? '$' + n.toFixed(2) : n > 0 ? '$' + n.toFixed(4) : '—'; };
+
+  // All tokens
+  allList.innerHTML = Object.entries(TOKENS).filter(function(e) { return e[1].live; }).map(function(e) {
+    var key = e[0], tok = e[1];
+    var data = priceMap[key] || {};
+    var spot = data.spot || 0;
+    var isActive = key === tokenKey;
+    var iconHtml = tok.logo
+      ? '<div class="ts-icon"><img src="' + tok.logo + '"></div>'
+      : '<div class="ts-icon" style="background:' + tok.color + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000">' + tok.ticker[0] + '</div>';
+    return '<a class="ts-item' + (isActive ? ' active' : '') + '" href="index.html?token=' + key + '">' +
+      iconHtml +
+      '<div><div class="ts-name">' + tok.ticker + '</div></div>' +
+      '<div class="ts-price">' + fmtP(spot) + '</div>' +
+    '</a>';
+  }).join('');
+
+  // Watchlist
+  if (_dashWL.length === 0) {
+    wlList.innerHTML = '<div class="ts-empty">Star tokens on the landing page</div>';
+  } else {
+    wlList.innerHTML = _dashWL.map(function(key) {
       var tok = TOKENS[key];
       if (!tok) return '';
       var data = priceMap[key] || {};
       var spot = data.spot || 0;
-      var priceFmt = spot >= 1 ? '$' + spot.toFixed(2) : spot >= 0.01 ? '$' + spot.toFixed(4) : '$' + spot.toFixed(6);
       var isActive = key === tokenKey;
-      return '<div class="wl-sidebar-item' + (isActive ? ' active' : '') + '" onclick="location.href=\'index.html?token=' + key + '\'">' +
-        '<div><div class="wl-sidebar-name">' + tok.ticker + '</div></div>' +
-        '<div style="text-align:right"><div class="wl-sidebar-price">' + (spot > 0 ? priceFmt : '—') + '</div></div>' +
-      '</div>';
-    }).join('');
-  } catch (e) {
-    list.innerHTML = _dashWL.map(function(key) {
-      var tok = TOKENS[key];
-      if (!tok) return '';
-      var isActive = key === tokenKey;
-      return '<div class="wl-sidebar-item' + (isActive ? ' active' : '') + '" onclick="location.href=\'index.html?token=' + key + '\'">' +
-        '<div class="wl-sidebar-name">' + tok.ticker + '</div>' +
-      '</div>';
+      var iconHtml = tok.logo
+        ? '<div class="ts-icon"><img src="' + tok.logo + '"></div>'
+        : '<div class="ts-icon" style="background:' + tok.color + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000">' + tok.ticker[0] + '</div>';
+      return '<a class="ts-item' + (isActive ? ' active' : '') + '" href="index.html?token=' + key + '">' +
+        iconHtml +
+        '<div><div class="ts-name">' + tok.ticker + '</div></div>' +
+        '<div class="ts-price">' + fmtP(spot) + '</div>' +
+      '</a>';
     }).join('');
   }
-  updateSidebarUI();
 }
 
-renderSidebar();
+renderTokenSidebar();
 
 document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
 
