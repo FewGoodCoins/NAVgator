@@ -583,18 +583,9 @@ if (_isCompare) {
           makeBar(mcapA, mcapB, tA.color, tB.color, cmpFmtM(mcapA), cmpFmtM(mcapB), mcapWinner + ' is ' + mcapRatio + 'x larger') +
         '</div>' +
 
-        // Key metrics side by side
-        '<div class="compare-card"><div class="compare-card-label">Key Metrics</div>' +
-          makePerfRow(0, 0, 'PRICE').replace(/>.*?<\/div>/, '>' + cmpFmt$(spotA) + '</div>').replace(/0.00%<\/div>$/, cmpFmt$(spotB) + '</div>') +
-        '</div>' +
-
-        // Performance
-        '<div class="compare-card"><div class="compare-card-label">Performance</div>' +
-          makePerfRow(chg7dA, chg7dB, '7D') +
-        '</div>' +
-
-        // NAV & Discount
-        '<div class="compare-card"><div class="compare-card-label">NAV & Discount</div>' +
+        // Price, NAV & Discount
+        '<div class="compare-card"><div class="compare-card-label">Price, NAV & Discount</div>' +
+          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--white)">' + cmpFmt$(spotA) + '</div><div class="compare-perf-center">Price</div><div class="compare-perf-right" style="color:var(--white)">' + cmpFmt$(spotB) + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--white)">' + cmpFmt$(navA) + '</div><div class="compare-perf-center">NAV</div><div class="compare-perf-right" style="color:var(--white)">' + cmpFmt$(navB) + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:' + cmpColor(discA) + '">' + cmpPct(discA) + '</div><div class="compare-perf-center">vs NAV</div><div class="compare-perf-right" style="color:' + cmpColor(discB) + '">' + cmpPct(discB) + '</div></div>' +
         '</div>' +
@@ -603,13 +594,6 @@ if (_isCompare) {
         '<div class="compare-card"><div class="compare-card-label">Runway</div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--orange)">' + (runA === Infinity ? '∞' : runA + ' mo') + '</div><div class="compare-perf-center">at allowance</div><div class="compare-perf-right" style="color:var(--orange)">' + (runB === Infinity ? '∞' : runB + ' mo') + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--dim)">' + cmpFmtM(burnA) + '/mo</div><div class="compare-perf-center">allowance</div><div class="compare-perf-right" style="color:var(--dim)">' + cmpFmtM(burnB) + '/mo</div></div>' +
-        '</div>' +
-
-        // Distance from NAV (like ATH bars)
-        '<div class="compare-card"><div class="compare-card-label">Distance from NAV</div>' +
-          '<div class="compare-ath-row"><div class="compare-ath-label">' + tA.ticker + '</div><div class="compare-ath-bar-bg"><div class="compare-ath-bar-fill" style="width:' + Math.max(5, Math.min(100, (spotA / navA * 100) || 0)) + '%;background:' + (discA < 0 ? '#e84057' : 'var(--green)') + '"></div></div><div class="compare-ath-val" style="color:' + cmpColor(discA) + '">' + Math.abs(discA).toFixed(0) + '%</div></div>' +
-          '<div class="compare-ath-row"><div class="compare-ath-label">' + tB.ticker + '</div><div class="compare-ath-bar-bg"><div class="compare-ath-bar-fill" style="width:' + Math.max(5, Math.min(100, (spotB / navB * 100) || 0)) + '%;background:' + (discB < 0 ? '#e84057' : 'var(--green)') + '"></div></div><div class="compare-ath-val" style="color:' + cmpColor(discB) + '">' + Math.abs(discB).toFixed(0) + '%</div></div>' +
-          '<div class="compare-bar-note">' + (Math.abs(discA) < Math.abs(discB) ? tA.ticker : tB.ticker) + ' is closer to NAV</div>' +
         '</div>';
 
     } catch (e) {
