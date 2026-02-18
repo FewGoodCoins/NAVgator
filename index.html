@@ -179,7 +179,7 @@
   .landing-nav-left { display: flex; align-items: center; gap: 12px; }
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
-  .landing-nav-left .brand-text { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; transition: text-shadow 0.2s; }
+  .landing-nav-left .brand-text { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; transition: text-shadow 0.2s; }
   .landing-nav-left .brand:hover .brand-text { text-shadow: 0 0 12px rgba(0,229,160,0.5), 0 0 24px rgba(0,229,160,0.2); }
   .landing-nav-left .brand-text span { color: #00b86e; font-weight: 700; }
   .landing-nav-left .brand-stat { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--muted); margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--border2); }
@@ -297,7 +297,7 @@
   .wl-star svg { width: 15px; height: 15px; fill: currentColor; }
 
   /* Watchlist sidebar */
-  .wl-sidebar { position: fixed; left: 0; top: 0; width: 180px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); border-top: 1px solid var(--border2); z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; transition: top 0.15s; }
+  .wl-sidebar { position: fixed; left: 0; top: 0; width: 180px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); border-top: 1px solid var(--border2); border-radius: 0 12px 12px 0; z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; transition: top 0.15s; }
   .wl-sidebar.open { display: flex; }
   .wl-sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
   .wl-sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -1142,22 +1142,22 @@ function toggleSidebar() {
 window.toggleSidebar = toggleSidebar;
 
 function updateSidebarUI() {
-  // Get nav bottom for alignment (below the NAVgator | SOLO UMBRA bar)
-  var navBottom = 0;
-  var nav = document.querySelector('.nav');
-  if (nav) navBottom = nav.getBoundingClientRect().bottom;
+  // Get chart-section top for alignment (the bordered area)
+  var targetTop = 0;
+  var chartSection = document.querySelector('.chart-section');
+  if (chartSection) targetTop = chartSection.getBoundingClientRect().top;
 
   if (_sidebarOpen && _dashWL.length > 0) {
     sidebarEl.classList.add('open');
     sidebarToggle.style.display = 'none';
     dashEl.classList.add('has-sidebar');
-    sidebarEl.style.top = navBottom + 'px';
-    sidebarEl.style.height = 'calc(100vh - ' + navBottom + 'px)';
+    sidebarEl.style.top = targetTop + 'px';
+    sidebarEl.style.height = 'calc(100vh - ' + targetTop + 'px)';
   } else {
     sidebarEl.classList.remove('open');
     if (_dashWL.length > 0) {
       sidebarToggle.style.display = 'block';
-      sidebarToggle.style.top = navBottom + 'px';
+      sidebarToggle.style.top = targetTop + 'px';
     } else {
       sidebarToggle.style.display = 'none';
     }
