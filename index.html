@@ -284,6 +284,7 @@
           <a href="index.html" class="brand">
             <div class="brand-text">NAV<span>gator</span></div>
           </a>
+          <div class="brand-stat" id="landing-total-mcap">MCap: <b id="landing-mcap-total">—</b></div>
           <div class="brand-stat" id="landing-total-treasury">NAV: <b id="landing-nav-total">—</b></div>
         </div>
         <div class="landing-nav-right">
@@ -825,6 +826,9 @@ if (!_hasToken) {
       var totalTreasury = landingTokens.filter(function(t) { return t.live; }).reduce(function(sum, t) { return sum + (t.treasury || 0); }, 0);
       var el = document.getElementById('landing-nav-total');
       if (el) el.textContent = totalTreasury >= 1e6 ? '$' + (totalTreasury / 1e6).toFixed(2) + 'M' : '$' + Math.round(totalTreasury).toLocaleString();
+      var totalMcap = landingTokens.filter(function(t) { return t.live; }).reduce(function(sum, t) { return sum + (t.mcap || 0); }, 0);
+      var mcapEl = document.getElementById('landing-mcap-total');
+      if (mcapEl) mcapEl.textContent = totalMcap >= 1e6 ? '$' + (totalMcap / 1e6).toFixed(2) + 'M' : '$' + Math.round(totalMcap).toLocaleString();
       console.log('NAVgator landing: live data loaded from API');
     } catch (e) { console.warn('API fetch failed:', e.message); }
   }
@@ -923,7 +927,7 @@ document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
 // Build nav — dim non-live tokens
 const navEl = document.getElementById('nav');
 const LIVE_KEYS = new Set(Object.entries(TOKENS).filter(([k,v]) => v.live).map(([k]) => k));
-let navHTML = '<a href="index.html" class="nav-brand">NAV<span>gator</span></a><div class="nav-tokens">';
+let navHTML = '<a href="index.html" class="nav-brand">NAV<span>gator</span></a><span class="nav-sep" style="color:var(--border2);margin:0 8px">|</span><div class="nav-tokens">';
 for (const [key, tok] of Object.entries(TOKENS)) {
   const isLive = LIVE_KEYS.has(key);
   const dimStyle = !isLive ? 'opacity:0.35;pointer-events:none;' : '';
