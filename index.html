@@ -217,7 +217,6 @@
   .token-table tbody tr:hover { background: rgba(255,255,255,0.03); box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 2px 12px rgba(0,0,0,0.3); border-radius: 12px; border-color: transparent; transform: scale(1.01); z-index: 1; position: relative; }
   .token-table tbody tr:hover td:first-child { border-radius: 12px 0 0 12px; }
   .token-table tbody tr:hover td:last-child { border-radius: 0 12px 12px 0; }
-  .token-table tbody tr:hover .tt-sparkline svg polyline { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 8px currentColor); }
   .token-table td { padding: 14px 18px; font-size: 14px; color: var(--text); text-align: right; white-space: nowrap; }
   .token-table td:nth-child(1) { text-align: center; color: var(--dim); font-size: 13px; font-weight: 500; width: 36px; }
   .token-table td:nth-child(2) { text-align: center; }
@@ -362,14 +361,6 @@
       </table>
     </div>
 
-    <div class="how">
-      <h2>How Treasury Backing Works</h2>
-      <div class="how-grid">
-        <div class="how-item"><div class="how-num" style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">01</div><div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:5px">Treasury-backed tokens</div><div style="font-size:12px;color:var(--muted);line-height:1.6">MetaDAO ICOs deposit all raised USDC into an on-chain treasury. The team draws a fixed monthly budget — every dollar is governed by futarchy.</div></div>
-        <div class="how-item"><div class="how-num" style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">02</div><div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:5px">Backing = Treasury ÷ Supply</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Each token has a claim on treasury USDC. When spot trades below backing, you're buying below the treasury floor — dissolution returns more than market price.</div></div>
-        <div class="how-item"><div class="how-num" style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">03</div><div style="font-size:13px;color:var(--white);font-weight:600;margin-bottom:5px">Dissolution right</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Any holder can propose dissolution via futarchy. If passed, treasury distributes pro-rata. This creates a soft price floor enforced by rational arbitrage.</div></div>
-      </div>
-    </div>
     <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · <a href="submit.html">Submit a Token</a> · Data via NAVgator API + Solana RPC · Not financial advice</div>
   </div>
 
@@ -1008,8 +999,21 @@ if (!_hasToken) {
 
   function drawSVGSparkline(key, prices, navVal) {
     var container = document.querySelector('.spark-container[data-token="' + key + '"]');
-    if (!container) return;
+    if (!container || prices.length < 2) return;
     var w = 200, h = 50;
+    var dpr = window.devicePixelRatio || 1;
+
+    // Create canvas
+    var canvas = document.createElement('canvas');
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    container.innerHTML = '';
+    container.appendChild(canvas);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
     var pMin = Math.min.apply(null, prices);
     var pMax = Math.max.apply(null, prices);
     if (navVal > 0) { pMin = Math.min(pMin, navVal); pMax = Math.max(pMax, navVal); }
@@ -1019,21 +1023,49 @@ if (!_hasToken) {
     var first = prices[0], last = prices[prices.length - 1];
     var color = last >= first ? '#00e5a0' : '#e84057';
 
+    // Build points
     var pts = prices.map(function(p, i) {
-      var x = (i / (prices.length - 1)) * w;
-      var y = h - ((p - pMin) / range) * h;
-      return x.toFixed(1) + ',' + y.toFixed(1);
-    }).join(' ');
+      return { x: (i / (prices.length - 1)) * w, y: h - ((p - pMin) / range) * h };
+    });
 
-    var navLine = '';
-    if (navVal > 0) {
-      var navY = (h - ((navVal - pMin) / range) * h).toFixed(1);
-      navLine = '<line x1="0" y1="' + navY + '" x2="' + w + '" y2="' + navY + '" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-dasharray="3,4"/>';
+    // Draw glow layer
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.4;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) {
+      var prev = pts[i - 1];
+      var cur = pts[i];
+      var cpx = (prev.x + cur.x) / 2;
+      ctx.bezierCurveTo(cpx, prev.y, cpx, cur.y, cur.x, cur.y);
     }
+    ctx.stroke();
+    ctx.restore();
 
-    container.innerHTML = '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%;height:100%">' +
-      '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-      '</svg>';
+    // Draw main line
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 4;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (var i = 1; i < pts.length; i++) {
+      var prev = pts[i - 1];
+      var cur = pts[i];
+      var cpx = (prev.x + cur.x) / 2;
+      ctx.bezierCurveTo(cpx, prev.y, cpx, cur.y, cur.x, cur.y);
+    }
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawAllSparklines() {
