@@ -363,7 +363,7 @@
       <div style="display:flex;align-items:baseline;gap:8px">
         <span class="token-header-title" id="token-title-name"></span>
         <span class="token-header-ticker" id="token-title-ticker"></span>
-        <span class="wl-star" id="dash-wl-star" style="cursor:pointer" onclick="toggleDashWatch()"><svg viewBox="0 0 20 20" style="width:20px;height:20px"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
+        <span class="wl-star" id="dash-wl-star" style="cursor:pointer" onclick="toggleDashWatch()"><svg viewBox="0 0 20 18" style="width:20px;height:18px"><polygon points="10,0.5 13.5,5.1 19,7.1 15.7,11.9 15.6,17.7 10,16 4.4,17.7 4.3,11.9 1,7.1 6.5,5.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
       </div>
     </div>
     <div class="cards" id="cards"></div>
@@ -731,8 +731,8 @@ if (!_hasToken) {
   // Watchlist
   var _watchlist = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
   var _activeFilter = 'all';
-  var _starFilled = '<svg viewBox="0 0 20 20"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6"/></svg>';
-  var _starEmpty = '<svg viewBox="0 0 20 20"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+  var _starFilled = '<svg viewBox="0 0 20 18"><polygon points="10,0.5 13.5,5.1 19,7.1 15.7,11.9 15.6,17.7 10,16 4.4,17.7 4.3,11.9 1,7.1 6.5,5.1" stroke-linejoin="round"/></svg>';
+  var _starEmpty = '<svg viewBox="0 0 20 18"><polygon points="10,0.5 13.5,5.1 19,7.1 15.7,11.9 15.6,17.7 10,16 4.4,17.7 4.3,11.9 1,7.1 6.5,5.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
   function starSvg(watched) { return watched ? _starFilled : _starEmpty; }
 
   function isWatched(key) { return _watchlist.indexOf(key) !== -1; }
@@ -971,7 +971,7 @@ var _dashWL = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
 var dashStarEl = document.getElementById('dash-wl-star');
 function updateDashStar() {
   var watched = _dashWL.indexOf(tokenKey) !== -1;
-  if (dashStarEl) { dashStarEl.classList.toggle('active', watched); dashStarEl.innerHTML = watched ? '<svg viewBox="0 0 20 20" style="width:20px;height:20px;fill:currentColor"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6"/></svg>' : '<svg viewBox="0 0 20 20" style="width:20px;height:20px"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>'; }
+  if (dashStarEl) { dashStarEl.classList.toggle('active', watched); dashStarEl.innerHTML = watched ? '<svg viewBox="0 0 20 18" style="width:20px;height:18px;fill:currentColor"><polygon points="10,0.5 13.5,5.1 19,7.1 15.7,11.9 15.6,17.7 10,16 4.4,17.7 4.3,11.9 1,7.1 6.5,5.1" stroke-linejoin="round"/></svg>' : '<svg viewBox="0 0 20 18" style="width:20px;height:18px"><polygon points="10,0.5 13.5,5.1 19,7.1 15.7,11.9 15.6,17.7 10,16 4.4,17.7 4.3,11.9 1,7.1 6.5,5.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>'; }
 }
 updateDashStar();
 window.toggleDashWatch = function() {
@@ -1797,10 +1797,22 @@ function initChart(rawCandles, navPerToken) {
   function updatePriceChange(candles) {
     var pctEl = document.getElementById('price-hero-pct');
     if (!pctEl || !candles || candles.length < 2) { if (pctEl) pctEl.style.display = 'none'; return; }
-    var first = candles[0].open || candles[0].close || candles[0].price;
-    var last = candles[candles.length - 1].close || candles[candles.length - 1].price;
-    if (!first || first === 0) { pctEl.style.display = 'none'; return; }
-    var pct = ((last - first) / first) * 100;
+    
+    // Get the time window based on current TF
+    var tfHours = { '6H': 6, '12H': 12, '1D': 24 }[_chartTF] || 24;
+    var now = candles[candles.length - 1].time;
+    var cutoff = now - (tfHours * 3600);
+    
+    // Find the candle closest to the cutoff time
+    var first = candles[0];
+    for (var i = 0; i < candles.length; i++) {
+      if (candles[i].time >= cutoff) { first = candles[i]; break; }
+    }
+    
+    var openPrice = first.open || first.close || first.price;
+    var lastPrice = candles[candles.length - 1].close || candles[candles.length - 1].price;
+    if (!openPrice || openPrice === 0) { pctEl.style.display = 'none'; return; }
+    var pct = ((lastPrice - openPrice) / openPrice) * 100;
     pctEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
     pctEl.style.color = pct >= 0 ? 'var(--green)' : '#e84057';
     pctEl.style.display = 'inline';
