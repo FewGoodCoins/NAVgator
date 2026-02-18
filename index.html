@@ -299,7 +299,7 @@
   .wl-star svg { width: 15px; height: 15px; fill: currentColor; }
 
   /* Token sidebar (dashboard) */
-  .token-sidebar { position: fixed; left: 32px; top: 0; width: 160px; height: calc(100vh - 40px); background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; z-index: 40; display: none; flex-direction: column; overflow-y: auto; font-family: 'Inter', sans-serif; padding-top: 80px; margin-top: 10px; }
+  .token-sidebar { position: fixed; left: 32px; top: 60px; width: 160px; height: calc(100vh - 70px); background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; z-index: 40; display: none; flex-direction: column; overflow-y: auto; font-family: 'Inter', sans-serif; padding-top: 0; }
   .token-sidebar.visible { display: flex; }
   .ts-search-wrap { padding: 8px 10px 4px; }
   .ts-search { width: 100%; font-family: 'Inter', sans-serif; font-size: 11px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg); color: var(--white); outline: none; transition: border-color 0.15s; }
@@ -309,7 +309,7 @@
   .ts-title { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 14px 6px; }
   .ts-list { }
   .ts-divider { border-top: 1px solid var(--border); margin: 8px 14px; }
-  .ts-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; transition: background 0.1s; text-decoration: none; border-radius: 8px; margin: 1px 6px; }
+  .ts-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; transition: background 0.1s; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
   .ts-item:hover { background: rgba(255,255,255,0.03); }
   .ts-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); }
   .ts-icon { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
@@ -402,11 +402,6 @@
     <div class="ts-section">
       <div class="ts-title">Tokens</div>
       <div class="ts-list" id="ts-all-tokens"></div>
-    </div>
-    <div class="ts-divider"></div>
-    <div class="ts-section">
-      <div class="ts-title">★ Watchlist</div>
-      <div class="ts-list" id="ts-watchlist"></div>
     </div>
   </div>
 
@@ -1161,7 +1156,6 @@ var tokenSidebar = document.getElementById('token-sidebar');
 
 async function renderTokenSidebar() {
   var allList = document.getElementById('ts-all-tokens');
-  var wlList = document.getElementById('ts-watchlist');
   if (!allList || !tokenSidebar) return;
 
   // Show sidebar and offset dashboard
@@ -1193,27 +1187,6 @@ async function renderTokenSidebar() {
       '<div class="ts-price">' + fmtP(spot) + '</div>' +
     '</a>';
   }).join('');
-
-  // Watchlist
-  if (_dashWL.length === 0) {
-    wlList.innerHTML = '<div class="ts-empty">Star tokens on the landing page</div>';
-  } else {
-    wlList.innerHTML = _dashWL.map(function(key) {
-      var tok = TOKENS[key];
-      if (!tok) return '';
-      var data = priceMap[key] || {};
-      var spot = data.spot || 0;
-      var isActive = key === tokenKey;
-      var iconHtml = tok.logo
-        ? '<div class="ts-icon"><img src="' + tok.logo + '"></div>'
-        : '<div class="ts-icon" style="background:' + tok.color + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000">' + tok.ticker[0] + '</div>';
-      return '<a class="ts-item' + (isActive ? ' active' : '') + '" href="index.html?token=' + key + '">' +
-        iconHtml +
-        '<div><div class="ts-name">' + tok.ticker + '</div></div>' +
-        '<div class="ts-price">' + fmtP(spot) + '</div>' +
-      '</a>';
-    }).join('');
-  }
 }
 
 renderTokenSidebar();
