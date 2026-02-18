@@ -174,7 +174,7 @@
   .dashboard { display: none; }
   .dashboard.active { display: block; }
   .hero { padding: 0; text-align: left; }
-  .landing-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 0; }
+  .landing-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 0; position: relative; }
   .landing-nav-left { display: flex; align-items: center; gap: 12px; }
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
@@ -184,7 +184,7 @@
   .landing-nav-left .brand-stat b { color: var(--white); font-weight: 600; }
   .landing-nav-left .brand-stat .up { color: var(--green); }
   .landing-nav-left .brand-stat .down { color: var(--red); }
-  .landing-nav-center { display: flex; align-items: center; gap: 8px; }
+  .landing-nav-center { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; }
   .landing-nav-center a { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; padding: 6px 16px; border-radius: 8px; transition: all 0.15s; }
   .landing-nav-center a:hover { color: var(--white); }
   .landing-nav-center a.nav-active { color: var(--white); font-weight: 600; }
@@ -206,19 +206,22 @@
 
   /* Table layout */
   .token-table-wrap { margin: 0 0 40px; border: none; border-radius: 0; overflow: hidden; background: transparent; }
-  .token-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; }
+  .token-table { width: 100%; border-collapse: separate; border-spacing: 0 2px; font-family: 'Inter', sans-serif; }
   .token-table thead th { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 18px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; white-space: nowrap; user-select: none; }
   .token-table thead th:nth-child(1) { width: 36px; text-align: center; }
   .token-table thead th:nth-child(2) { text-align: left; }
   .token-table thead th:hover:not(.no-sort) { color: var(--green); }
   .token-table thead th.sorted { color: var(--green); }
-  .token-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: background 0.15s, transform 0.15s, box-shadow 0.15s; }
+  .token-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: all 0.2s; border-radius: 12px; }
   .token-table tbody tr:last-child { border-bottom: none; }
-  .token-table tbody tr:hover { background: rgba(255,255,255,0.02); transform: scale(1.01); box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 1; position: relative; }
-  .token-table tbody tr:hover .tt-sparkline svg polyline { filter: drop-shadow(0 0 6px currentColor); }
+  .token-table tbody tr:hover { background: rgba(255,255,255,0.03); box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 2px 12px rgba(0,0,0,0.3); border-radius: 12px; border-color: transparent; transform: scale(1.01); z-index: 1; position: relative; }
+  .token-table tbody tr:hover td:first-child { border-radius: 12px 0 0 12px; }
+  .token-table tbody tr:hover td:last-child { border-radius: 0 12px 12px 0; }
+  .token-table tbody tr:hover .tt-sparkline svg polyline { filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 8px currentColor); }
   .token-table td { padding: 14px 18px; font-size: 14px; color: var(--text); text-align: right; white-space: nowrap; }
   .token-table td:nth-child(1) { text-align: center; color: var(--dim); font-size: 13px; font-weight: 500; width: 36px; }
-  .token-table td:nth-child(2) { text-align: left; }
+  .token-table td:nth-child(2) { text-align: center; }
+  .token-table td:nth-child(3) { text-align: left; }
   .tt-name-cell { display: flex; align-items: center; gap: 14px; }
   .tt-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 15px; font-weight: 400; color: #0c0c10; flex-shrink: 0; overflow: hidden; }
   .tt-icon img { width: 100%; height: 100%; object-fit: cover; }
@@ -324,7 +327,7 @@
       <div class="landing-nav">
         <div class="landing-nav-left">
           <a href="index.html" class="brand">
-            <img src="logos/navgator-logo.png" style="width:32px;height:32px;vertical-align:middle;margin-right:8px"><div class="brand-text">NAV<span>gator</span></div>
+            <div class="brand-text">NAV<span>gator</span></div>
           </a>
           <div class="brand-stat" id="landing-total-mcap">mcap: <b id="landing-mcap-total">—</b></div>
         </div>
@@ -1158,7 +1161,7 @@ window.copyMint = function() {
 // Build nav — dim non-live tokens
 const navEl = document.getElementById('nav');
 const LIVE_KEYS = new Set(Object.entries(TOKENS).filter(([k,v]) => v.live).map(([k]) => k));
-let navHTML = '<a href="index.html" class="nav-brand"><img src="logos/navgator-logo.png" style="width:28px;height:28px;vertical-align:middle;margin-right:6px">NAV<span>gator</span></a><span class="nav-sep" style="color:var(--border2);margin:0 8px">|</span><div class="nav-tokens">';
+let navHTML = '<a href="index.html" class="nav-brand">NAV<span>gator</span></a><span class="nav-sep" style="color:var(--border2);margin:0 8px">|</span><div class="nav-tokens">';
 for (const [key, tok] of Object.entries(TOKENS)) {
   const isLive = LIVE_KEYS.has(key);
   const dimStyle = !isLive ? 'opacity:0.35;pointer-events:none;' : '';
