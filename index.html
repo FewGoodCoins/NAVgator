@@ -299,13 +299,17 @@
   .wl-star svg { width: 15px; height: 15px; fill: currentColor; }
 
   /* Token sidebar (dashboard) */
-  .token-sidebar { position: fixed; left: 0; top: 0; width: 180px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); border-radius: 0 12px 12px 0; z-index: 40; display: none; flex-direction: column; overflow-y: auto; font-family: 'Inter', sans-serif; padding-top: 80px; }
+  .token-sidebar { position: fixed; left: 32px; top: 0; width: 160px; height: calc(100vh - 40px); background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; z-index: 40; display: none; flex-direction: column; overflow-y: auto; font-family: 'Inter', sans-serif; padding-top: 80px; margin-top: 10px; }
   .token-sidebar.visible { display: flex; }
+  .ts-search-wrap { padding: 8px 10px 4px; }
+  .ts-search { width: 100%; font-family: 'Inter', sans-serif; font-size: 11px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg); color: var(--white); outline: none; transition: border-color 0.15s; }
+  .ts-search:focus { border-color: var(--green); }
+  .ts-search::placeholder { color: var(--dim); }
   .ts-section { padding: 0; }
   .ts-title { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 14px 6px; }
   .ts-list { }
   .ts-divider { border-top: 1px solid var(--border); margin: 8px 14px; }
-  .ts-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; transition: background 0.1s; text-decoration: none; }
+  .ts-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; transition: background 0.1s; text-decoration: none; border-radius: 8px; margin: 1px 6px; }
   .ts-item:hover { background: rgba(255,255,255,0.03); }
   .ts-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); }
   .ts-icon { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
@@ -314,8 +318,8 @@
   .ts-ticker { font-size: 10px; color: var(--dim); }
   .ts-price { margin-left: auto; font-size: 10px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
   .ts-empty { padding: 10px 14px; font-size: 10px; color: var(--dim); }
-  .dashboard.has-sidebar { margin-left: 180px; }
-  @media (max-width: 900px) { .token-sidebar { width: 60px; padding-top: 70px; } .token-sidebar .ts-title, .token-sidebar .ts-name, .token-sidebar .ts-price, .token-sidebar .ts-ticker { display: none; } .ts-item { justify-content: center; padding: 8px; } .dashboard.has-sidebar { margin-left: 60px; } }
+  .dashboard.has-sidebar { margin-left: 192px; }
+  @media (max-width: 900px) { .token-sidebar { width: 52px; left: 8px; padding-top: 70px; } .token-sidebar .ts-title, .token-sidebar .ts-name, .token-sidebar .ts-price, .token-sidebar .ts-ticker { display: none; } .ts-item { justify-content: center; padding: 8px; margin: 1px 4px; } .dashboard.has-sidebar { margin-left: 68px; } }
   @media (max-width: 600px) { .token-sidebar { display: none !important; } .dashboard.has-sidebar { margin-left: 0; } }
 </style>
 </head>
@@ -392,6 +396,9 @@
 
   <!-- ══ TOKEN SIDEBAR (visible on dashboard) ══ -->
   <div class="token-sidebar" id="token-sidebar">
+    <div class="ts-search-wrap">
+      <input type="text" class="ts-search" id="ts-search" placeholder="Search…" autocomplete="off">
+    </div>
     <div class="ts-section">
       <div class="ts-title">Tokens</div>
       <div class="ts-list" id="ts-all-tokens"></div>
@@ -1210,6 +1217,23 @@ async function renderTokenSidebar() {
 }
 
 renderTokenSidebar();
+
+// Sidebar search filter
+var tsSearchEl = document.getElementById('ts-search');
+if (tsSearchEl) {
+  tsSearchEl.addEventListener('input', function() {
+    var q = this.value.toLowerCase().trim();
+    document.querySelectorAll('#ts-all-tokens .ts-item').forEach(function(item) {
+      var name = item.querySelector('.ts-name');
+      var text = name ? name.textContent.toLowerCase() : '';
+      var href = item.getAttribute('href') || '';
+      var key = href.split('token=')[1] || '';
+      var tok = TOKENS[key];
+      var fullName = tok ? tok.name.toLowerCase() : '';
+      item.style.display = (!q || text.includes(q) || fullName.includes(q) || key.includes(q)) ? '' : 'none';
+    });
+  });
+}
 
 document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
 
