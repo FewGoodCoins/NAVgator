@@ -79,7 +79,7 @@
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
   .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
-  .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
   .mp-label { font-size: 11px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
@@ -174,7 +174,7 @@
   .dashboard { display: none; }
   .dashboard.active { display: block; }
   .hero { padding: 0; text-align: left; }
-  .landing-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 0; position: relative; }
+  .landing-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 0; position: relative; }
   .landing-nav-left { display: flex; align-items: center; gap: 12px; }
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
@@ -388,7 +388,7 @@
   <div class="wl-sidebar" id="wl-sidebar">
     <div class="wl-sidebar-header">
       <span class="wl-sidebar-title">★ Watchlist</span>
-      <button class="wl-sidebar-close" onclick="toggleSidebar()">✕</button>
+      <button class="wl-sidebar-close" onclick="toggleSidebar()">«</button>
     </div>
     <div class="wl-sidebar-list" id="wl-sidebar-list"></div>
   </div>
@@ -807,7 +807,13 @@ if (!_hasToken) {
     var idx = _watchlist.indexOf(key);
     if (idx === -1) _watchlist.push(key); else _watchlist.splice(idx, 1);
     localStorage.setItem('navgator_watchlist', JSON.stringify(_watchlist));
-    renderTable();
+    // Update star in-place instead of full re-render
+    var starEl = e.currentTarget || e.target.closest('.wl-star');
+    if (starEl) {
+      var watched = isWatched(key);
+      starEl.classList.toggle('active', watched);
+      starEl.innerHTML = starSvg(watched);
+    }
   }
 
   // Watchlist nav toggle
@@ -1133,20 +1139,25 @@ function toggleSidebar() {
 window.toggleSidebar = toggleSidebar;
 
 function updateSidebarUI() {
+  // Get chart top for alignment
+  var chartTop = 0;
+  var chart = document.querySelector('.chart-layout');
+  if (chart) chartTop = chart.getBoundingClientRect().top;
+
   if (_sidebarOpen && _dashWL.length > 0) {
     sidebarEl.classList.add('open');
     sidebarToggle.style.display = 'none';
     dashEl.classList.add('has-sidebar');
-    // Align sidebar top with chart
-    var chart = document.querySelector('.chart-layout');
-    if (chart) {
-      var rect = chart.getBoundingClientRect();
-      sidebarEl.style.top = rect.top + 'px';
-      sidebarEl.style.height = 'calc(100vh - ' + rect.top + 'px)';
-    }
+    sidebarEl.style.top = chartTop + 'px';
+    sidebarEl.style.height = 'calc(100vh - ' + chartTop + 'px)';
   } else {
     sidebarEl.classList.remove('open');
-    sidebarToggle.style.display = _dashWL.length > 0 ? 'block' : 'none';
+    if (_dashWL.length > 0) {
+      sidebarToggle.style.display = 'block';
+      sidebarToggle.style.top = chartTop + 'px';
+    } else {
+      sidebarToggle.style.display = 'none';
+    }
     dashEl.classList.remove('has-sidebar');
   }
 }
