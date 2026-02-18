@@ -80,6 +80,17 @@
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
   .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
+  .left-panel { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; }
+  .lp-search { width: 100%; font-family: 'Inter', sans-serif; font-size: 11px; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--white); outline: none; }
+  .lp-search::placeholder { color: var(--dim); }
+  .lp-list { flex: 1; overflow-y: auto; }
+  .lp-item { display: flex; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer; transition: background 0.1s; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .lp-item:hover { background: rgba(255,255,255,0.03); }
+  .lp-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); }
+  .lp-icon { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+  .lp-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .lp-name { font-size: 12px; font-weight: 600; color: var(--white); }
+  .lp-price { margin-left: auto; font-size: 10px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
@@ -89,7 +100,7 @@
   .mp-sub { font-size: 11px; color: var(--dim); margin-top: 2px; }
   .mp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .mp-pair .mp-box { min-height: 0; }
-  @media (max-width: 900px) { .chart-layout { flex-direction: column; } .metrics-panel { width: 100%; flex-direction: row; flex-wrap: wrap; } .metrics-panel .mp-box { flex: 1; min-width: 140px; } .mp-pair { flex: 2; min-width: 290px; } }
+  @media (max-width: 900px) { .chart-layout { flex-direction: column; } .left-panel { width: 100%; max-height: 200px; } .metrics-panel { width: 100%; flex-direction: row; flex-wrap: wrap; } .metrics-panel .mp-box { flex: 1; min-width: 140px; } .mp-pair { flex: 2; min-width: 290px; } }
   .chart-title { display: none; }
   .chart-controls { display: flex; gap: 6px; margin-bottom: 12px; z-index: 2; align-items: center; }
   .chart-btn-group { display: flex; gap: 4px; }
@@ -394,17 +405,6 @@
     </div>
   </div>
 
-  <!-- ══ TOKEN SIDEBAR (visible on dashboard) ══ -->
-  <div class="token-sidebar" id="token-sidebar">
-    <div class="ts-search-wrap">
-      <input type="text" class="ts-search" id="ts-search" placeholder="Search…" autocomplete="off">
-    </div>
-    <div class="ts-section">
-      <div class="ts-title">Tokens</div>
-      <div class="ts-list" id="ts-all-tokens"></div>
-    </div>
-  </div>
-
   <!-- ══ DASHBOARD VIEW ══ -->
   <div class="dashboard" id="dashboard-view">
 
@@ -413,6 +413,13 @@
 
   <!-- Chart + Metrics Panel -->
   <div class="chart-layout">
+
+    <!-- Left Panel -->
+    <div class="left-panel" id="left-panel">
+      <input type="text" class="lp-search" id="lp-search" placeholder="Search tokens…" autocomplete="off">
+      <div class="lp-list" id="lp-token-list"></div>
+    </div>
+
     <div class="chart-section">
       <div class="price-hero-border" id="chart-token-header" style="display:flex;align-items:center;gap:10px">
         <div id="token-icon" style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0"></div>
@@ -1147,22 +1154,14 @@ window.toggleDashWatch = function() {
   if (idx === -1) _dashWL.push(tokenKey); else _dashWL.splice(idx, 1);
   localStorage.setItem('navgator_watchlist', JSON.stringify(_dashWL));
   updateDashStar();
-  renderTokenSidebar();
+  renderLeftPanel();
 };
 
-// Token Sidebar
-var dashEl = document.getElementById('dashboard-view');
-var tokenSidebar = document.getElementById('token-sidebar');
+// Left Panel - Token List
+async function renderLeftPanel() {
+  var list = document.getElementById('lp-token-list');
+  if (!list) return;
 
-async function renderTokenSidebar() {
-  var allList = document.getElementById('ts-all-tokens');
-  if (!allList || !tokenSidebar) return;
-
-  // Show sidebar and offset dashboard
-  tokenSidebar.classList.add('visible');
-  dashEl.classList.add('has-sidebar');
-
-  // Fetch prices for all tokens
   var priceMap = {};
   try {
     var res = await fetch('https://navgator-api.vercel.app/api/current');
@@ -1172,32 +1171,31 @@ async function renderTokenSidebar() {
 
   var fmtP = function(n) { return n >= 1 ? '$' + n.toFixed(2) : n > 0 ? '$' + n.toFixed(4) : '—'; };
 
-  // All tokens
-  allList.innerHTML = Object.entries(TOKENS).filter(function(e) { return e[1].live; }).map(function(e) {
+  list.innerHTML = Object.entries(TOKENS).filter(function(e) { return e[1].live; }).map(function(e) {
     var key = e[0], tok = e[1];
     var data = priceMap[key] || {};
     var spot = data.spot || 0;
     var isActive = key === tokenKey;
     var iconHtml = tok.logo
-      ? '<div class="ts-icon"><img src="' + tok.logo + '"></div>'
-      : '<div class="ts-icon" style="background:' + tok.color + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000">' + tok.ticker[0] + '</div>';
-    return '<a class="ts-item' + (isActive ? ' active' : '') + '" href="index.html?token=' + key + '">' +
+      ? '<div class="lp-icon"><img src="' + tok.logo + '"></div>'
+      : '<div class="lp-icon" style="background:' + tok.color + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000">' + tok.ticker[0] + '</div>';
+    return '<a class="lp-item' + (isActive ? ' active' : '') + '" href="index.html?token=' + key + '">' +
       iconHtml +
-      '<div><div class="ts-name">' + tok.ticker + '</div></div>' +
-      '<div class="ts-price">' + fmtP(spot) + '</div>' +
+      '<div class="lp-name">' + tok.ticker + '</div>' +
+      '<div class="lp-price">' + fmtP(spot) + '</div>' +
     '</a>';
   }).join('');
 }
 
-renderTokenSidebar();
+renderLeftPanel();
 
-// Sidebar search filter
-var tsSearchEl = document.getElementById('ts-search');
-if (tsSearchEl) {
-  tsSearchEl.addEventListener('input', function() {
+// Left panel search filter
+var lpSearchEl = document.getElementById('lp-search');
+if (lpSearchEl) {
+  lpSearchEl.addEventListener('input', function() {
     var q = this.value.toLowerCase().trim();
-    document.querySelectorAll('#ts-all-tokens .ts-item').forEach(function(item) {
-      var name = item.querySelector('.ts-name');
+    document.querySelectorAll('#lp-token-list .lp-item').forEach(function(item) {
+      var name = item.querySelector('.lp-name');
       var text = name ? name.textContent.toLowerCase() : '';
       var href = item.getAttribute('href') || '';
       var key = href.split('token=')[1] || '';
