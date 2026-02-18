@@ -79,13 +79,13 @@
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
   .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
-  .metrics-panel { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
-  .mp-label { font-size: 9px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .mp-value { font-family: 'JetBrains Mono', 'Inter', sans-serif; font-size: 15px; font-weight: 700; color: var(--white); }
-  .mp-value.large { font-size: 28px; }
-  .mp-sub { font-size: 10px; color: var(--dim); margin-top: 2px; }
+  .mp-label { font-size: 11px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .mp-value { font-family: 'JetBrains Mono', 'Inter', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); }
+  .mp-value.large { font-size: 32px; }
+  .mp-sub { font-size: 11px; color: var(--dim); margin-top: 2px; }
   .mp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .mp-pair .mp-box { min-height: 0; }
   @media (max-width: 900px) { .chart-layout { flex-direction: column; } .metrics-panel { width: 100%; flex-direction: row; flex-wrap: wrap; } .metrics-panel .mp-box { flex: 1; min-width: 140px; } .mp-pair { flex: 2; min-width: 290px; } }
@@ -451,9 +451,10 @@
       <div class="mp-box price-box" id="mp-price"></div>
       <div class="mp-pair">
         <div class="mp-box" id="mp-mcap"></div>
-        <div class="mp-box" id="mp-treasury"></div>
+        <div class="mp-box" id="mp-circ"></div>
       </div>
-      <div class="mp-pair">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="mp-box" id="mp-treasury"></div>
         <div class="mp-box" id="mp-nav"></div>
         <div class="mp-box" id="mp-vsnav"></div>
       </div>
@@ -2032,16 +2033,19 @@ function renderUI(isLive) {
   if (mpPrice) mpPrice.innerHTML = '<div class="mp-label">Price</div><div class="mp-value large" id="price-hero-val">' + fmt$(CFG.spot) + '</div><div id="price-hero-pct" style="font-family:Inter,sans-serif;font-size:13px;font-weight:600;margin-top:4px"></div>';
 
   var mpNav = document.getElementById('mp-nav');
-  if (mpNav) mpNav.innerHTML = '<div class="mp-label">NAV</div><div class="mp-value">' + fmt$(strike) + '</div><div class="mp-sub">per token</div>';
+  if (mpNav) mpNav.innerHTML = '<div class="mp-label">NAV</div><div class="mp-value">' + fmt$(strike) + '</div>';
 
   var mpVsnav = document.getElementById('mp-vsnav');
-  if (mpVsnav) mpVsnav.innerHTML = '<div class="mp-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="mp-value" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? '-' + Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="mp-sub">' + (isDiscount ? 'below NAV' : 'above NAV') + '</div>';
+  if (mpVsnav) mpVsnav.innerHTML = '<div class="mp-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="mp-value" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? '-' + Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div>';
 
   var mpMcap = document.getElementById('mp-mcap');
-  if (mpMcap) mpMcap.innerHTML = '<div class="mp-label">MCap</div><div class="mp-value">' + fmtM(CFG.spot * circulatingSupply) + '</div><div class="mp-sub">' + (circulatingSupply / 1e6).toFixed(1) + 'M circ</div>';
+  if (mpMcap) mpMcap.innerHTML = '<div class="mp-label">MCap</div><div class="mp-value">' + fmtM(CFG.spot * circulatingSupply) + '</div>';
+
+  var mpCirc = document.getElementById('mp-circ');
+  if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Circ. Supply</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div>';
 
   var mpTreasury = document.getElementById('mp-treasury');
-  if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="mp-sub">DAO + AMMs</div>';
+  if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div>';
 
   var mpRunway = document.getElementById('mp-runway');
   if (mpRunway) mpRunway.innerHTML = '<div class="mp-label">Runway</div><div class="mp-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="mp-sub">' + fmtM(burn) + '/mo</div>';
