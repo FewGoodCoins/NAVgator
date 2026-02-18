@@ -233,7 +233,7 @@
   @media (max-width: 600px) { .how-grid { grid-template-columns: 1fr; } }
 
   /* Compare page */
-  .compare { display: none; max-width: 700px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', sans-serif; }
+  .compare { display: none; max-width: 900px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', sans-serif; }
   .compare.active { display: block; }
   .compare-header { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; }
   .compare-back { font-size: 22px; color: var(--muted); text-decoration: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border2); border-radius: 8px; transition: all 0.15s; }
@@ -247,23 +247,23 @@
   .compare-quick-btn { font-family: 'Inter', sans-serif; font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
   .compare-quick-btn:hover { color: var(--white); border-color: var(--green); }
   .compare-placeholder { text-align: center; color: var(--dim); font-size: 14px; padding: 60px 0; }
-  .compare-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
-  .compare-card-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
-  .compare-versus { display: flex; justify-content: center; align-items: center; gap: 16px; margin-bottom: 24px; padding: 20px 0; }
-  .compare-versus-token { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; color: var(--white); }
-  .compare-versus-token img { width: 32px; height: 32px; border-radius: 50%; }
-  .compare-versus-vs { font-size: 13px; color: var(--dim); font-weight: 400; }
+  .compare-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 30px 32px; margin-bottom: 20px; }
+  .compare-card-label { font-size: 11px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 18px; text-align: center; }
+  .compare-versus { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 30px; padding: 24px 0; }
+  .compare-versus-token { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: var(--white); }
+  .compare-versus-token img { width: 38px; height: 38px; border-radius: 50%; }
+  .compare-versus-vs { font-size: 14px; color: var(--dim); font-weight: 400; }
   .compare-bar-wrap { margin-bottom: 6px; }
-  .compare-bar { height: 8px; border-radius: 4px; display: flex; overflow: hidden; margin-bottom: 4px; }
-  .compare-bar-a { height: 100%; border-radius: 4px 0 0 4px; }
-  .compare-bar-b { height: 100%; border-radius: 0 4px 4px 0; }
-  .compare-bar-labels { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; }
-  .compare-bar-note { text-align: center; font-size: 11px; color: var(--dim); margin-top: 2px; }
-  .compare-perf-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .compare-bar { height: 10px; border-radius: 5px; display: flex; overflow: hidden; margin-bottom: 6px; }
+  .compare-bar-a { height: 100%; border-radius: 5px 0 0 5px; }
+  .compare-bar-b { height: 100%; border-radius: 0 5px 5px 0; }
+  .compare-bar-labels { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; }
+  .compare-bar-note { text-align: center; font-size: 12px; color: var(--dim); margin-top: 4px; }
+  .compare-perf-row { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
   .compare-perf-row:last-child { border-bottom: none; }
-  .compare-perf-left { flex: 1; text-align: left; font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-  .compare-perf-center { width: 100px; text-align: center; font-size: 12px; color: var(--dim); font-weight: 500; }
-  .compare-perf-right { flex: 1; text-align: right; font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .compare-perf-left { flex: 1; text-align: left; font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .compare-perf-center { width: 100px; text-align: center; font-size: 13px; color: var(--dim); font-weight: 500; }
+  .compare-perf-right { flex: 1; text-align: right; font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
   .compare-ath-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .compare-ath-label { width: 60px; font-size: 12px; font-weight: 600; color: var(--white); }
   .compare-ath-bar-bg { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
@@ -333,7 +333,7 @@
 
     <div class="compare-selectors">
       <select id="compare-a" class="compare-select"><option value="">Select token</option></select>
-      <div class="compare-swap" onclick="swapCompare()">⇅</div>
+      <div class="compare-swap" onclick="swapCompare()">⇄</div>
       <select id="compare-b" class="compare-select"><option value="">Select token</option></select>
     </div>
 
@@ -585,16 +585,16 @@ if (_isCompare) {
         '</div>' +
 
         // Price, NAV & Discount
-        '<div class="compare-card"><div class="compare-card-label">Price, NAV & Discount</div>' +
+        '<div class="compare-card">' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--white)">' + cmpFmt$(spotA) + '</div><div class="compare-perf-center">Price</div><div class="compare-perf-right" style="color:var(--white)">' + cmpFmt$(spotB) + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--white)">' + cmpFmt$(navA) + '</div><div class="compare-perf-center">NAV</div><div class="compare-perf-right" style="color:var(--white)">' + cmpFmt$(navB) + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:' + cmpColor(discA) + '">' + cmpPct(discA) + '</div><div class="compare-perf-center">vs NAV</div><div class="compare-perf-right" style="color:' + cmpColor(discB) + '">' + cmpPct(discB) + '</div></div>' +
         '</div>' +
 
         // Runway
-        '<div class="compare-card"><div class="compare-card-label">Runway</div>' +
-          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--orange)">' + (runA === Infinity ? '∞' : runA + ' mo') + '</div><div class="compare-perf-center">at allowance</div><div class="compare-perf-right" style="color:var(--orange)">' + (runB === Infinity ? '∞' : runB + ' mo') + '</div></div>' +
-          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--dim)">' + cmpFmtM(burnA) + '/mo</div><div class="compare-perf-center">allowance</div><div class="compare-perf-right" style="color:var(--dim)">' + cmpFmtM(burnB) + '/mo</div></div>' +
+        '<div class="compare-card">' +
+          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--orange)">' + (runA === Infinity ? '∞' : runA + ' mo') + '</div><div class="compare-perf-center">Runway</div><div class="compare-perf-right" style="color:var(--orange)">' + (runB === Infinity ? '∞' : runB + ' mo') + '</div></div>' +
+          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--dim)">' + cmpFmtM(burnA) + '/mo</div><div class="compare-perf-center">Allowance</div><div class="compare-perf-right" style="color:var(--dim)">' + cmpFmtM(burnB) + '/mo</div></div>' +
         '</div>';
 
     } catch (e) {
