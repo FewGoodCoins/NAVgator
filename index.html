@@ -70,10 +70,10 @@
   .token-header-above { display: flex; align-items: center; gap: 14px; flex-shrink: 0; padding: 0; }
   .token-header-above .token-header-icon { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .token-header-above .token-header-icon img { width: 100%; height: 100%; object-fit: cover; }
-  .token-header-above .token-header-title { font-family: 'Inter', sans-serif; font-size: 32px; font-weight: 700; color: var(--white); }
-  .token-header-above .token-header-ticker { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 500; color: var(--dim); }
+  .token-header-title { font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 700; color: var(--white); }
+  .token-header-ticker { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 500; color: var(--dim); }
   @media (max-width: 800px) { .token-metrics-row { flex-wrap: wrap; } }
-  @media (max-width: 500px) { .token-header-above .token-header-title { font-size: 24px; } }
+  @media (max-width: 500px) { .token-header-title { font-size: 20px; } }
 
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
@@ -403,7 +403,7 @@
   <div class="chart-layout">
     <div class="chart-section">
       <div class="price-hero-border" id="chart-token-header" style="display:flex;align-items:center;gap:10px">
-        <div id="token-icon" style="width:36px;height:36px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0"><style>#token-icon img{width:100%;height:100%;object-fit:cover}</style></div>
+        <div id="token-icon" style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0"></div>
         <span class="token-header-title" id="token-title-name"></span>
         <span class="token-header-ticker" id="token-title-ticker"></span>
       </div>
@@ -436,6 +436,14 @@
 
     <!-- Metrics Panel -->
     <div class="metrics-panel" id="metrics-panel">
+      <div class="mp-box" id="mp-pair-header" style="padding:12px 14px;text-align:center">
+        <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--white)">
+          <span id="mp-ticker-label"></span>
+          <span id="mp-mint-copy" style="cursor:pointer;margin-left:4px;color:var(--dim);font-size:11px" title="Copy address" onclick="copyMint()">📋</span>
+          <span style="color:var(--dim);font-weight:400"> / USDC</span>
+        </div>
+        <div style="font-size:11px;color:var(--dim);margin-top:4px">Solana via MetaDAO</div>
+      </div>
       <div class="mp-box price-box" id="mp-price"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div class="mp-box" id="mp-chg-1h"></div>
@@ -466,7 +474,7 @@
           <span id="mp-wl-label">Watchlist</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--muted)">
-          <span style="font-size:14px">🔔</span>
+          <span style="font-size:14px;font-weight:700;color:currentColor;border:1.5px solid currentColor;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif">!</span>
           <span>Alerts</span>
         </div>
       </div>
@@ -1132,6 +1140,18 @@ async function renderSidebar() {
 renderSidebar();
 
 document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
+
+// Pair header
+var mpTickerLabel = document.getElementById('mp-ticker-label');
+if (mpTickerLabel) mpTickerLabel.textContent = CFG.ticker;
+window.copyMint = function() {
+  if (CFG.mint) {
+    navigator.clipboard.writeText(CFG.mint).then(function() {
+      var el = document.getElementById('mp-mint-copy');
+      if (el) { el.textContent = '✓'; setTimeout(function() { el.textContent = '📋'; }, 1500); }
+    });
+  }
+};
 
 // Build nav — dim non-live tokens
 const navEl = document.getElementById('nav');
@@ -2045,9 +2065,9 @@ function renderUI(isLive) {
   var iconEl = document.getElementById('token-icon');
   if (iconEl) {
     if (CFG.logo) {
-      iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '">';
+      iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '" style="width:100%;height:100%;object-fit:cover;display:block">';
     } else {
-      iconEl.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
+      iconEl.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:16px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
     }
   }
   var titleEl = document.getElementById('token-title-name');
@@ -2084,10 +2104,10 @@ function renderUI(isLive) {
   if (mpVsnav) mpVsnav.innerHTML = '<div class="mp-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="mp-value" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? '-' + Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div>';
 
   var mpMcap = document.getElementById('mp-mcap');
-  if (mpMcap) mpMcap.innerHTML = '<div class="mp-label">MCap</div><div class="mp-value">' + fmtM(CFG.spot * circulatingSupply) + '</div><div class="mp-sub">Price x Supply</div>';
+  if (mpMcap) mpMcap.innerHTML = '<div class="mp-label">MCap</div><div class="mp-value">' + fmtM(CFG.spot * circulatingSupply) + '</div>';
 
   var mpCirc = document.getElementById('mp-circ');
-  if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Supply</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div><div class="mp-sub">circulating</div>';
+  if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Supply</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div>';
 
   var mpTreasury = document.getElementById('mp-treasury');
   if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="mp-sub">DAO + AMMs</div>';
@@ -2104,7 +2124,7 @@ function renderUI(isLive) {
       var now = new Date();
       ageMo = Math.floor((now - launch) / (30.44 * 24 * 60 * 60 * 1000));
     }
-    mpAge.innerHTML = '<div class="mp-label">Age</div><div class="mp-value">' + ageMo + ' mo</div><div class="mp-sub">post TGE</div>';
+    mpAge.innerHTML = '<div class="mp-label">Age</div><div class="mp-value">' + ageMo + ' mo</div><div class="mp-sub">Post TGE</div>';
   }
 
   // Outflow & Inflow
@@ -2114,10 +2134,10 @@ function renderUI(isLive) {
   var inflow = 0; // TODO: calculate from AMM yield + fees when available
 
   var mpOutflow = document.getElementById('mp-outflow');
-  if (mpOutflow) mpOutflow.innerHTML = '<div class="mp-label">Outflow</div><div class="mp-value" style="color:var(--red)">' + fmtM(outflow) + '</div><div class="mp-sub">total</div>';
+  if (mpOutflow) mpOutflow.innerHTML = '<div class="mp-label">Outflow</div><div class="mp-value" style="color:var(--red)">' + fmtM(outflow) + '</div><div class="mp-sub">Total</div>';
 
   var mpInflow = document.getElementById('mp-inflow');
-  if (mpInflow) mpInflow.innerHTML = '<div class="mp-label">Inflow</div><div class="mp-value" style="color:var(--green)">' + fmtM(inflow) + '</div><div class="mp-sub">total</div>';
+  if (mpInflow) mpInflow.innerHTML = '<div class="mp-label">Inflow</div><div class="mp-value" style="color:var(--green)">' + fmtM(inflow) + '</div><div class="mp-sub">Total</div>';
 
   document.getElementById('params').innerHTML =
     '<span>ICO <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
@@ -2401,8 +2421,8 @@ function renderAllowance(data) {
   // Set token header immediately (name/icon don't need API)
   var iconEl = document.getElementById('token-icon');
   if (iconEl) {
-    if (CFG.logo) iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '">';
-    else iconEl.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
+    if (CFG.logo) iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '" style="width:100%;height:100%;object-fit:cover;display:block">';
+    else iconEl.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:16px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
   }
   var titleEl = document.getElementById('token-title-name');
   if (titleEl) titleEl.textContent = CFG.name;
