@@ -439,10 +439,14 @@
       <div class="mp-box" id="mp-pair-header" style="padding:12px 14px;text-align:center">
         <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:var(--white)">
           <span id="mp-ticker-label"></span>
-          <span id="mp-mint-copy" style="cursor:pointer;margin-left:4px;color:var(--dim);font-size:11px" title="Copy address" onclick="copyMint()">📋</span>
+          <span id="mp-mint-copy" style="cursor:pointer;margin-left:4px;color:var(--dim);display:inline-flex;align-items:center;vertical-align:middle" title="Copy address" onclick="copyMint()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 0 1 2 9.5V3.5A1.5 1.5 0 0 1 3.5 2h6A1.5 1.5 0 0 1 11 3.5V5"/></svg></span>
           <span style="color:var(--dim);font-weight:400"> / USDC</span>
         </div>
-        <div style="font-size:11px;color:var(--dim);margin-top:4px">Solana via MetaDAO</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:4px">
+          <img src="https://cryptologos.cc/logos/solana-sol-logo.png" style="width:14px;height:14px;border-radius:50%"> Solana
+          <span style="margin:0 2px">via</span>
+          <img src="https://app.metadao.fi/favicon.ico" style="width:14px;height:14px;border-radius:50%"> MetaDAO
+        </div>
       </div>
       <div class="mp-box price-box" id="mp-price"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
@@ -1148,7 +1152,7 @@ window.copyMint = function() {
   if (CFG.mint) {
     navigator.clipboard.writeText(CFG.mint).then(function() {
       var el = document.getElementById('mp-mint-copy');
-      if (el) { el.textContent = '✓'; setTimeout(function() { el.textContent = '📋'; }, 1500); }
+      if (el) { el.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 8 6 12 14 4"/></svg>'; setTimeout(function() { el.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M5 11H3.5A1.5 1.5 0 0 1 2 9.5V3.5A1.5 1.5 0 0 1 3.5 2h6A1.5 1.5 0 0 1 11 3.5V5"/></svg>'; }, 1500); }
     });
   }
 };
