@@ -80,7 +80,8 @@
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
   .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
-  .left-panel { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; align-self: flex-end; }
+  .left-panel-wrap { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+  .left-panel { display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; }
   .lp-search { width: 100%; font-family: 'Inter', sans-serif; font-size: 11px; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--white); outline: none; }
   .lp-search::placeholder { color: var(--dim); }
   .lp-list { flex: 1; overflow-y: auto; }
@@ -415,9 +416,11 @@
   <div class="chart-layout">
 
     <!-- Left Panel -->
-    <div class="left-panel" id="left-panel">
-      <input type="text" class="lp-search" id="lp-search" placeholder="Search tokens…" autocomplete="off">
-      <div class="lp-list" id="lp-token-list"></div>
+    <div class="left-panel-wrap">
+      <div class="left-panel" id="left-panel">
+        <input type="text" class="lp-search" id="lp-search" placeholder="Search tokens…" autocomplete="off">
+        <div class="lp-list" id="lp-token-list"></div>
+      </div>
     </div>
 
     <div class="chart-section">
@@ -1188,6 +1191,22 @@ async function renderLeftPanel() {
 }
 
 renderLeftPanel();
+
+// Sync left panel position with metrics panel
+function syncLeftPanel() {
+  var mp = document.getElementById('metrics-panel');
+  var lp = document.getElementById('left-panel');
+  if (mp && lp) {
+    var mpRect = mp.getBoundingClientRect();
+    var lpWrap = lp.parentElement;
+    var wrapRect = lpWrap.getBoundingClientRect();
+    var topOffset = mpRect.top - wrapRect.top;
+    lp.style.height = mpRect.height + 'px';
+    lpWrap.style.paddingTop = Math.max(0, topOffset) + 'px';
+  }
+}
+setTimeout(syncLeftPanel, 300);
+window.addEventListener('resize', syncLeftPanel);
 
 // Left panel search filter
 var lpSearchEl = document.getElementById('lp-search');
