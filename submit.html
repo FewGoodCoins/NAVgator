@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NAVgator · Submit Token</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
   :root {
     --bg: #0d0d0d; --bg2: #131313; --bg3: #1a1a1a;
     --white: #e8e6e3; --text: #c8c5c0; --muted: #8a8780; --dim: #555560;
@@ -17,7 +17,7 @@
   a { color: var(--green); text-decoration: none; }
   a:hover { opacity: 0.85; }
 
-  .wrap { max-width: 640px; margin: 0 auto; padding: 30px 20px 60px; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 40px 20px 60px; }
 
   .header { display: flex; align-items: center; gap: 14px; margin-bottom: 36px; }
   .back { font-size: 22px; color: var(--muted); text-decoration: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border2); border-radius: 8px; transition: all 0.15s; }
@@ -25,39 +25,52 @@
   .page-title { font-size: 22px; font-weight: 700; color: var(--white); }
   .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
-  .form-section { margin-bottom: 28px; }
-  .section-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-
-  .field { margin-bottom: 16px; }
+  .field { margin-bottom: 18px; }
   .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
   .field label .req { color: var(--green); }
-  .field input, .field select, .field textarea {
-    width: 100%; font-family: 'Inter', sans-serif; font-size: 13px; padding: 10px 14px;
-    border-radius: 8px; border: 1px solid var(--border2); background: var(--bg2);
+  .field input {
+    width: 100%; font-family: 'Inter', sans-serif; font-size: 14px; padding: 12px 14px;
+    border-radius: 10px; border: 1px solid var(--border2); background: var(--bg2);
     color: var(--white); transition: border-color 0.15s; outline: none;
   }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--green); }
-  .field input::placeholder, .field textarea::placeholder { color: var(--dim); }
-  .field textarea { min-height: 80px; resize: vertical; }
+  .field input:focus { border-color: var(--green); }
+  .field input::placeholder { color: var(--dim); }
   .field .hint { font-size: 10px; color: var(--dim); margin-top: 4px; }
 
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 500px) { .row { grid-template-columns: 1fr; } }
 
   .submit-btn {
     width: 100%; padding: 14px; font-family: 'Inter', sans-serif; font-size: 14px;
     font-weight: 600; border: none; border-radius: 10px; cursor: pointer;
-    background: var(--green); color: #0c0c10; transition: all 0.2s;
+    background: var(--green); color: #0c0c10; transition: all 0.2s; margin-top: 8px;
   }
   .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
   .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-  .status { margin-top: 16px; padding: 14px; border-radius: 8px; font-size: 13px; display: none; }
+  .status { margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 13px; display: none; }
   .status.success { display: block; background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); color: var(--green); }
   .status.error { display: block; background: rgba(232,64,87,0.1); border: 1px solid rgba(232,64,87,0.2); color: var(--red); }
 
-  .info-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 18px; margin-bottom: 28px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .info-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 16px; margin-bottom: 28px; font-size: 12px; color: var(--muted); line-height: 1.7; }
   .info-box b { color: var(--white); font-weight: 600; }
+
+  .discovery { display: none; margin-top: 24px; }
+  .discovery.show { display: block; }
+  .disc-section { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .disc-title { font-size: 11px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .disc-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .disc-row:last-child { border-bottom: none; }
+  .disc-label { color: var(--muted); }
+  .disc-value { color: var(--white); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .disc-value.green { color: var(--green); }
+  .disc-holder { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+  .disc-holder:last-child { border-bottom: none; }
+  .disc-addr { font-family: 'JetBrains Mono', monospace; color: var(--white); font-size: 10px; }
+  .disc-badge { display: inline-block; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+  .disc-badge.dao { background: rgba(0,229,160,0.15); color: var(--green); }
+  .disc-badge.amm { background: rgba(91,141,239,0.15); color: #5b8def; }
+  .disc-badge.lock { background: rgba(255,140,66,0.15); color: var(--orange); }
+  .disc-badge.meta { background: rgba(159,140,252,0.15); color: #9f8cfc; }
 
   .footer { text-align: center; font-size: 11px; color: var(--dim); padding-top: 30px; border-top: 1px solid var(--border); }
 </style>
@@ -69,205 +82,159 @@
     <a href="index.html" class="back">←</a>
     <div>
       <div class="page-title">Submit a Token</div>
-      <div class="page-sub">Request your MetaDAO project be listed on NAVgator</div>
+      <div class="page-sub">Add a MetaDAO project to NAVgator</div>
     </div>
   </div>
 
   <div class="info-box">
-    <b>What we need:</b> NAVgator tracks treasury-backed tokens launched via MetaDAO's futarchy system. To add your token, we need on-chain addresses for your treasury wallets, AMM pools, and token mint. Submissions are reviewed manually before going live.
+    <b>Just paste the token address.</b> Our backend auto-discovers treasury wallets, AMM pools, supply, and price from on-chain data. Results are reviewed before going live.
   </div>
 
   <form id="submit-form" onsubmit="return handleSubmit(event)">
+    <div class="field">
+      <label>Token Mint Address <span class="req">*</span></label>
+      <input type="text" name="mint" id="input-mint" placeholder="Paste Solana token mint address" required>
+      <div class="hint">The SPL token contract address</div>
+    </div>
 
-    <div class="form-section">
-      <div class="section-label">Token Info</div>
-      <div class="row">
-        <div class="field">
-          <label>Token Name <span class="req">*</span></label>
-          <input type="text" name="name" placeholder="e.g. Solomon" required>
-        </div>
-        <div class="field">
-          <label>Ticker <span class="req">*</span></label>
-          <input type="text" name="ticker" placeholder="e.g. SOLO" required>
-        </div>
+    <div class="row">
+      <div class="field">
+        <label>Token Name <span class="req">*</span></label>
+        <input type="text" name="name" id="input-name" placeholder="e.g. Solomon" required>
       </div>
       <div class="field">
-        <label>Token Mint Address <span class="req">*</span></label>
-        <input type="text" name="mint" placeholder="Solana mint address" required>
-        <div class="hint">The SPL token mint address on Solana</div>
-      </div>
-      <div class="field">
-        <label>Logo URL</label>
-        <input type="text" name="logo" placeholder="https://...png or .jpg">
-        <div class="hint">Direct link to token logo image (square, min 200x200)</div>
+        <label>Ticker <span class="req">*</span></label>
+        <input type="text" name="ticker" id="input-ticker" placeholder="e.g. SOLO" required>
       </div>
     </div>
 
-    <div class="form-section">
-      <div class="section-label">Treasury & Pools</div>
-      <div class="field">
-        <label>DAO Treasury Wallet <span class="req">*</span></label>
-        <input type="text" name="daoWallet" placeholder="Solana wallet address holding USDC" required>
-        <div class="hint">The main DAO treasury wallet holding USDC</div>
-      </div>
-      <div class="field">
-        <label>Futarchy AMM Address <span class="req">*</span></label>
-        <input type="text" name="futAmm" placeholder="Futarchy conditional AMM address" required>
-        <div class="hint">The futarchy AMM that holds USDC + project tokens</div>
-      </div>
-      <div class="field">
-        <label>Meteora DLMM Pool Address <span class="req">*</span></label>
-        <input type="text" name="pubMetPool" placeholder="Meteora DLMM pool public address" required>
-        <div class="hint">Public Meteora pool used for reserves query</div>
-      </div>
-      <div class="field">
-        <label>Meteora AMM Token Vault</label>
-        <input type="text" name="metAmm" placeholder="Project token vault inside Meteora pool">
-        <div class="hint">The token account for project tokens in the Meteora pool</div>
-      </div>
-      <div class="field">
-        <label>Meteora AMM USDC Vault</label>
-        <input type="text" name="metAmmUsdc" placeholder="USDC vault inside Meteora pool">
-        <div class="hint">The token account for USDC in the Meteora pool</div>
-      </div>
-      <div class="field">
-        <label>Legacy Pool Address</label>
-        <input type="text" name="pubMetPoolLegacy" placeholder="Previous Meteora pool (if migrated)">
-        <div class="hint">If the project migrated pools, enter the old one here</div>
-      </div>
-      <div class="field">
-        <label>Team Locked Wallet</label>
-        <input type="text" name="teamLocked" placeholder="Performance lock / vesting wallet">
-        <div class="hint">Wallet holding team tokens that are locked/vesting</div>
-      </div>
-      <div class="field">
-        <label>Buyback Wallet</label>
-        <input type="text" name="buybackWallet" placeholder="Buyback wallet address">
-        <div class="hint">Wallet used for token buybacks (if any)</div>
-      </div>
-      <div class="field">
-        <label>Additional Treasury Wallets</label>
-        <textarea name="additionalWallets" placeholder="One address per line — any other wallets holding USDC for the DAO"></textarea>
-      </div>
+    <div class="field">
+      <label>Twitter / X</label>
+      <input type="text" name="twitter" placeholder="@projectname">
     </div>
 
-    <div class="form-section">
-      <div class="section-label">ICO & Financials</div>
-      <div class="row">
-        <div class="field">
-          <label>ICO Price (USDC) <span class="req">*</span></label>
-          <input type="number" name="icoPrice" step="any" placeholder="0.80" required>
-        </div>
-        <div class="field">
-          <label>TGE Date <span class="req">*</span></label>
-          <input type="date" name="tgeDate" required>
-          <div class="hint">Token Generation Event date</div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Monthly Allowance (USDC) <span class="req">*</span></label>
-          <input type="number" name="monthlyAllowance" step="any" placeholder="100000" required>
-          <div class="hint">Monthly budget the team draws from treasury</div>
-        </div>
-        <div class="field">
-          <label>Amount Raised (USDC)</label>
-          <input type="number" name="raised" step="any" placeholder="7400000">
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Total Token Supply</label>
-          <input type="number" name="totalSupply" step="any" placeholder="12900000">
-        </div>
-        <div class="field">
-          <label>Investor Vesting Total</label>
-          <input type="number" name="investorVestingTotal" step="any" placeholder="4356250">
-          <div class="hint">Total investor tokens with vesting schedule</div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Investor Vesting Months</label>
-          <input type="number" name="investorVestingMonths" placeholder="24">
-        </div>
-        <div class="field">
-          <label>Investor Vesting TGE</label>
-          <input type="date" name="investorVestingTge">
-          <div class="hint">When investor vesting starts</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <div class="section-label">Contact</div>
-      <div class="row">
-        <div class="field">
-          <label>Twitter / X <span class="req">*</span></label>
-          <input type="text" name="twitter" placeholder="@projectname" required>
-        </div>
-        <div class="field">
-          <label>Website</label>
-          <input type="text" name="website" placeholder="https://...">
-        </div>
-      </div>
-      <div class="field">
-        <label>Contact Email or Telegram</label>
-        <input type="text" name="contact" placeholder="For follow-up questions">
-      </div>
-      <div class="field">
-        <label>Notes</label>
-        <textarea name="notes" placeholder="Anything else we should know about your project"></textarea>
-      </div>
-    </div>
-
-    <button type="submit" class="submit-btn" id="submit-btn">Submit for Review</button>
+    <button type="submit" class="submit-btn" id="submit-btn">Discover & Submit</button>
     <div class="status" id="status"></div>
-
   </form>
 
+  <div class="discovery" id="discovery"></div>
+
   <div class="footer">
-    <a href="index.html">← NAVgator Home</a> · Submissions are reviewed within 48 hours · Not financial advice
+    <a href="index.html">← NAVgator Home</a> · Submissions reviewed before going live · Not financial advice
   </div>
 
 </div>
 
 <script>
+var META_HOLDING = '6awyHMshBGVjJ3ozdSJdyyDE1CTAXUwrpNMaRGMsb4sf';
+
 async function handleSubmit(e) {
   e.preventDefault();
   var btn = document.getElementById('submit-btn');
   var status = document.getElementById('status');
+  var discovery = document.getElementById('discovery');
   btn.disabled = true;
-  btn.textContent = 'Submitting…';
+  btn.textContent = 'Scanning on-chain data…';
   status.className = 'status';
   status.style.display = 'none';
+  discovery.className = 'discovery';
 
   var form = document.getElementById('submit-form');
   var data = {};
   new FormData(form).forEach(function(v, k) { data[k] = v; });
 
   try {
-    var res = await fetch('https://navgator-api.vercel.app/api/submit', {
+    var res = await fetch('https://navgator-api.vercel.app/api/discover', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     var json = await res.json();
-    if (res.ok) {
+
+    if (res.ok && json.draft) {
       status.className = 'status success';
-      status.textContent = '✓ Token submitted! We\'ll review and reach out within 48 hours.';
+      status.textContent = '✓ Token discovered and submitted for review!';
       status.style.display = 'block';
-      form.reset();
+      renderDiscovery(json.draft);
     } else {
-      throw new Error(json.error || 'Submission failed');
+      throw new Error(json.error || 'Discovery failed');
     }
   } catch (err) {
     status.className = 'status error';
-    status.textContent = '✗ ' + err.message + '. Please try again or reach out on Twitter.';
+    status.textContent = '✗ ' + err.message;
     status.style.display = 'block';
   }
   btn.disabled = false;
-  btn.textContent = 'Submit for Review';
+  btn.textContent = 'Discover & Submit';
+}
+
+function renderDiscovery(draft) {
+  var el = document.getElementById('discovery');
+  var fmtAddr = function(a) { return a ? a.slice(0, 6) + '…' + a.slice(-4) : '—'; };
+  var fmtN = function(n) { return n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : (n || 0).toString(); };
+  var fmtP = function(n) { return n >= 1 ? '$' + n.toFixed(2) : n > 0 ? '$' + n.toFixed(6) : '—'; };
+
+  var html = '';
+
+  // Overview
+  html += '<div class="disc-section"><div class="disc-title">Token Overview</div>';
+  html += '<div class="disc-row"><span class="disc-label">Name</span><span class="disc-value">' + draft.ticker + ' — ' + draft.name + '</span></div>';
+  html += '<div class="disc-row"><span class="disc-label">Price</span><span class="disc-value green">' + fmtP(draft.spot) + '</span></div>';
+  html += '<div class="disc-row"><span class="disc-label">Supply</span><span class="disc-value">' + fmtN(draft.supply.total) + '</span></div>';
+  html += '<div class="disc-row"><span class="disc-label">MetaDAO Holdings</span><span class="disc-value">' + fmtN(draft.metaHoldingTokens) + '</span></div>';
+  html += '</div>';
+
+  // Top holders
+  if (draft.holders && draft.holders.length > 0) {
+    html += '<div class="disc-section"><div class="disc-title">Top Holders (auto-classified)</div>';
+    draft.holders.forEach(function(h) {
+      var badge = '';
+      if (h.address === draft.classified.likelyDAO) badge = '<span class="disc-badge dao">Likely DAO</span>';
+      else if (h.address === draft.classified.likelyFutAmm) badge = '<span class="disc-badge amm">Likely Fut AMM</span>';
+      else if (h.address === draft.classified.likelyTeamLock) badge = '<span class="disc-badge lock">Likely Team Lock</span>';
+      else if (h.address === META_HOLDING) badge = '<span class="disc-badge meta">MetaDAO</span>';
+
+      html += '<div class="disc-holder">';
+      html += '<div><span class="disc-addr">' + fmtAddr(h.address) + '</span>' + badge + '</div>';
+      html += '<div style="display:flex;gap:16px;margin-top:2px;color:var(--dim)">';
+      html += '<span>' + fmtN(h.tokenBalance) + ' tokens (' + h.tokenPct + ')</span>';
+      if (h.usdcBalance > 0) html += '<span style="color:var(--green)">' + fmtN(h.usdcBalance) + ' USDC</span>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  // Meteora pools
+  if (draft.meteoraPools && draft.meteoraPools.length > 0) {
+    html += '<div class="disc-section"><div class="disc-title">Meteora Pools Found</div>';
+    draft.meteoraPools.forEach(function(p) {
+      html += '<div class="disc-row"><span class="disc-addr">' + fmtAddr(p.address) + '</span><span class="disc-value">' + (p.isUSDCPair ? 'USDC pair' : 'Other pair') + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  // Suggested config
+  html += '<div class="disc-section"><div class="disc-title">Suggested Config (for tokens.js)</div>';
+  html += '<pre style="font-size:10px;color:var(--text);overflow-x:auto;white-space:pre-wrap;font-family:JetBrains Mono,monospace;line-height:1.6">';
+  var cfg = draft.suggestedConfig;
+  var key = draft.ticker.toLowerCase();
+  html += key + ': {\n';
+  html += '  ticker: \'' + draft.ticker + '\', name: \'' + draft.name + '\',\n';
+  html += '  mint: \'' + cfg.mint + '\',\n';
+  html += '  usdcMint: \'' + cfg.usdcMint + '\',\n';
+  html += '  daoWallet: \'' + cfg.daoWallet + '\',\n';
+  html += '  futAmm: \'' + cfg.futAmm + '\',\n';
+  html += '  metAmm: \'' + cfg.metAmm + '\',\n';
+  html += '  metAmmUsdc: \'' + cfg.metAmmUsdc + '\',\n';
+  if (cfg.teamLocked) html += '  teamLocked: \'' + cfg.teamLocked + '\',\n';
+  if (cfg.buybackWallet) html += '  buybackWallet: \'' + cfg.buybackWallet + '\',\n';
+  html += '  pubMetPool: \'' + cfg.pubMetPool + '\',\n';
+  html += '  monthlyAllowance: ' + cfg.monthlyAllowance + ',\n';
+  html += '},';
+  html += '</pre></div>';
+
+  el.innerHTML = html;
+  el.className = 'discovery show';
 }
 </script>
 </body>
