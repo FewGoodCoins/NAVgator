@@ -22,7 +22,8 @@
 
   /* Nav bar */
   .nav { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
-  .nav-brand { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; display: inline; }
+  .nav-brand { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; display: inline; transition: text-shadow 0.2s; }
+  .nav-brand:hover { text-shadow: 0 0 12px rgba(0,229,160,0.5), 0 0 24px rgba(0,229,160,0.2); }
   .nav-brand span { color: #00b86e; font-weight: 700; }
   .nav-brand-icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, var(--green), #00b880); font-family: 'DM Serif Display', serif; font-size: 13px; font-weight: 400; color: #0c0c10; flex-shrink: 0; }
   .nav-sep { color: var(--dim); }
@@ -178,7 +179,8 @@
   .landing-nav-left { display: flex; align-items: center; gap: 12px; }
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
-  .landing-nav-left .brand-text { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; }
+  .landing-nav-left .brand-text { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: var(--white); letter-spacing: -0.5px; transition: text-shadow 0.2s; }
+  .landing-nav-left .brand:hover .brand-text { text-shadow: 0 0 12px rgba(0,229,160,0.5), 0 0 24px rgba(0,229,160,0.2); }
   .landing-nav-left .brand-text span { color: #00b86e; font-weight: 700; }
   .landing-nav-left .brand-stat { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--muted); margin-left: 8px; padding-left: 12px; border-left: 1px solid var(--border2); }
   .landing-nav-left .brand-stat b { color: var(--white); font-weight: 600; }
@@ -295,7 +297,7 @@
   .wl-star svg { width: 15px; height: 15px; fill: currentColor; }
 
   /* Watchlist sidebar */
-  .wl-sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; transition: top 0.15s; }
+  .wl-sidebar { position: fixed; left: 0; top: 0; width: 180px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border2); border-top: 1px solid var(--border2); z-index: 100; display: none; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; transition: top 0.15s; }
   .wl-sidebar.open { display: flex; }
   .wl-sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
   .wl-sidebar-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -311,8 +313,8 @@
   .wl-sidebar-empty { padding: 20px 14px; font-size: 11px; color: var(--dim); text-align: center; }
   .wl-sidebar-toggle { position: fixed; left: 0; top: 50px; z-index: 99; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-radius: 0 6px 6px 0; padding: 8px 6px; cursor: pointer; color: var(--dim); font-size: 14px; transition: all 0.15s; display: none; }
   .wl-sidebar-toggle:hover { color: var(--white); border-color: var(--green); }
-  .dashboard.has-sidebar { margin-left: 220px; }
-  @media (max-width: 900px) { .wl-sidebar { width: 180px; } .dashboard.has-sidebar { margin-left: 180px; } }
+  .dashboard.has-sidebar { margin-left: 180px; }
+  @media (max-width: 900px) { .wl-sidebar { width: 160px; } .dashboard.has-sidebar { margin-left: 160px; } }
   @media (max-width: 600px) { .wl-sidebar { width: 100%; } .dashboard.has-sidebar { margin-left: 0; } }
 </style>
 </head>
@@ -354,7 +356,7 @@
             <th>vs NAV</th>
             <th>Treasury</th>
             <th>MCap</th>
-            <th class="no-sort" style="cursor:default">Trend <span style="font-size:8px;color:var(--dim);font-weight:500">7D</span></th>
+            <th>Trend <span style="font-size:8px;color:var(--dim);font-weight:500">7D</span></th>
           </tr>
         </thead>
         <tbody id="token-tbody"></tbody>
@@ -791,8 +793,8 @@ if (!_hasToken) {
   let currentSort = 'treasury';
   let sortDir = 'desc'; // 'asc' or 'desc'
 
-  const sortKeys = ['', '', 'name', 'price', 'nav', 'vsNav', 'treasury', 'mcap', ''];
-  // Column index: 0=#, 1=Name, 2=Price, 3=NAV, 4=vsNAV, 5=Treasury, 6=MCap, 7=Trend
+  const sortKeys = ['', '', 'name', 'price', 'nav', 'vsNav', 'treasury', 'mcap', 'trend'];
+  // Column index: 0=star, 1=#, 2=Name, 3=Price, 4=NAV, 5=vsNAV, 6=Treasury, 7=MCap, 8=Trend
 
   // Watchlist
   var _watchlist = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
@@ -843,6 +845,7 @@ if (!_hasToken) {
         vb = b.strike > 0 ? (b.spot - b.strike) / b.strike : -999;
       }
       else if (currentSort === 'mcap') { va = a.mcap; vb = b.mcap; }
+      else if (currentSort === 'trend') { va = a.change7d || 0; vb = b.change7d || 0; }
       else if (currentSort === 'name') { return sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name); }
       else { va = a.mcap; vb = b.mcap; }
       return sortDir === 'asc' ? va - vb : vb - va;
@@ -1139,22 +1142,22 @@ function toggleSidebar() {
 window.toggleSidebar = toggleSidebar;
 
 function updateSidebarUI() {
-  // Get chart top for alignment
-  var chartTop = 0;
-  var chart = document.querySelector('.chart-layout');
-  if (chart) chartTop = chart.getBoundingClientRect().top;
+  // Get nav bottom for alignment (below the NAVgator | SOLO UMBRA bar)
+  var navBottom = 0;
+  var nav = document.querySelector('.nav');
+  if (nav) navBottom = nav.getBoundingClientRect().bottom;
 
   if (_sidebarOpen && _dashWL.length > 0) {
     sidebarEl.classList.add('open');
     sidebarToggle.style.display = 'none';
     dashEl.classList.add('has-sidebar');
-    sidebarEl.style.top = chartTop + 'px';
-    sidebarEl.style.height = 'calc(100vh - ' + chartTop + 'px)';
+    sidebarEl.style.top = navBottom + 'px';
+    sidebarEl.style.height = 'calc(100vh - ' + navBottom + 'px)';
   } else {
     sidebarEl.classList.remove('open');
     if (_dashWL.length > 0) {
       sidebarToggle.style.display = 'block';
-      sidebarToggle.style.top = chartTop + 'px';
+      sidebarToggle.style.top = navBottom + 'px';
     } else {
       sidebarToggle.style.display = 'none';
     }
