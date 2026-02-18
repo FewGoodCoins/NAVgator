@@ -1248,7 +1248,12 @@ function attachChartEvents(container) {
     if (mxScaled > w - dragZone && myScaled <= _chart.height - dragZone) {
       canvas.style.cursor = 'ns-resize';
     } else if (myScaled > _chart.height - dragZone && mxScaled <= w - dragZone) {
-      canvas.style.cursor = 'ew-resize';
+      // Show directional cursor based on available zoom/pan
+      var canZoomIn = (_chart.viewEnd - _chart.viewStart) > 0.06;
+      var canZoomOut = (_chart.viewEnd - _chart.viewStart) < 0.99;
+      if (canZoomIn && canZoomOut) canvas.style.cursor = 'ew-resize';
+      else if (canZoomOut) canvas.style.cursor = 'w-resize';
+      else canvas.style.cursor = 'e-resize';
     } else if (mxScaled >= cpad.left && mxScaled <= w - dragZone && myScaled >= cpad.top && myScaled <= _chart.height - dragZone) {
       canvas.style.cursor = 'crosshair';
     } else {
