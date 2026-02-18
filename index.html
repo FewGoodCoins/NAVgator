@@ -270,6 +270,9 @@
   .compare-ath-bar-fill { height: 100%; border-radius: 4px; }
   .compare-ath-val { width: 60px; text-align: right; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
   @media (max-width: 500px) { .compare-selectors { flex-direction: column; } .compare-select { min-width: 100%; } }
+  .wl-star { cursor: pointer; font-size: 14px; color: var(--dim); transition: all 0.15s; user-select: none; }
+  .wl-star:hover { color: var(--green); }
+  .wl-star.active { color: var(--green); }
 </style>
 </head>
 <body>
@@ -285,9 +288,10 @@
             <div class="brand-text">NAV<span>gator</span></div>
           </a>
           <div class="brand-stat" id="landing-total-mcap">MCap: <b id="landing-mcap-total">—</b></div>
-          <div class="brand-stat" id="landing-total-treasury">NAV: <b id="landing-nav-total">—</b></div>
+          <div class="brand-stat" id="landing-total-treasury" style="border-left:none;padding-left:0;margin-left:4px">NAV: <b id="landing-nav-total">—</b></div>
         </div>
         <div class="landing-nav-right">
+          <a href="#" id="nav-watchlist-btn" class="compare-btn" style="font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:8px;color:var(--muted);text-decoration:none;transition:all 0.15s">★ Watchlist</a>
           <a href="index.html?compare" class="compare-btn" style="font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:8px;color:var(--muted);text-decoration:none;transition:all 0.15s">Compare</a>
           <a href="https://metadao.fi" target="_blank">MetaDAO</a>
           <a href="submit.html" class="submit-btn">+ Submit Token</a>
@@ -299,6 +303,7 @@
       <table class="token-table" id="token-table">
         <thead>
           <tr>
+            <th class="no-sort" style="cursor:default;width:30px"></th>
             <th>#</th>
             <th style="text-align:left">Name</th>
             <th>Price <span style="font-size:8px;color:var(--dim);font-weight:500">7D</span></th>
@@ -356,6 +361,7 @@
       <div class="token-header-icon" id="token-icon"></div>
       <span class="token-header-title" id="token-title-name"></span>
       <span class="token-header-ticker" id="token-title-ticker"></span>
+      <span class="wl-star" id="dash-wl-star" style="font-size:20px;margin-left:8px;cursor:pointer" onclick="toggleDashWatch()">★</span>
     </div>
     <div class="cards" id="cards"></div>
   </div>
@@ -584,15 +590,11 @@ if (_isCompare) {
           makeBar(mcapA, mcapB, tA.color, tB.color, cmpFmtM(mcapA), cmpFmtM(mcapB), mcapWinner + ' is ' + mcapRatio + 'x larger') +
         '</div>' +
 
-        // Price, NAV & Discount
+        // Price, NAV, Discount & Runway — single card
         '<div class="compare-card">' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--white)">' + cmpFmt$(spotA) + '</div><div class="compare-perf-center">Price</div><div class="compare-perf-right" style="color:var(--white)">' + cmpFmt$(spotB) + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--white)">' + cmpFmt$(navA) + '</div><div class="compare-perf-center">NAV</div><div class="compare-perf-right" style="color:var(--white)">' + cmpFmt$(navB) + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:' + cmpColor(discA) + '">' + cmpPct(discA) + '</div><div class="compare-perf-center">vs NAV</div><div class="compare-perf-right" style="color:' + cmpColor(discB) + '">' + cmpPct(discB) + '</div></div>' +
-        '</div>' +
-
-        // Runway
-        '<div class="compare-card">' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--orange)">' + (runA === Infinity ? '∞' : runA + ' mo') + '</div><div class="compare-perf-center">Runway</div><div class="compare-perf-right" style="color:var(--orange)">' + (runB === Infinity ? '∞' : runB + ' mo') + '</div></div>' +
           '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--dim)">' + cmpFmtM(burnA) + '/mo</div><div class="compare-perf-center">Allowance</div><div class="compare-perf-right" style="color:var(--dim)">' + cmpFmtM(burnB) + '/mo</div></div>' +
         '</div>';
@@ -719,11 +721,40 @@ if (!_hasToken) {
   let currentSort = 'treasury';
   let sortDir = 'desc'; // 'asc' or 'desc'
 
-  const sortKeys = ['', 'name', 'price', 'nav', 'vsNav', 'treasury', 'mcap', ''];
+  const sortKeys = ['', '', 'name', 'price', 'nav', 'vsNav', 'treasury', 'mcap', ''];
   // Column index: 0=#, 1=Name, 2=Price, 3=NAV, 4=vsNAV, 5=Treasury, 6=MCap, 7=Trend
 
+  // Watchlist
+  var _watchlist = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
+  var _activeFilter = 'all';
+
+  function isWatched(key) { return _watchlist.indexOf(key) !== -1; }
+  function toggleWatch(key, e) {
+    e.stopPropagation();
+    var idx = _watchlist.indexOf(key);
+    if (idx === -1) _watchlist.push(key); else _watchlist.splice(idx, 1);
+    localStorage.setItem('navgator_watchlist', JSON.stringify(_watchlist));
+    renderTable();
+  }
+
+  // Watchlist nav toggle
+  var wlNavBtn = document.getElementById('nav-watchlist-btn');
+  if (wlNavBtn) {
+    wlNavBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      _activeFilter = _activeFilter === 'watchlist' ? 'all' : 'watchlist';
+      wlNavBtn.style.borderColor = _activeFilter === 'watchlist' ? 'var(--green)' : '';
+      wlNavBtn.style.color = _activeFilter === 'watchlist' ? 'var(--green)' : '';
+      renderTable();
+    });
+  }
+
   function renderTable() {
-    const sorted = [...landingTokens].sort((a, b) => {
+    var filtered = _activeFilter === 'watchlist'
+      ? landingTokens.filter(function(t) { return isWatched(t.key); })
+      : landingTokens;
+
+    const sorted = [...filtered].sort((a, b) => {
       let va, vb;
       if (currentSort === 'treasury') { va = a.treasury; vb = b.treasury; }
       else if (currentSort === 'price') { va = a.change7d || 0; vb = b.change7d || 0; }
@@ -742,6 +773,7 @@ if (!_hasToken) {
     tbody.innerHTML = sorted.map((t, i) => {
       if (!t.live) {
         return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4">' +
+          '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + (isWatched(t.key) ? '★' : '☆') + '</span></td>' +
           '<td>' + (i + 1) + '</td>' +
           '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
           '<td colspan="6"><span class="tt-coming">Coming Soon</span></td></tr>';
@@ -754,6 +786,7 @@ if (!_hasToken) {
       var noData = t.spot === 0;
 
       return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
+        '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + (isWatched(t.key) ? '★' : '☆') + '</span></td>' +
         '<td>' + (i + 1) + '</td>' +
         '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
         '<td><div class="tt-price">' + (noData ? '—' : lfmt$(t.spot)) + (t.change7d !== undefined ? '<div style="font-size:11px;margin-top:2px;color:' + (t.change7d >= 0 ? 'var(--green)' : '#e84057') + '">' + (t.change7d >= 0 ? '▲' : '▼') + ' ' + Math.abs(t.change7d).toFixed(2) + '%</div>' : '') + '</div></td>' +
@@ -764,6 +797,10 @@ if (!_hasToken) {
         '<td><div class="spark-container tt-sparkline" data-token="' + t.key + '"></div></td>' +
         '</tr>';
     }).join('');
+
+    if (_activeFilter === 'watchlist' && filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--dim);font-size:13px">No tokens in your watchlist yet. Click ★ to add one.</td></tr>';
+    }
 
     // Sort header highlights and arrows
     document.querySelectorAll('.token-table thead th').forEach((th, idx) => {
@@ -921,6 +958,21 @@ const params = new URLSearchParams(window.location.search);
 const tokenKey = (params.get('token') || 'solo').toLowerCase();
 const CFG = TOKENS[tokenKey] || TOKENS.solo;
 const API_BASE_DASH = 'https://navgator-api.vercel.app';
+
+// Dashboard watchlist
+var _dashWL = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
+var dashStarEl = document.getElementById('dash-wl-star');
+function updateDashStar() {
+  var watched = _dashWL.indexOf(tokenKey) !== -1;
+  if (dashStarEl) { dashStarEl.classList.toggle('active', watched); dashStarEl.textContent = watched ? '★' : '☆'; }
+}
+updateDashStar();
+window.toggleDashWatch = function() {
+  var idx = _dashWL.indexOf(tokenKey);
+  if (idx === -1) _dashWL.push(tokenKey); else _dashWL.splice(idx, 1);
+  localStorage.setItem('navgator_watchlist', JSON.stringify(_dashWL));
+  updateDashStar();
+};
 
 document.title = `NAVgator · ${CFG.ticker}/USDC — Treasury Analytics`;
 
