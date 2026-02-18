@@ -77,6 +77,17 @@
 
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 28px; margin-bottom: 28px; position: relative; overflow: visible; }
+  .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
+  .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
+  .metrics-panel { width: 200px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; }
+  .mp-box.price-box { padding: 16px 14px; }
+  .mp-label { font-size: 9px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .mp-value { font-family: 'JetBrains Mono', 'Inter', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); }
+  .mp-value.large { font-size: 24px; }
+  .mp-sub { font-size: 10px; color: var(--dim); margin-top: 2px; }
+  .mp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 900px) { .chart-layout { flex-direction: column; } .metrics-panel { width: 100%; flex-direction: row; flex-wrap: wrap; } .metrics-panel .mp-box { flex: 1; min-width: 140px; } .mp-pair { flex: 2; min-width: 290px; } }
   .chart-title { display: none; }
   .chart-controls { display: flex; gap: 6px; margin-bottom: 12px; z-index: 2; align-items: center; }
   .chart-btn-group { display: flex; gap: 4px; }
@@ -290,8 +301,8 @@
   .wl-sidebar-price { font-size: 11px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
   .wl-sidebar-change { font-size: 10px; font-family: 'JetBrains Mono', monospace; }
   .wl-sidebar-empty { padding: 20px 14px; font-size: 11px; color: var(--dim); text-align: center; }
-  .wl-sidebar-toggle { position: fixed; left: 12px; top: 50%; transform: translateY(-50%); z-index: 99; background: var(--bg2); border: 1px solid var(--border2); border-radius: 6px; padding: 8px 6px; cursor: pointer; color: var(--dim); font-size: 11px; transition: all 0.15s; display: none; writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 1px; }
-  .wl-sidebar-toggle:hover { color: var(--green); border-color: var(--green); }
+  .wl-sidebar-toggle { position: fixed; left: 0; top: 50px; z-index: 99; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-radius: 0 6px 6px 0; padding: 8px 6px; cursor: pointer; color: var(--dim); font-size: 14px; transition: all 0.15s; display: none; }
+  .wl-sidebar-toggle:hover { color: var(--white); border-color: var(--green); }
   .dashboard.has-sidebar { margin-left: 220px; }
   @media (max-width: 900px) { .wl-sidebar { width: 180px; } .dashboard.has-sidebar { margin-left: 180px; } }
   @media (max-width: 600px) { .wl-sidebar { width: 100%; } .dashboard.has-sidebar { margin-left: 0; } }
@@ -379,7 +390,7 @@
     </div>
     <div class="wl-sidebar-list" id="wl-sidebar-list"></div>
   </div>
-  <button class="wl-sidebar-toggle" id="wl-sidebar-toggle" onclick="toggleSidebar()">★ WATCHLIST</button>
+  <button class="wl-sidebar-toggle" id="wl-sidebar-toggle" onclick="toggleSidebar()">»</button>
 
   <!-- ══ DASHBOARD VIEW ══ -->
   <div class="dashboard" id="dashboard-view">
@@ -387,7 +398,7 @@
   <!-- Nav -->
   <nav class="nav" id="nav"></nav>
 
-  <!-- Token header + metrics row -->
+  <!-- Token header -->
   <div class="token-metrics-row">
     <div class="token-header-above">
       <div class="token-header-icon" id="token-icon"></div>
@@ -397,39 +408,57 @@
         <span class="wl-star" id="dash-wl-star" style="cursor:pointer" onclick="toggleDashWatch()"><svg viewBox="0 0 20 18" style="width:20px;height:18px"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
       </div>
     </div>
-    <div class="cards" id="cards"></div>
   </div>
 
-  <!-- Chart section — dominates the page -->
-  <div class="chart-section">
-    <div class="price-hero-border">
-      <span class="price-hero-value" id="price-hero-val"></span>
-      <span class="price-hero-pct" id="price-hero-pct" style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;margin-left:10px"></span>
-    </div>
-    <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
-    <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
-      <div class="chart-btn-group">
-        <button class="chart-btn" data-tf="6H">6H</button>
-        <button class="chart-btn" data-tf="12H">12H</button>
-        <button class="chart-btn active" data-tf="1D">1D</button>
+  <!-- Chart + Metrics Panel -->
+  <div class="chart-layout">
+    <div class="chart-section">
+      <div class="price-hero-border">
+        <span class="price-hero-value" id="price-hero-val"></span>
+        <span class="price-hero-pct" id="price-hero-pct" style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;margin-left:10px"></span>
       </div>
-      <div class="chart-btn-group" style="margin-left:12px">
-        <button class="chart-btn active" id="btn-lin">LINE</button>
+      <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
+      <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
+        <div class="chart-btn-group">
+          <button class="chart-btn" data-tf="6H">6H</button>
+          <button class="chart-btn" data-tf="12H">12H</button>
+          <button class="chart-btn active" data-tf="1D">1D</button>
+        </div>
+        <div class="chart-btn-group" style="margin-left:12px">
+          <button class="chart-btn active" id="btn-lin">LINE</button>
+        </div>
+        <div class="chart-btn-group" style="margin-left:12px">
+          <button class="chart-btn" id="btn-nav-focus" onclick="toggleNavFocus()">NAV</button>
+        </div>
       </div>
-      <div class="chart-btn-group" style="margin-left:12px">
-        <button class="chart-btn" id="btn-nav-focus" onclick="toggleNavFocus()">NAV</button>
+      <div id="chart-container" style="position:relative;cursor:default">
+        <canvas id="chart-canvas"></canvas>
+        <div class="chart-tooltip" id="chart-tooltip"></div>
+        <div class="chart-loading" id="chart-loading">Loading chart…</div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
+        <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="4" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="7" y1="1.5" x2="11" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="14" y1="1.5" x2="18" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/></svg></span> <span id="leg-nav-label">NAV</span></span>
+        <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
+        <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
       </div>
     </div>
-    <div id="chart-container" style="position:relative;cursor:default">
-      <canvas id="chart-canvas"></canvas>
-      <div class="chart-tooltip" id="chart-tooltip"></div>
-      <div class="chart-loading" id="chart-loading">Loading chart…</div>
-    </div>
-    <div class="legend">
-      <span class="legend-item"><span class="legend-line" style="background:#e8e6e3"></span> <span id="leg-spot-label">Price</span></span>
-      <span class="legend-item"><span class="legend-dash"><svg viewBox="0 0 20 3"><line x1="0" y1="1.5" x2="4" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="7" y1="1.5" x2="11" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/><line x1="14" y1="1.5" x2="18" y2="1.5" stroke="#e8e6e3" stroke-width="1.5" stroke-linecap="butt"/></svg></span> <span id="leg-nav-label">NAV</span></span>
-      <span class="legend-item"><span class="legend-fill" style="background:rgba(0,229,160,0.2)"></span> Above NAV</span>
-      <span class="legend-item"><span class="legend-fill" style="background:rgba(232,64,87,0.2)"></span> Below NAV</span>
+
+    <!-- Metrics Panel -->
+    <div class="metrics-panel" id="metrics-panel">
+      <div class="mp-box price-box" id="mp-price"></div>
+      <div class="mp-pair">
+        <div class="mp-box" id="mp-nav"></div>
+        <div class="mp-box" id="mp-vsnav"></div>
+      </div>
+      <div class="mp-pair">
+        <div class="mp-box" id="mp-mcap"></div>
+        <div class="mp-box" id="mp-treasury"></div>
+      </div>
+      <div class="mp-pair">
+        <div class="mp-box" id="mp-runway"></div>
+        <div class="mp-box" id="mp-activity"></div>
+      </div>
     </div>
   </div>
 
@@ -1988,12 +2017,34 @@ function renderUI(isLive) {
   var circulatingSupply = (CFG.onChainSupply || supplyForNAV) - (CFG.lockTokenBalance || 0);
   if (circulatingSupply <= 0) circulatingSupply = supplyForNAV;
 
-  document.getElementById('cards').innerHTML =
-    '<div class="card"><div class="card-label">Treasury</div><div class="card-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="card-sub">DAO + AMMs</div></div>' +
-    '<div class="card"><div class="card-label">NAV / Token</div><div class="card-value" style="color:var(--white)">' + fmt$(strike) + '</div><div class="card-sub">treasury \u00f7 holder supply</div></div>' +
-    '<div class="card" onclick="togglePremiumFormat()" style="cursor:pointer"><div class="card-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="card-value" id="prem-val" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="card-sub" id="prem-sub">' + (isDiscount ? 'below NAV' : 'above NAV') + '</div></div>' +
-    '<div class="card"><div class="card-label">Runway</div><div class="card-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="card-sub">' + fmtM(burn) + '/month</div></div>' +
-    '<div class="card"><div class="card-label">MCap</div><div class="card-value" style="color:var(--white)">' + fmtM(CFG.spot * circulatingSupply) + '</div><div class="card-sub">' + (circulatingSupply / 1e6).toFixed(1) + 'M circulating</div></div>';
+  // Metrics panel
+  var mpPrice = document.getElementById('mp-price');
+  if (mpPrice) mpPrice.innerHTML = '<div class="mp-label">Price</div><div class="mp-value large">' + fmt$(CFG.spot) + '</div>';
+
+  var mpNav = document.getElementById('mp-nav');
+  if (mpNav) mpNav.innerHTML = '<div class="mp-label">NAV</div><div class="mp-value">' + fmt$(strike) + '</div><div class="mp-sub">per token</div>';
+
+  var mpVsnav = document.getElementById('mp-vsnav');
+  if (mpVsnav) mpVsnav.innerHTML = '<div class="mp-label">' + (isDiscount ? 'Discount' : 'Premium') + '</div><div class="mp-value" style="color:' + (isDiscount ? 'var(--red)' : 'var(--green)') + '">' + (isDiscount ? '-' + Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%') + '</div><div class="mp-sub">' + (isDiscount ? 'below NAV' : 'above NAV') + '</div>';
+
+  var mpMcap = document.getElementById('mp-mcap');
+  if (mpMcap) mpMcap.innerHTML = '<div class="mp-label">MCap</div><div class="mp-value">' + fmtM(CFG.spot * circulatingSupply) + '</div><div class="mp-sub">' + (circulatingSupply / 1e6).toFixed(1) + 'M circ</div>';
+
+  var mpTreasury = document.getElementById('mp-treasury');
+  if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="mp-sub">DAO + AMMs</div>';
+
+  var mpRunway = document.getElementById('mp-runway');
+  if (mpRunway) mpRunway.innerHTML = '<div class="mp-label">Runway</div><div class="mp-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="mp-sub">' + fmtM(burn) + '/mo</div>';
+
+  // Activity box: withdrawn + months live (estimate from ICO price * supply vs current treasury)
+  var mpActivity = document.getElementById('mp-activity');
+  if (mpActivity) {
+    var raised = CFG.icoPrice * (CFG.supply || supplyForNAV);
+    var withdrawn = raised - CFG.treasuryUSDC;
+    if (withdrawn < 0) withdrawn = 0;
+    var monthsLiveEst = burn > 0 ? Math.round(withdrawn / burn) : 0;
+    mpActivity.innerHTML = '<div class="mp-label">Withdrawn</div><div class="mp-value">' + fmtM(withdrawn) + '</div><div class="mp-sub">' + monthsLiveEst + ' mo live</div>';
+  }
 
   document.getElementById('params').innerHTML =
     '<span>ICO <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
@@ -2261,7 +2312,7 @@ function renderAllowance(data) {
   if (priceEl) priceEl.textContent = '—';
   var priceChangeEl = document.getElementById('price-hero-change');
   if (priceChangeEl) priceChangeEl.textContent = '';
-  var cardsEl = document.getElementById('cards');
+  var cardsEl = document.getElementById('metrics-panel');
   if (cardsEl) cardsEl.style.opacity = '0';
   var paramsEl = document.getElementById('params');
   if (paramsEl) paramsEl.style.opacity = '0';
