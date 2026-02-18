@@ -231,6 +231,45 @@
   .how h2 { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin-bottom: 24px; }
   .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
   @media (max-width: 600px) { .how-grid { grid-template-columns: 1fr; } }
+
+  /* Compare page */
+  .compare { display: none; max-width: 700px; margin: 0 auto; padding: 30px 20px; font-family: 'Inter', sans-serif; }
+  .compare.active { display: block; }
+  .compare-header { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; }
+  .compare-back { font-size: 22px; color: var(--muted); text-decoration: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border2); border-radius: 8px; transition: all 0.15s; }
+  .compare-back:hover { color: var(--white); border-color: var(--green); }
+  .compare-title { font-size: 20px; font-weight: 700; color: var(--white); }
+  .compare-selectors { display: flex; align-items: center; gap: 12px; justify-content: center; margin-bottom: 16px; }
+  .compare-select { font-family: 'Inter', sans-serif; font-size: 14px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border2); background: var(--bg2); color: var(--white); min-width: 200px; appearance: auto; cursor: pointer; }
+  .compare-swap { font-size: 18px; color: var(--muted); cursor: pointer; padding: 8px; border: 1px solid var(--border2); border-radius: 8px; transition: all 0.15s; user-select: none; }
+  .compare-swap:hover { color: var(--white); border-color: var(--green); }
+  .compare-quick { display: flex; gap: 8px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+  .compare-quick-btn { font-family: 'Inter', sans-serif; font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .compare-quick-btn:hover { color: var(--white); border-color: var(--green); }
+  .compare-placeholder { text-align: center; color: var(--dim); font-size: 14px; padding: 60px 0; }
+  .compare-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .compare-card-label { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+  .compare-versus { display: flex; justify-content: center; align-items: center; gap: 16px; margin-bottom: 24px; padding: 20px 0; }
+  .compare-versus-token { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; color: var(--white); }
+  .compare-versus-token img { width: 32px; height: 32px; border-radius: 50%; }
+  .compare-versus-vs { font-size: 13px; color: var(--dim); font-weight: 400; }
+  .compare-bar-wrap { margin-bottom: 6px; }
+  .compare-bar { height: 8px; border-radius: 4px; display: flex; overflow: hidden; margin-bottom: 4px; }
+  .compare-bar-a { height: 100%; border-radius: 4px 0 0 4px; }
+  .compare-bar-b { height: 100%; border-radius: 0 4px 4px 0; }
+  .compare-bar-labels { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; }
+  .compare-bar-note { text-align: center; font-size: 11px; color: var(--dim); margin-top: 2px; }
+  .compare-perf-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .compare-perf-row:last-child { border-bottom: none; }
+  .compare-perf-left { flex: 1; text-align: left; font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .compare-perf-center { width: 100px; text-align: center; font-size: 12px; color: var(--dim); font-weight: 500; }
+  .compare-perf-right { flex: 1; text-align: right; font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .compare-ath-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .compare-ath-label { width: 60px; font-size: 12px; font-weight: 600; color: var(--white); }
+  .compare-ath-bar-bg { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+  .compare-ath-bar-fill { height: 100%; border-radius: 4px; }
+  .compare-ath-val { width: 60px; text-align: right; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  @media (max-width: 500px) { .compare-selectors { flex-direction: column; } .compare-select { min-width: 100%; } }
 </style>
 </head>
 <body>
@@ -248,6 +287,7 @@
           <div class="brand-stat" id="landing-total-treasury">NAV: <b id="landing-nav-total">—</b></div>
         </div>
         <div class="landing-nav-right">
+          <a href="index.html?compare" class="compare-btn" style="font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:8px;color:var(--muted);text-decoration:none;transition:all 0.15s">Compare</a>
           <a href="https://metadao.fi" target="_blank">MetaDAO</a>
           <a href="submit.html" class="submit-btn">+ Submit Token</a>
         </div>
@@ -281,6 +321,26 @@
       </div>
     </div>
     <div class="footer">NAVgator · Treasury analytics for ownership tokens · <a href="https://metadao.fi" target="_blank">MetaDAO</a> · <a href="submit.html">Submit a Token</a> · Data via NAVgator API + Solana RPC · Not financial advice</div>
+  </div>
+
+  <!-- ══ COMPARE VIEW ══ -->
+  <div class="compare" id="compare-view">
+    <div class="compare-header">
+      <a href="index.html" class="compare-back">←</a>
+      <h2 class="compare-title">Compare Tokens</h2>
+    </div>
+
+    <div class="compare-selectors">
+      <select id="compare-a" class="compare-select"><option value="">Select token</option></select>
+      <div class="compare-swap" onclick="swapCompare()">⇅</div>
+      <select id="compare-b" class="compare-select"><option value="">Select token</option></select>
+    </div>
+
+    <div class="compare-quick" id="compare-quick"></div>
+
+    <div class="compare-body" id="compare-body">
+      <div class="compare-placeholder">Select two tokens above to compare</div>
+    </div>
   </div>
 
   <!-- ══ DASHBOARD VIEW ══ -->
@@ -364,8 +424,12 @@
 // ═══════════════════════════════════════════════════════════════════════
 const _params = new URLSearchParams(window.location.search);
 const _hasToken = _params.has('token');
+const _isCompare = _params.has('compare');
 
-if (_hasToken) {
+if (_isCompare) {
+  document.getElementById('compare-view').classList.add('active');
+  document.title = 'NAVgator · Compare Tokens';
+} else if (_hasToken) {
   document.getElementById('dashboard-view').classList.add('active');
   document.title = 'NAVgator · Dashboard';
 } else {
@@ -410,6 +474,157 @@ const TOKENS = {
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
 };
+// ═══════════════════════════════════════════════════════════════════════
+// COMPARE PAGE LOGIC
+// ═══════════════════════════════════════════════════════════════════════
+if (_isCompare) {
+  var cmpAPI = 'https://navgator-api.vercel.app';
+  var cmpTokens = {};
+  var cmpFmt$ = function(n) { return n >= 1 ? '$' + n.toFixed(2) : n >= 0.01 ? '$' + n.toFixed(4) : '$' + n.toFixed(6); };
+  var cmpFmtM = function(n) { return n >= 1e6 ? '$' + (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? '$' + (n / 1e3).toFixed(0) + 'K' : '$' + n.toFixed(0); };
+  var cmpPct = function(n) { var s = n >= 0 ? '+' + n.toFixed(2) + '%' : n.toFixed(2) + '%'; return s; };
+  var cmpColor = function(n) { return n >= 0 ? 'var(--green)' : '#e84057'; };
+
+  // Populate dropdowns
+  var selA = document.getElementById('compare-a');
+  var selB = document.getElementById('compare-b');
+  Object.entries(TOKENS).forEach(function(e) {
+    if (!e[1].live) return;
+    selA.innerHTML += '<option value="' + e[0] + '">' + e[1].ticker + ' — ' + e[1].name + '</option>';
+    selB.innerHTML += '<option value="' + e[0] + '">' + e[1].ticker + ' — ' + e[1].name + '</option>';
+  });
+
+  // Quick pairs
+  var pairs = [['solo','umbra'], ['solo','avici'], ['avici','omfg'], ['umbra','omfg']];
+  var quickEl = document.getElementById('compare-quick');
+  quickEl.innerHTML = '<span style="font-size:11px;color:var(--dim)">Popular:</span>' + pairs.map(function(p) {
+    return '<button class="compare-quick-btn" onclick="setCompare(\'' + p[0] + '\',\'' + p[1] + '\')">' + TOKENS[p[0]].ticker + ' / ' + TOKENS[p[1]].ticker + '</button>';
+  }).join('');
+
+  window.setCompare = function(a, b) {
+    selA.value = a; selB.value = b;
+    runCompare();
+  };
+  window.swapCompare = function() {
+    var tmp = selA.value; selA.value = selB.value; selB.value = tmp;
+    if (selA.value && selB.value) runCompare();
+  };
+  selA.addEventListener('change', function() { if (selA.value && selB.value) runCompare(); });
+  selB.addEventListener('change', function() { if (selA.value && selB.value) runCompare(); });
+
+  async function runCompare() {
+    var kA = selA.value, kB = selB.value;
+    if (!kA || !kB || kA === kB) return;
+    var body = document.getElementById('compare-body');
+    body.innerHTML = '<div class="compare-placeholder">Loading…</div>';
+
+    // Fetch data for both tokens
+    try {
+      var [resA, resB, sparkRes] = await Promise.all([
+        fetch(cmpAPI + '/api/current?token=' + kA).then(function(r) { return r.json(); }),
+        fetch(cmpAPI + '/api/current?token=' + kB).then(function(r) { return r.json(); }),
+        fetch(cmpAPI + '/api/sparklines').then(function(r) { return r.json(); })
+      ]);
+
+      var tA = TOKENS[kA], tB = TOKENS[kB];
+      var navA = resA.nav || 0, navB = resB.nav || 0;
+      var spotA = resA.spot || 0, spotB = resB.spot || 0;
+      var treasA = resA.treasuryUSDC || 0, treasB = resB.treasuryUSDC || 0;
+      var effA = resA.effectiveSupply || tA.supply, effB = resB.effectiveSupply || tB.supply;
+      var mcapA = spotA * effA, mcapB = spotB * effB;
+      var discA = navA > 0 ? ((spotA - navA) / navA * 100) : 0;
+      var discB = navB > 0 ? ((spotB - navB) / navB * 100) : 0;
+      var burnA = resA.monthlyAllowance || tA.monthlyAllowance || 0;
+      var burnB = resB.monthlyAllowance || tB.monthlyAllowance || 0;
+      var runA = burnA > 0 ? Math.floor(treasA / burnA) : Infinity;
+      var runB = burnB > 0 ? Math.floor(treasB / burnB) : Infinity;
+
+      // 7D change from sparklines
+      var spA = sparkRes.sparklines && sparkRes.sparklines[kA];
+      var spB = sparkRes.sparklines && sparkRes.sparklines[kB];
+      var chg7dA = spA && spA.length >= 2 ? ((spA[spA.length-1].p - spA[0].p) / spA[0].p * 100) : 0;
+      var chg7dB = spB && spB.length >= 2 ? ((spB[spB.length-1].p - spB[0].p) / spB[0].p * 100) : 0;
+
+      var logoA = tA.logo ? '<img src="' + tA.logo + '">' : '<div style="width:32px;height:32px;border-radius:50%;background:' + tA.color + ';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000">' + tA.ticker[0] + '</div>';
+      var logoB = tB.logo ? '<img src="' + tB.logo + '">' : '<div style="width:32px;height:32px;border-radius:50%;background:' + tB.color + ';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#000">' + tB.ticker[0] + '</div>';
+
+      function makeBar(valA, valB, colorA, colorB, labelA, labelB, note) {
+        var total = valA + valB || 1;
+        var pctA = (valA / total * 100).toFixed(1);
+        return '<div class="compare-bar-wrap"><div class="compare-bar"><div class="compare-bar-a" style="width:' + pctA + '%;background:' + colorA + '"></div><div class="compare-bar-b" style="width:' + (100 - pctA) + '%;background:' + colorB + '"></div></div>' +
+          '<div class="compare-bar-labels"><span style="color:' + colorA + '">' + labelA + '</span><span style="color:' + colorB + '">' + labelB + '</span></div>' +
+          (note ? '<div class="compare-bar-note">' + note + '</div>' : '') + '</div>';
+      }
+
+      function makePerfRow(valA, valB, label) {
+        return '<div class="compare-perf-row"><div class="compare-perf-left" style="color:' + cmpColor(valA) + '">' + cmpPct(valA) + '</div><div class="compare-perf-center">' + label + '</div><div class="compare-perf-right" style="color:' + cmpColor(valB) + '">' + cmpPct(valB) + '</div></div>';
+      }
+
+      var treasRatio = treasA > treasB ? (treasA / treasB).toFixed(1) : (treasB / treasA).toFixed(1);
+      var treasWinner = treasA > treasB ? tA.ticker : tB.ticker;
+      var mcapRatio = mcapA > mcapB ? (mcapA / mcapB).toFixed(1) : (mcapB / mcapA).toFixed(1);
+      var mcapWinner = mcapA > mcapB ? tA.ticker : tB.ticker;
+
+      body.innerHTML =
+        // Versus header
+        '<div class="compare-versus">' +
+          '<div class="compare-versus-token">' + logoA + ' ' + tA.ticker + '</div>' +
+          '<div class="compare-versus-vs">vs</div>' +
+          '<div class="compare-versus-token">' + logoB + ' ' + tB.ticker + '</div>' +
+        '</div>' +
+
+        // Treasury
+        '<div class="compare-card"><div class="compare-card-label">Treasury</div>' +
+          makeBar(treasA, treasB, tA.color, tB.color, cmpFmtM(treasA), cmpFmtM(treasB), treasWinner + ' is ' + treasRatio + 'x larger') +
+        '</div>' +
+
+        // Market Cap
+        '<div class="compare-card"><div class="compare-card-label">Market Cap</div>' +
+          makeBar(mcapA, mcapB, tA.color, tB.color, cmpFmtM(mcapA), cmpFmtM(mcapB), mcapWinner + ' is ' + mcapRatio + 'x larger') +
+        '</div>' +
+
+        // Key metrics side by side
+        '<div class="compare-card"><div class="compare-card-label">Key Metrics</div>' +
+          makePerfRow(0, 0, 'PRICE').replace(/>.*?<\/div>/, '>' + cmpFmt$(spotA) + '</div>').replace(/0.00%<\/div>$/, cmpFmt$(spotB) + '</div>') +
+        '</div>' +
+
+        // Performance
+        '<div class="compare-card"><div class="compare-card-label">Performance</div>' +
+          makePerfRow(chg7dA, chg7dB, '7D') +
+        '</div>' +
+
+        // NAV & Discount
+        '<div class="compare-card"><div class="compare-card-label">NAV & Discount</div>' +
+          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--white)">' + cmpFmt$(navA) + '</div><div class="compare-perf-center">NAV</div><div class="compare-perf-right" style="color:var(--white)">' + cmpFmt$(navB) + '</div></div>' +
+          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:' + cmpColor(discA) + '">' + cmpPct(discA) + '</div><div class="compare-perf-center">vs NAV</div><div class="compare-perf-right" style="color:' + cmpColor(discB) + '">' + cmpPct(discB) + '</div></div>' +
+        '</div>' +
+
+        // Runway
+        '<div class="compare-card"><div class="compare-card-label">Runway</div>' +
+          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--orange)">' + (runA === Infinity ? '∞' : runA + ' mo') + '</div><div class="compare-perf-center">at allowance</div><div class="compare-perf-right" style="color:var(--orange)">' + (runB === Infinity ? '∞' : runB + ' mo') + '</div></div>' +
+          '<div class="compare-perf-row"><div class="compare-perf-left" style="color:var(--dim)">' + cmpFmtM(burnA) + '/mo</div><div class="compare-perf-center">allowance</div><div class="compare-perf-right" style="color:var(--dim)">' + cmpFmtM(burnB) + '/mo</div></div>' +
+        '</div>' +
+
+        // Distance from NAV (like ATH bars)
+        '<div class="compare-card"><div class="compare-card-label">Distance from NAV</div>' +
+          '<div class="compare-ath-row"><div class="compare-ath-label">' + tA.ticker + '</div><div class="compare-ath-bar-bg"><div class="compare-ath-bar-fill" style="width:' + Math.max(5, Math.min(100, (spotA / navA * 100) || 0)) + '%;background:' + (discA < 0 ? '#e84057' : 'var(--green)') + '"></div></div><div class="compare-ath-val" style="color:' + cmpColor(discA) + '">' + Math.abs(discA).toFixed(0) + '%</div></div>' +
+          '<div class="compare-ath-row"><div class="compare-ath-label">' + tB.ticker + '</div><div class="compare-ath-bar-bg"><div class="compare-ath-bar-fill" style="width:' + Math.max(5, Math.min(100, (spotB / navB * 100) || 0)) + '%;background:' + (discB < 0 ? '#e84057' : 'var(--green)') + '"></div></div><div class="compare-ath-val" style="color:' + cmpColor(discB) + '">' + Math.abs(discB).toFixed(0) + '%</div></div>' +
+          '<div class="compare-bar-note">' + (Math.abs(discA) < Math.abs(discB) ? tA.ticker : tB.ticker) + ' is closer to NAV</div>' +
+        '</div>';
+
+    } catch (e) {
+      body.innerHTML = '<div class="compare-placeholder">Error loading data. Try again.</div>';
+    }
+  }
+
+  // Check URL for pre-selected pair
+  var cmpA = _params.get('a'), cmpB = _params.get('b');
+  if (cmpA && cmpB && TOKENS[cmpA] && TOKENS[cmpB]) {
+    selA.value = cmpA; selB.value = cmpB;
+    runCompare();
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // LANDING PAGE LOGIC
 // ═══════════════════════════════════════════════════════════════════════
