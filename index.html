@@ -270,9 +270,10 @@
   .compare-ath-bar-fill { height: 100%; border-radius: 4px; }
   .compare-ath-val { width: 60px; text-align: right; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
   @media (max-width: 500px) { .compare-selectors { flex-direction: column; } .compare-select { min-width: 100%; } }
-  .wl-star { cursor: pointer; font-size: 20px; color: var(--dim); transition: all 0.15s; user-select: none; padding: 4px 6px; line-height: 1; }
+  .wl-star { cursor: pointer; color: var(--dim); transition: all 0.15s; user-select: none; padding: 4px; line-height: 1; display: inline-flex; align-items: center; }
   .wl-star:hover { color: var(--green); }
   .wl-star.active { color: var(--green); }
+  .wl-star svg { width: 18px; height: 18px; fill: currentColor; }
 </style>
 </head>
 <body>
@@ -362,7 +363,7 @@
       <div style="display:flex;align-items:baseline;gap:8px">
         <span class="token-header-title" id="token-title-name"></span>
         <span class="token-header-ticker" id="token-title-ticker"></span>
-        <span class="wl-star" id="dash-wl-star" style="font-size:20px;cursor:pointer" onclick="toggleDashWatch()">★</span>
+        <span class="wl-star" id="dash-wl-star" style="cursor:pointer" onclick="toggleDashWatch()"><svg viewBox="0 0 20 20" style="width:20px;height:20px"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
       </div>
     </div>
     <div class="cards" id="cards"></div>
@@ -372,6 +373,7 @@
   <div class="chart-section">
     <div class="price-hero-border">
       <span class="price-hero-value" id="price-hero-val"></span>
+      <span class="price-hero-pct" id="price-hero-pct" style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;margin-left:10px"></span>
     </div>
     <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
     <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
@@ -729,6 +731,9 @@ if (!_hasToken) {
   // Watchlist
   var _watchlist = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
   var _activeFilter = 'all';
+  var _starFilled = '<svg viewBox="0 0 20 20"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6"/></svg>';
+  var _starEmpty = '<svg viewBox="0 0 20 20"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+  function starSvg(watched) { return watched ? _starFilled : _starEmpty; }
 
   function isWatched(key) { return _watchlist.indexOf(key) !== -1; }
   function toggleWatch(key, e) {
@@ -775,7 +780,7 @@ if (!_hasToken) {
     tbody.innerHTML = sorted.map((t, i) => {
       if (!t.live) {
         return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4">' +
-          '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + (isWatched(t.key) ? '★' : '☆') + '</span></td>' +
+          '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
           '<td>' + (i + 1) + '</td>' +
           '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
           '<td colspan="6"><span class="tt-coming">Coming Soon</span></td></tr>';
@@ -788,7 +793,7 @@ if (!_hasToken) {
       var noData = t.spot === 0;
 
       return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
-        '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + (isWatched(t.key) ? '★' : '☆') + '</span></td>' +
+        '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
         '<td>' + (i + 1) + '</td>' +
         '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
         '<td><div class="tt-price">' + (noData ? '—' : lfmt$(t.spot)) + (t.change7d !== undefined ? '<div style="font-size:11px;margin-top:2px;color:' + (t.change7d >= 0 ? 'var(--green)' : '#e84057') + '">' + (t.change7d >= 0 ? '▲' : '▼') + ' ' + Math.abs(t.change7d).toFixed(2) + '%</div>' : '') + '</div></td>' +
@@ -966,7 +971,7 @@ var _dashWL = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
 var dashStarEl = document.getElementById('dash-wl-star');
 function updateDashStar() {
   var watched = _dashWL.indexOf(tokenKey) !== -1;
-  if (dashStarEl) { dashStarEl.classList.toggle('active', watched); dashStarEl.textContent = watched ? '★' : '☆'; }
+  if (dashStarEl) { dashStarEl.classList.toggle('active', watched); dashStarEl.innerHTML = watched ? '<svg viewBox="0 0 20 20" style="width:20px;height:20px;fill:currentColor"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6"/></svg>' : '<svg viewBox="0 0 20 20" style="width:20px;height:20px"><polygon points="10,1 13.2,5.6 18.6,7.2 15.2,11.7 15.3,17.3 10,15.5 4.7,17.3 4.8,11.7 1.4,7.2 6.8,5.6" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>'; }
 }
 updateDashStar();
 window.toggleDashWatch = function() {
@@ -1789,7 +1794,20 @@ function initChart(rawCandles, navPerToken) {
   _navPerToken = navPerToken;
   _chartTF = '1D';
 
+  function updatePriceChange(candles) {
+    var pctEl = document.getElementById('price-hero-pct');
+    if (!pctEl || !candles || candles.length < 2) { if (pctEl) pctEl.style.display = 'none'; return; }
+    var first = candles[0].open || candles[0].close || candles[0].price;
+    var last = candles[candles.length - 1].close || candles[candles.length - 1].price;
+    if (!first || first === 0) { pctEl.style.display = 'none'; return; }
+    var pct = ((last - first) / first) * 100;
+    pctEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    pctEl.style.color = pct >= 0 ? 'var(--green)' : '#e84057';
+    pctEl.style.display = 'inline';
+  }
+
   buildChart(rawCandles, navPerToken);
+  updatePriceChange(rawCandles);
 
   var controls = document.getElementById('chart-controls');
   if (controls) {
@@ -1810,6 +1828,7 @@ function initChart(rawCandles, navPerToken) {
       var candles = await fetchCandlesForTF(_chartTF);
       if (candles.length === 0) candles = rawCandles;
       buildChart(candles, _navPerToken);
+      updatePriceChange(candles);
       renderNAVStats(candles, _navPerToken);
     });
   }
