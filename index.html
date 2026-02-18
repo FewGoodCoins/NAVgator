@@ -449,21 +449,26 @@
     <!-- Metrics Panel -->
     <div class="metrics-panel" id="metrics-panel">
       <div class="mp-box price-box" id="mp-price"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="mp-box" id="mp-chg-1h"></div>
+        <div class="mp-box" id="mp-chg-1d"></div>
+        <div class="mp-box" id="mp-chg-7d"></div>
+      </div>
       <div class="mp-pair">
         <div class="mp-box" id="mp-mcap"></div>
         <div class="mp-box" id="mp-circ"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div class="mp-box" id="mp-treasury"></div>
+      <div class="mp-pair">
         <div class="mp-box" id="mp-nav"></div>
         <div class="mp-box" id="mp-vsnav"></div>
       </div>
       <div class="mp-pair">
+        <div class="mp-box" id="mp-treasury"></div>
         <div class="mp-box" id="mp-runway"></div>
-        <div class="mp-box" id="mp-age"></div>
       </div>
-      <div class="mp-pair">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div class="mp-box" id="mp-outflow"></div>
+        <div class="mp-box" id="mp-age"></div>
         <div class="mp-box" id="mp-inflow"></div>
       </div>
     </div>
@@ -1956,8 +1961,40 @@ function initChart(rawCandles, navPerToken) {
     pctEl.style.display = 'inline';
   }
 
+  function updateChangeBoxes(candles) {
+    if (!candles || candles.length < 2) return;
+    var lastPrice = candles[candles.length - 1].close || candles[candles.length - 1].price;
+    var now = candles[candles.length - 1].time;
+
+    function calcChange(hours) {
+      var cutoff = now - (hours * 3600);
+      for (var i = 0; i < candles.length; i++) {
+        if (candles[i].time >= cutoff) {
+          var open = candles[i].open || candles[i].close || candles[i].price;
+          if (open && open > 0) return ((lastPrice - open) / open) * 100;
+          break;
+        }
+      }
+      return null;
+    }
+
+    function renderBox(id, label, pct) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (pct === null) { el.innerHTML = '<div class="mp-label">' + label + '</div><div class="mp-value" style="font-size:14px;color:var(--dim)">—</div>'; return; }
+      var color = pct >= 0 ? 'var(--green)' : '#e84057';
+      var text = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+      el.innerHTML = '<div class="mp-label">' + label + '</div><div class="mp-value" style="font-size:14px;color:' + color + '">' + text + '</div>';
+    }
+
+    renderBox('mp-chg-1h', '1H', calcChange(1));
+    renderBox('mp-chg-1d', '1D', calcChange(24));
+    renderBox('mp-chg-7d', '7D', calcChange(168));
+  }
+
   buildChart(rawCandles, navPerToken);
   updatePriceChange(rawCandles);
+  updateChangeBoxes(rawCandles);
 
   var controls = document.getElementById('chart-controls');
   if (controls) {
@@ -1979,6 +2016,7 @@ function initChart(rawCandles, navPerToken) {
       if (candles.length === 0) candles = rawCandles;
       buildChart(candles, _navPerToken);
       updatePriceChange(candles);
+      updateChangeBoxes(candles);
       renderNAVStats(candles, _navPerToken);
     });
   }
@@ -2030,7 +2068,7 @@ function renderUI(isLive) {
 
   // Metrics panel
   var mpPrice = document.getElementById('mp-price');
-  if (mpPrice) mpPrice.innerHTML = '<div class="mp-label">Price</div><div class="mp-value large" id="price-hero-val">' + fmt$(CFG.spot) + '</div><div id="price-hero-pct" style="font-family:Inter,sans-serif;font-size:13px;font-weight:600;margin-top:4px"></div>';
+  if (mpPrice) mpPrice.innerHTML = '<div class="mp-label">Price</div><div class="mp-value large">' + fmt$(CFG.spot) + '</div>';
 
   var mpNav = document.getElementById('mp-nav');
   if (mpNav) mpNav.innerHTML = '<div class="mp-label">NAV</div><div class="mp-value">' + fmt$(strike) + '</div>';
@@ -2042,7 +2080,7 @@ function renderUI(isLive) {
   if (mpMcap) mpMcap.innerHTML = '<div class="mp-label">MCap</div><div class="mp-value">' + fmtM(CFG.spot * circulatingSupply) + '</div>';
 
   var mpCirc = document.getElementById('mp-circ');
-  if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Circ. Supply</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div>';
+  if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Supply</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div><div class="mp-sub">circulating</div>';
 
   var mpTreasury = document.getElementById('mp-treasury');
   if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div>';
