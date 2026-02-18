@@ -270,7 +270,7 @@
   .compare-ath-bar-fill { height: 100%; border-radius: 4px; }
   .compare-ath-val { width: 60px; text-align: right; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
   @media (max-width: 500px) { .compare-selectors { flex-direction: column; } .compare-select { min-width: 100%; } }
-  .wl-star { cursor: pointer; font-size: 14px; color: var(--dim); transition: all 0.15s; user-select: none; }
+  .wl-star { cursor: pointer; font-size: 20px; color: var(--dim); transition: all 0.15s; user-select: none; padding: 4px 6px; line-height: 1; }
   .wl-star:hover { color: var(--green); }
   .wl-star.active { color: var(--green); }
 </style>
@@ -291,7 +291,7 @@
           <div class="brand-stat" id="landing-total-treasury" style="border-left:none;padding-left:0;margin-left:4px">NAV: <b id="landing-nav-total">—</b></div>
         </div>
         <div class="landing-nav-right">
-          <a href="#" id="nav-watchlist-btn" class="compare-btn" style="font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:8px;color:var(--muted);text-decoration:none;transition:all 0.15s">★ Watchlist</a>
+          <a href="#" id="nav-watchlist-btn" class="compare-btn" style="font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:8px;color:var(--muted);text-decoration:none;transition:all 0.15s">Watchlist</a>
           <a href="index.html?compare" class="compare-btn" style="font-size:12px;padding:6px 14px;border:1px solid var(--border2);border-radius:8px;color:var(--muted);text-decoration:none;transition:all 0.15s">Compare</a>
           <a href="https://metadao.fi" target="_blank">MetaDAO</a>
           <a href="submit.html" class="submit-btn">+ Submit Token</a>
@@ -359,9 +359,11 @@
   <div class="token-metrics-row">
     <div class="token-header-above">
       <div class="token-header-icon" id="token-icon"></div>
-      <span class="token-header-title" id="token-title-name"></span>
-      <span class="token-header-ticker" id="token-title-ticker"></span>
-      <span class="wl-star" id="dash-wl-star" style="font-size:20px;margin-left:8px;cursor:pointer" onclick="toggleDashWatch()">★</span>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span class="token-header-title" id="token-title-name"></span>
+        <span class="token-header-ticker" id="token-title-ticker"></span>
+        <span class="wl-star" id="dash-wl-star" style="font-size:20px;cursor:pointer" onclick="toggleDashWatch()">★</span>
+      </div>
     </div>
     <div class="cards" id="cards"></div>
   </div>
