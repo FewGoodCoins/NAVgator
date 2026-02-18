@@ -76,17 +76,18 @@
   @media (max-width: 500px) { .token-header-above .token-header-title { font-size: 24px; } }
 
   /* Chart section — clean, no box */
-  .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 28px; margin-bottom: 28px; position: relative; overflow: visible; }
+  .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
   .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
-  .metrics-panel { width: 200px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
-  .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; }
-  .mp-box.price-box { padding: 16px 14px; }
+  .metrics-panel { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+  .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
+  .mp-box.price-box { padding: 18px 14px; }
   .mp-label { font-size: 9px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .mp-value { font-family: 'JetBrains Mono', 'Inter', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); }
-  .mp-value.large { font-size: 24px; }
+  .mp-value { font-family: 'JetBrains Mono', 'Inter', sans-serif; font-size: 15px; font-weight: 700; color: var(--white); }
+  .mp-value.large { font-size: 28px; }
   .mp-sub { font-size: 10px; color: var(--dim); margin-top: 2px; }
   .mp-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mp-pair .mp-box { min-height: 0; }
   @media (max-width: 900px) { .chart-layout { flex-direction: column; } .metrics-panel { width: 100%; flex-direction: row; flex-wrap: wrap; } .metrics-panel .mp-box { flex: 1; min-width: 140px; } .mp-pair { flex: 2; min-width: 290px; } }
   .chart-title { display: none; }
   .chart-controls { display: flex; gap: 6px; margin-bottom: 12px; z-index: 2; align-items: center; }
@@ -413,9 +414,10 @@
   <!-- Chart + Metrics Panel -->
   <div class="chart-layout">
     <div class="chart-section">
-      <div class="price-hero-border">
-        <span class="price-hero-value" id="price-hero-val"></span>
-        <span class="price-hero-pct" id="price-hero-pct" style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;margin-left:10px"></span>
+      <div class="price-hero-border" id="chart-token-header" style="display:flex;align-items:center;gap:10px">
+        <div id="chart-token-icon" style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+        <span style="font-family:'Inter',sans-serif;font-size:20px;font-weight:700;color:var(--white)" id="chart-token-name"></span>
+        <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--dim)" id="chart-token-ticker"></span>
       </div>
       <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
       <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
@@ -448,16 +450,20 @@
     <div class="metrics-panel" id="metrics-panel">
       <div class="mp-box price-box" id="mp-price"></div>
       <div class="mp-pair">
-        <div class="mp-box" id="mp-nav"></div>
-        <div class="mp-box" id="mp-vsnav"></div>
-      </div>
-      <div class="mp-pair">
         <div class="mp-box" id="mp-mcap"></div>
         <div class="mp-box" id="mp-treasury"></div>
       </div>
       <div class="mp-pair">
+        <div class="mp-box" id="mp-nav"></div>
+        <div class="mp-box" id="mp-vsnav"></div>
+      </div>
+      <div class="mp-pair">
         <div class="mp-box" id="mp-runway"></div>
-        <div class="mp-box" id="mp-activity"></div>
+        <div class="mp-box" id="mp-age"></div>
+      </div>
+      <div class="mp-pair">
+        <div class="mp-box" id="mp-outflow"></div>
+        <div class="mp-box" id="mp-inflow"></div>
       </div>
     </div>
   </div>
@@ -518,6 +524,7 @@ const TOKENS = {
     mint: 'SoLo9oxzLDpcq1dpqAgMwgce5WqkRDtNXK7EPnbmeta',
     gtPool: 'o5rJFXSKTsuws58rBMNPG8jdKdnY4Z7ouU29dyohE4g',
     icoPrice: 0.80, monthlyAllowance: 100_000,
+    launchDate: '2024-08-01',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
   umbra: { live: true,
@@ -526,6 +533,7 @@ const TOKENS = {
     mint: 'PRVT6TB7uss3FrUd2D9xs2zqDBsa3GbMJMwCQsgmeta',
     gtPool: '7dVri3qjYD3uobSZL3Zth8vSCgU6r6R2nvFsh7uVfDte',
     icoPrice: 0.30, monthlyAllowance: 100_000,
+    launchDate: '2024-08-15',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
   avici: { live: true,
@@ -534,6 +542,7 @@ const TOKENS = {
     mint: 'BANKJmvhT8tiJRsBSS1n2HryMBPvT5Ze4HU95DUAmeta',
     gtPool: '5gB4NPgFB3MHFHSeKN4sbaY6t9MB8ikCe9HyiKYid4Td',
     icoPrice: 0.35, monthlyAllowance: 100_000,
+    launchDate: '2024-08-01',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
   omfg: { live: true,
@@ -542,6 +551,7 @@ const TOKENS = {
     mint: 'omfgRBnxHsNJh6YeGbGAmWenNkenzsXyBXm3WDhmeta',
     gtPool: 'BiNnErm2VDkbKGiABj9ZRUjybz879NhH2heeWE7m5M6d',
     icoPrice: 0.05, monthlyAllowance: 50_000,
+    launchDate: '2024-07-28',
     spot: 0, treasuryUSDC: 0, supply: 0,
   },
 };
@@ -1232,7 +1242,7 @@ var _chart = {
   isYDragging: false, yDragStartY: 0, yDragStartZoom: 1, yDragStartOffset: 0,
   isXDragging: false, xDragStartX: 0, xDragStartViewStart: 0, xDragStartViewEnd: 0,
   yZoom: 1, yOffset: 0, // Y-axis zoom (1=auto) and vertical offset
-  width: 0, height: 420,
+  width: 0, height: 480,
   padding: { top: 20, right: 70, bottom: 50, left: 30 },
 };
 
@@ -2019,7 +2029,7 @@ function renderUI(isLive) {
 
   // Metrics panel
   var mpPrice = document.getElementById('mp-price');
-  if (mpPrice) mpPrice.innerHTML = '<div class="mp-label">Price</div><div class="mp-value large">' + fmt$(CFG.spot) + '</div>';
+  if (mpPrice) mpPrice.innerHTML = '<div class="mp-label">Price</div><div class="mp-value large" id="price-hero-val">' + fmt$(CFG.spot) + '</div><div id="price-hero-pct" style="font-family:Inter,sans-serif;font-size:13px;font-weight:600;margin-top:4px"></div>';
 
   var mpNav = document.getElementById('mp-nav');
   if (mpNav) mpNav.innerHTML = '<div class="mp-label">NAV</div><div class="mp-value">' + fmt$(strike) + '</div><div class="mp-sub">per token</div>';
@@ -2036,15 +2046,29 @@ function renderUI(isLive) {
   var mpRunway = document.getElementById('mp-runway');
   if (mpRunway) mpRunway.innerHTML = '<div class="mp-label">Runway</div><div class="mp-value" style="color:var(--orange)">' + monthsLeft + ' mo</div><div class="mp-sub">' + fmtM(burn) + '/mo</div>';
 
-  // Activity box: withdrawn + months live (estimate from ICO price * supply vs current treasury)
-  var mpActivity = document.getElementById('mp-activity');
-  if (mpActivity) {
-    var raised = CFG.icoPrice * (CFG.supply || supplyForNAV);
-    var withdrawn = raised - CFG.treasuryUSDC;
-    if (withdrawn < 0) withdrawn = 0;
-    var monthsLiveEst = burn > 0 ? Math.round(withdrawn / burn) : 0;
-    mpActivity.innerHTML = '<div class="mp-label">Withdrawn</div><div class="mp-value">' + fmtM(withdrawn) + '</div><div class="mp-sub">' + monthsLiveEst + ' mo live</div>';
+  // Age
+  var mpAge = document.getElementById('mp-age');
+  if (mpAge) {
+    var ageMo = '—';
+    if (CFG.launchDate) {
+      var launch = new Date(CFG.launchDate);
+      var now = new Date();
+      ageMo = Math.floor((now - launch) / (30.44 * 24 * 60 * 60 * 1000));
+    }
+    mpAge.innerHTML = '<div class="mp-label">Age</div><div class="mp-value">' + ageMo + ' mo</div><div class="mp-sub">since launch</div>';
   }
+
+  // Outflow & Inflow
+  var raised = CFG.icoPrice * (CFG.supply || supplyForNAV);
+  var outflow = raised - CFG.treasuryUSDC;
+  if (outflow < 0) outflow = 0;
+  var inflow = 0; // TODO: calculate from AMM yield + fees when available
+
+  var mpOutflow = document.getElementById('mp-outflow');
+  if (mpOutflow) mpOutflow.innerHTML = '<div class="mp-label">Outflow</div><div class="mp-value" style="color:var(--red)">' + fmtM(outflow) + '</div><div class="mp-sub">since inception</div>';
+
+  var mpInflow = document.getElementById('mp-inflow');
+  if (mpInflow) mpInflow.innerHTML = '<div class="mp-label">Inflow</div><div class="mp-value" style="color:var(--green)">' + fmtM(inflow) + '</div><div class="mp-sub">since inception</div>';
 
   document.getElementById('params').innerHTML =
     '<span>ICO <b>' + fmt$(CFG.icoPrice) + '</b></span>' +
@@ -2060,6 +2084,20 @@ function renderUI(isLive) {
   document.getElementById('chart-label').innerHTML = CFG.ticker + ' Price vs NAV';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
   document.getElementById('leg-nav-label').textContent = CFG.ticker + ' NAV';
+
+  // Chart token header (logo + name + ticker inside chart)
+  var chartIcon = document.getElementById('chart-token-icon');
+  if (chartIcon) {
+    if (CFG.logo) {
+      chartIcon.innerHTML = '<img src="' + CFG.logo + '" style="width:100%;height:100%;object-fit:cover">';
+    } else {
+      chartIcon.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
+    }
+  }
+  var chartName = document.getElementById('chart-token-name');
+  if (chartName) chartName.textContent = CFG.name;
+  var chartTicker = document.getElementById('chart-token-ticker');
+  if (chartTicker) chartTicker.textContent = CFG.ticker;
 
   return strike;
 }
