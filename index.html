@@ -80,18 +80,33 @@
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
   .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
-  .left-panel-wrap { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: flex-end; }
-  .left-panel { display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; }
-  .lp-search { width: 100%; font-family: 'Inter', sans-serif; font-size: 11px; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--white); outline: none; }
-  .lp-search::placeholder { color: var(--dim); }
-  .lp-list { flex: 1; overflow-y: auto; }
-  .lp-item { display: flex; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer; transition: background 0.1s; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  /* Fixed sidebar on dashboard */
+  .dash-sidebar { position: fixed; left: 0; top: 0; width: 200px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border); z-index: 100; display: flex; flex-direction: column; overflow: hidden; }
+  .dash-sidebar-brand { padding: 20px 16px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .dash-sidebar-brand a { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; transition: text-shadow 0.2s; }
+  .dash-sidebar-brand a:hover { text-shadow: 0 0 12px rgba(0,229,160,0.5); }
+  .dash-sidebar-brand a span { color: #00b86e; }
+  .dash-sidebar-search { padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .dash-sidebar-search input { width: 100%; font-family: 'Inter', sans-serif; font-size: 11px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg); color: var(--white); outline: none; transition: border-color 0.15s; }
+  .dash-sidebar-search input:focus { border-color: var(--green); }
+  .dash-sidebar-search input::placeholder { color: var(--dim); }
+  .dash-sidebar-list { flex: 1; overflow-y: auto; }
+  .lp-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; transition: background 0.1s; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
   .lp-item:hover { background: rgba(255,255,255,0.03); }
   .lp-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); }
-  .lp-icon { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+  .lp-icon { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
   .lp-icon img { width: 100%; height: 100%; object-fit: cover; }
   .lp-name { font-size: 12px; font-weight: 600; color: var(--white); }
   .lp-price { margin-left: auto; font-size: 10px; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  /* Dashboard content offset */
+  body.is-dashboard { padding-left: 200px; }
+  body.is-dashboard .wrap { padding-left: 24px; padding-right: 24px; max-width: 100%; }
+  /* Hide left-panel-wrap (old inline panel) on dashboard */
+  body.is-dashboard .left-panel-wrap { display: none; }
+  /* Scroll-hide top nav on dashboard */
+  body.is-dashboard #global-nav { position: fixed; top: 0; left: 200px; right: 0; z-index: 90; background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 24px; transition: transform 0.3s ease; }
+  body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
+  body.is-dashboard .wrap { padding-top: 64px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
@@ -408,19 +423,18 @@
   <!-- ══ DASHBOARD VIEW ══ -->
   <div class="dashboard" id="dashboard-view">
 
+  <!-- Fixed sidebar (token pages only) -->
+  <div class="dash-sidebar" id="dash-sidebar">
+    <div class="dash-sidebar-brand"><a href="index.html">NAV<span>gator</span></a></div>
+    <div class="dash-sidebar-search"><input type="text" id="lp-search" placeholder="Search tokens…" autocomplete="off"></div>
+    <div class="dash-sidebar-list" id="lp-token-list"></div>
+  </div>
+
   <!-- Nav (hidden, replaced by sidebar) -->
   <nav class="nav" id="nav" style="display:none"></nav>
 
   <!-- Chart + Metrics Panel -->
   <div class="chart-layout">
-
-    <!-- Left Panel -->
-    <div class="left-panel-wrap">
-      <div class="left-panel" id="left-panel">
-        <input type="text" class="lp-search" id="lp-search" placeholder="Search tokens…" autocomplete="off">
-        <div class="lp-list" id="lp-token-list"></div>
-      </div>
-    </div>
 
     <div class="chart-section">
       <div class="price-hero-border" id="chart-token-header" style="display:flex;align-items:center;gap:10px">
@@ -1153,6 +1167,21 @@ window.toggleDashWatch = function() {
   renderLeftPanel();
 };
 
+// Mark body as dashboard, enable scroll-hide nav
+document.body.classList.add('is-dashboard');
+var _lastScrollY = 0;
+window.addEventListener('scroll', function() {
+  var nav = document.getElementById('global-nav');
+  if (!nav) return;
+  var currentY = window.scrollY;
+  if (currentY > _lastScrollY && currentY > 60) {
+    nav.classList.add('nav-hidden');
+  } else {
+    nav.classList.remove('nav-hidden');
+  }
+  _lastScrollY = currentY;
+}, { passive: true });
+
 // Left Panel - Token List
 async function renderLeftPanel() {
   var list = document.getElementById('lp-token-list');
@@ -1184,22 +1213,6 @@ async function renderLeftPanel() {
 }
 
 renderLeftPanel();
-
-// Sync left panel position with metrics panel
-function syncLeftPanel() {
-  var mp = document.getElementById('metrics-panel');
-  var lp = document.getElementById('left-panel');
-  if (mp && lp) {
-    var mpRect = mp.getBoundingClientRect();
-    var lpWrap = lp.parentElement;
-    var wrapRect = lpWrap.getBoundingClientRect();
-    var topOffset = mpRect.top - wrapRect.top;
-    lp.style.height = mpRect.height + 'px';
-    lpWrap.style.paddingTop = Math.max(0, topOffset) + 'px';
-  }
-}
-setTimeout(syncLeftPanel, 300);
-window.addEventListener('resize', syncLeftPanel);
 
 // Left panel search filter
 var lpSearchEl = document.getElementById('lp-search');
