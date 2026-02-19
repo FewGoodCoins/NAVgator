@@ -2100,9 +2100,9 @@ function initChart(rawCandles, navPerToken) {
       el.innerHTML = '<div class="mp-label">' + label + '</div><div class="mp-value" style="font-size:14px;color:' + color + '">' + text + '</div>';
     }
 
-    renderBox('mp-chg-1h', '1H', calcChange(1));
-    renderBox('mp-chg-1d', '1D', calcChange(24));
-    renderBox('mp-chg-7d', '7D', calcChange(168));
+    renderBox('mp-chg-1h', '1D', calcChange(24));
+    renderBox('mp-chg-1d', '7D', calcChange(168));
+    renderBox('mp-chg-7d', '30D', calcChange(720));
   }
 
   buildChart(rawCandles, navPerToken);
