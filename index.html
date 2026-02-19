@@ -2189,7 +2189,7 @@ function renderUI(isLive) {
   if (mpMcap) mpMcap.innerHTML = '<div class="mp-label">MCap</div><div class="mp-value">' + fmtM(CFG.spot * circulatingSupply) + '</div>';
 
   var mpCirc = document.getElementById('mp-circ');
-  if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Supply</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div>';
+  if (mpCirc) mpCirc.innerHTML = '<div class="mp-label">Circulating</div><div class="mp-value">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div>';
 
   var mpTreasury = document.getElementById('mp-treasury');
   if (mpTreasury) mpTreasury.innerHTML = '<div class="mp-label">Treasury</div><div class="mp-value" style="color:var(--green)">' + fmtM(CFG.treasuryUSDC) + '</div><div class="mp-sub">DAO + AMMs</div>';
