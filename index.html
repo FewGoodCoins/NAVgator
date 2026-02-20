@@ -957,17 +957,16 @@ if (!_hasToken) {
     container.id = 'abs-stars';
     container.style.cssText = 'position:absolute;left:8px;top:0;width:28px;pointer-events:none;';
     wrap.appendChild(container);
-    var wrapTop = wrap.getBoundingClientRect().top + window.scrollY;
+    var tableTop = wrap.querySelector('table').offsetTop;
     document.querySelectorAll('#token-tbody tr').forEach(function(row) {
       var onclick = row.getAttribute('onclick') || '';
       var m = onclick.match(/token=([^']+)/);
       if (!m) return;
       var key = m[1];
-      var r = row.getBoundingClientRect();
-      var top = r.top + window.scrollY - wrapTop;
+      var top = tableTop + row.offsetTop;
       var star = document.createElement('div');
       star.className = 'wl-star' + (isWatched(key) ? ' active' : '');
-      star.style.cssText = 'position:absolute;top:' + top + 'px;height:' + r.height + 'px;width:28px;display:flex;align-items:center;justify-content:center;pointer-events:all;cursor:pointer;';
+      star.style.cssText = 'position:absolute;top:' + top + 'px;height:' + row.offsetHeight + 'px;width:28px;display:flex;align-items:center;justify-content:center;pointer-events:all;cursor:pointer;';
       star.innerHTML = starSvg(isWatched(key));
       star.addEventListener('click', function(e) {
         e.stopPropagation();
