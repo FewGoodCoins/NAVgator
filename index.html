@@ -79,8 +79,10 @@
 
   /* ── Inline token panel (left of chart) ── */
   .token-page-layout { display: flex; gap: 0; align-items: flex-start; margin-bottom: 28px; margin-left: -24px; }
-  /* Collapsed = 44px (icons only), Expanded = 200px, Wide = 260px */
-  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 75px; }
+  /* Left panel: fixed so it never scrolls away */
+  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; height: calc(100vh - 55px); position: fixed; top: 55px; left: 0; z-index: 50; }
+  /* Push chart content right so it doesn't sit under the fixed panel */
+  .token-page-layout > .chart-and-metrics { margin-left: 163.5px; }
   /* Toggle button */
   .tlp-toggle { display: none; }
   .tlp-toggle:hover { color: var(--green); }
@@ -145,6 +147,9 @@
   body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); padding: 16px 32px; }
   body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
   body.is-dashboard .wrap { padding-top: 55px; }
+  /* Align brand logo width with the left panel so it appears connected */
+  body.is-dashboard .landing-nav-left { width: 163.5px; flex-shrink: 0; padding-left: 0; }
+  body.is-dashboard .nav-inner { padding-left: 0; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
