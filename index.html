@@ -141,10 +141,10 @@
   body.is-dashboard .wrap { padding-left: 24px; padding-right: 24px; max-width: 100%; }
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
-  /* Token page: fix nav to top matching landing page exactly */
-  body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); padding: 16px 32px; }
+  /* Token page: global nav sits below the token top bar */
+  body.is-dashboard #global-nav { position: fixed; top: 48px; left: 0; right: 0; z-index: 90; background: var(--bg); padding: 16px 32px; }
   body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
-  body.is-dashboard .wrap { padding-top: 55px; }
+  body.is-dashboard .wrap { padding-top: calc(48px + 55px); }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
@@ -384,6 +384,26 @@
   .dashboard.has-sidebar { margin-left: 192px; }
   @media (max-width: 900px) { .token-sidebar { width: 52px; left: 8px; padding-top: 70px; } .token-sidebar .ts-title, .token-sidebar .ts-name, .token-sidebar .ts-price, .token-sidebar .ts-ticker { display: none; } .ts-item { justify-content: center; padding: 8px; margin: 1px 4px; } .dashboard.has-sidebar { margin-left: 68px; } }
   @media (max-width: 600px) { .token-sidebar { display: none !important; } .dashboard.has-sidebar { margin-left: 0; } }
+
+  /* ── Token top bar (fixed, token pages only) ── */
+  #token-top-bar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    height: 48px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border2);
+    align-items: center;
+    padding: 0 20px 0 16px;
+    gap: 10px;
+  }
+  body.is-dashboard #token-top-bar { display: flex; }
+  body.is-dashboard .token-left-panel { top: calc(48px + 55px); max-height: calc(100vh - 103px); }
+  #token-top-bar .ttb-icon { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+  #token-top-bar .ttb-icon img { width: 100%; height: 100%; object-fit: cover; }
+  #token-top-bar .ttb-name { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; color: var(--white); }
+  #token-top-bar .ttb-ticker { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--dim); }
 </style>
 </head>
 <body>
@@ -458,6 +478,13 @@
     </div>
   </div>
 
+  <!-- ══ TOKEN TOP BAR (fixed, token pages only) ══ -->
+  <div id="token-top-bar">
+    <div class="ttb-icon" id="ttb-icon"></div>
+    <span class="ttb-name" id="ttb-name"></span>
+    <span class="ttb-ticker" id="ttb-ticker"></span>
+  </div>
+
   <!-- ══ DASHBOARD VIEW ══ -->
   <div class="dashboard" id="dashboard-view">
 
@@ -493,12 +520,6 @@
   <div class="chart-layout">
 
     <div class="chart-section">
-      <div class="price-hero-border" id="chart-token-header" style="display:flex;align-items:center;gap:10px">
-        <div id="token-icon" style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0"></div>
-        <span class="token-header-title" id="token-title-name"></span>
-        <span class="token-header-ticker" id="token-title-ticker"></span>
-      </div>
-      <div class="price-hero-change" id="price-hero-change" style="display:none"></div>
       <div class="chart-controls" id="chart-controls" style="justify-content:flex-end">
         <div class="chart-btn-group">
           <button class="chart-btn" data-tf="6H">6H</button>
@@ -2670,6 +2691,16 @@ function renderAllowance(data) {
     if (CFG.logo) iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '" style="width:100%;height:100%;object-fit:cover;display:block">';
     else iconEl.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:16px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
   }
+  // Populate fixed top bar
+  var ttbIcon = document.getElementById('ttb-icon');
+  if (ttbIcon) {
+    if (CFG.logo) ttbIcon.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '" style="width:100%;height:100%;object-fit:cover;display:block">';
+    else ttbIcon.innerHTML = '<div style="width:100%;height:100%;border-radius:50%;background:' + (CFG.color || '#333') + ';display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:13px;font-weight:700;color:#fff">' + CFG.ticker.charAt(0) + '</div>';
+  }
+  var ttbName = document.getElementById('ttb-name');
+  if (ttbName) ttbName.textContent = CFG.name;
+  var ttbTicker = document.getElementById('ttb-ticker');
+  if (ttbTicker) ttbTicker.textContent = CFG.ticker;
   var titleEl = document.getElementById('token-title-name');
   if (titleEl) titleEl.textContent = CFG.name;
   var tickerEl = document.getElementById('token-title-ticker');
