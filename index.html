@@ -118,6 +118,17 @@
   .tlp-empty { padding: 10px 12px; font-size: 10px; color: var(--dim); font-family: "Inter", sans-serif; }
   .token-page-layout > .chart-and-metrics { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; padding-left: 16px; }
   .token-page-layout > .chart-and-metrics > .chart-layout { margin-bottom: 0; margin-top: 0; }
+
+  /* ── Bottom section ── */
+  .token-bottom-section { margin-top: 8px; margin-bottom: 32px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; }
+  .tbs-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border2); }
+  .tbs-title { font-family: "Inter", sans-serif; font-size: 12px; font-weight: 600; color: var(--white); text-transform: uppercase; letter-spacing: 1px; }
+  .tbs-sub { font-family: "Inter", sans-serif; font-size: 11px; color: var(--dim); }
+  .token-bottom-section .addr-section { background: transparent; border: none; border-radius: 0; padding: 16px 20px; margin-bottom: 0; }
+  .token-bottom-section .addr-title { display: none; }
+  .token-bottom-section .addr-row { padding: 10px 0; gap: 16px; }
+  .token-bottom-section .addr-label { min-width: 120px; font-size: 12px; color: var(--muted); }
+  .token-bottom-section .addr-val a { font-size: 12px; }
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
@@ -572,8 +583,14 @@
   <div class="desc" id="desc" style="display:none"></div>
   <div class="chart-title" id="chart-label" style="display:none"></div>
 
-  <!-- Address section -->
-  <div class="addr-section" id="addr-section"></div>
+  <!-- ══ BOTTOM SECTION: Relevant Addresses ══ -->
+  <div class="token-bottom-section">
+    <div class="tbs-header">
+      <span class="tbs-title">Relevant Addresses</span>
+      <span class="tbs-sub">Verified wallets · Solana</span>
+    </div>
+    <div class="addr-section" id="addr-section"></div>
+  </div>
 
   <!-- Allowance section -->
   <div class="allowance-section" id="allowance-section" style="display:none">
