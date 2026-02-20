@@ -245,12 +245,9 @@
   .token-table thead th.sorted { color: var(--green); }
   .token-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: all 0.2s; border-radius: 12px; }
   .token-table tbody tr:last-child { border-bottom: none; }
-  .token-table tbody tr:hover { background: rgba(255,255,255,0.03); border-color: transparent; transform: scale(1.01); z-index: 1; position: relative; }
-  .token-table tbody tr:hover td:nth-child(2) { border-radius: 12px 0 0 12px; box-shadow: -1px -1px 0 rgba(255,255,255,0.1), -1px 1px 0 rgba(255,255,255,0.1), 0 -1px 0 rgba(255,255,255,0.1), 0 1px 0 rgba(255,255,255,0.1), 0 2px 12px rgba(0,0,0,0.3); }
-  .token-table tbody tr:hover td:nth-last-child(2) { border-radius: 0 12px 12px 0; box-shadow: 1px -1px 0 rgba(255,255,255,0.1), 1px 1px 0 rgba(255,255,255,0.1), 0 -1px 0 rgba(255,255,255,0.1), 0 1px 0 rgba(255,255,255,0.1), 0 2px 12px rgba(0,0,0,0.3); }
-  .token-table tbody tr:hover td:nth-child(n+3):nth-last-child(n+3) { box-shadow: 0 -1px 0 rgba(255,255,255,0.1), 0 1px 0 rgba(255,255,255,0.1); }
-  .token-table tbody tr:hover td:first-child { background: transparent; box-shadow: none; border-radius: 0; }
-  .token-table tbody tr:hover td:last-child { background: transparent; box-shadow: none; border-radius: 0; }
+  .token-table tbody tr:hover { background: rgba(255,255,255,0.03); box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 2px 12px rgba(0,0,0,0.3); border-radius: 12px; border-color: transparent; transform: scale(1.01); z-index: 1; position: relative; }
+  .token-table tbody tr:hover td:first-child { border-radius: 12px 0 0 12px; }
+  .token-table tbody tr:hover td:last-child { border-radius: 0 12px 12px 0; }
   .token-table td { padding: 14px 18px; font-size: 14px; color: var(--text); text-align: right; white-space: nowrap; }
   .token-table td:nth-child(1) { text-align: center; color: var(--dim); font-size: 13px; font-weight: 500; width: 28px; padding-left: 6px; padding-right: 2px; }
   .token-table td:nth-child(2) { text-align: center; }
@@ -386,8 +383,7 @@
       <table class="token-table" id="token-table">
         <thead>
           <tr>
-            <th class="no-sort" style="cursor:default;width:30px;border-bottom:none"></th>
-            <th class="no-sort" style="cursor:default;width:28px;border-bottom:none"></th>
+            <th class="no-sort" style="cursor:default;width:30px"></th>
             <th style="text-align:left">Name</th>
             <th>Price <span style="font-size:8px;color:var(--dim);font-weight:500">7D</span></th>
             <th>NAV</th>
@@ -900,8 +896,7 @@ if (!_hasToken) {
     tbody.innerHTML = sorted.map((t, i) => {
       if (!t.live) {
         return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4">' +
-          '<td onclick="event.stopPropagation()"><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
-          '<td style="color:var(--dim);font-size:13px;font-weight:500;text-align:center">' + (i + 1) + '</td>' +
+          '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
           '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
           '<td colspan="5"><span class="tt-coming">Coming Soon</span></td></tr>';
       }
@@ -913,8 +908,7 @@ if (!_hasToken) {
       var noData = t.spot === 0;
 
       return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
-        '<td onclick="event.stopPropagation()"><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
-        '<td style="color:var(--dim);font-size:13px;font-weight:500;text-align:center">' + (i + 1) + '</td>' +
+        '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
         '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
         '<td><div class="tt-price">' + (noData ? '—' : lfmt$(t.spot)) + (t.change7d !== undefined ? '<div style="font-size:11px;margin-top:2px;color:' + (t.change7d >= 0 ? 'var(--green)' : '#e84057') + '">' + (t.change7d >= 0 ? '▲' : '▼') + ' ' + Math.abs(t.change7d).toFixed(2) + '%</div>' : '') + '</div></td>' +
         '<td style="color:var(--text)">' + (noData ? '—' : (t.strike > 0 ? lfmt$(t.strike) : '—')) + '</td>' +
