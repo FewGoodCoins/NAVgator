@@ -236,7 +236,7 @@
   @media (max-width: 600px) { .landing-nav-left .brand-stat { display: none; } .landing-nav-right a:not(.submit-btn) { display: none; } }
 
   /* Table layout */
-  .token-table-wrap { margin: 0 -8px 40px; padding: 0 8px 0 36px; border: none; border-radius: 0; overflow: visible; background: transparent; position: relative; }
+  .token-table-wrap { margin: 0 -8px 40px; padding: 0 8px; border: none; border-radius: 0; overflow: visible; background: transparent; }
   .token-table { width: 100%; border-collapse: separate; border-spacing: 0 2px; font-family: 'Inter', sans-serif; }
   .token-table thead th { font-size: 10px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 18px; text-align: right; border-bottom: none; cursor: pointer; white-space: nowrap; user-select: none; }
   .token-table thead th:nth-child(1) { width: 28px; text-align: center; padding-left: 6px; padding-right: 2px; }
@@ -245,9 +245,11 @@
   .token-table thead th.sorted { color: var(--green); }
   .token-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: all 0.2s; border-radius: 12px; }
   .token-table tbody tr:last-child { border-bottom: none; }
-  .token-table tbody tr:hover { background: rgba(255,255,255,0.03); box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 2px 12px rgba(0,0,0,0.3); border-radius: 12px; border-color: transparent; transform: scale(1.01); z-index: 1; position: relative; }
-  .token-table tbody tr:hover td:first-child { border-radius: 12px 0 0 12px; }
-  .token-table tbody tr:hover td:last-child { border-radius: 0 12px 12px 0; }
+  .token-table tbody tr:hover { background: rgba(255,255,255,0.03); border-color: transparent; transform: scale(1.01); z-index: 1; position: relative; }
+  .token-table tbody tr:hover td:first-child { background: transparent !important; }
+  .token-table tbody tr:hover td:nth-child(2) { border-radius: 12px 0 0 12px; box-shadow: -1px 0 0 rgba(255,255,255,0.1), 0 1px 0 rgba(255,255,255,0.1), 0 -1px 0 rgba(255,255,255,0.1), -4px 0 12px rgba(0,0,0,0.2); }
+  .token-table tbody tr:hover td:nth-child(n+3):not(:last-child) { box-shadow: 0 1px 0 rgba(255,255,255,0.1), 0 -1px 0 rgba(255,255,255,0.1); }
+  .token-table tbody tr:hover td:last-child { border-radius: 0 12px 12px 0; box-shadow: 1px 0 0 rgba(255,255,255,0.1), 0 1px 0 rgba(255,255,255,0.1), 0 -1px 0 rgba(255,255,255,0.1), 4px 0 12px rgba(0,0,0,0.2); }
   .token-table td { padding: 14px 18px; font-size: 14px; color: var(--text); text-align: right; white-space: nowrap; }
   .token-table td:nth-child(1) { text-align: center; color: var(--dim); font-size: 13px; font-weight: 500; width: 28px; padding-left: 6px; padding-right: 2px; }
   .token-table td:nth-child(2) { text-align: center; }
@@ -384,6 +386,7 @@
         <thead>
           <tr>
             <th class="no-sort" style="cursor:default;width:30px"></th>
+            <th class="no-sort" style="cursor:default;width:24px;text-align:center"></th>
             <th style="text-align:left">Name</th>
             <th>Price <span style="font-size:8px;color:var(--dim);font-weight:500">7D</span></th>
             <th>NAV</th>
@@ -867,7 +870,7 @@ if (!_hasToken) {
       _activeFilter = _activeFilter === 'watchlist' ? 'all' : 'watchlist';
       wlNavBtn.style.borderColor = _activeFilter === 'watchlist' ? 'var(--green)' : '';
       wlNavBtn.style.color = _activeFilter === 'watchlist' ? 'var(--green)' : '';
-      renderTable(); setTimeout(renderStars, 50);
+      renderTable();
     });
   }
 
@@ -895,7 +898,8 @@ if (!_hasToken) {
     const tbody = document.getElementById('token-tbody');
     tbody.innerHTML = sorted.map((t, i) => {
       if (!t.live) {
-        return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4" data-key="' + t.key + '">' +
+        return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" style="opacity:0.4">' +
+          '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
           '<td style="color:var(--dim);font-size:13px;font-weight:500;text-align:center">' + (i + 1) + '</td>' +
           '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
           '<td colspan="5"><span class="tt-coming">Coming Soon</span></td></tr>';
@@ -907,7 +911,8 @@ if (!_hasToken) {
       var allowLabel = t.monthlyAllowance > 0 ? lfmtK(t.monthlyAllowance) + '/mo' : '—';
       var noData = t.spot === 0;
 
-      return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'" data-key="' + t.key + '">' +
+      return '<tr onclick="location.href=\'index.html?token=' + t.key + '\'">' +
+        '<td><span class="wl-star' + (isWatched(t.key) ? ' active' : '') + '" onclick="toggleWatch(\'' + t.key + '\', event)">' + starSvg(isWatched(t.key)) + '</span></td>' +
         '<td style="color:var(--dim);font-size:13px;font-weight:500;text-align:center">' + (i + 1) + '</td>' +
         '<td><div class="tt-name-cell">' + iconHtml(t) + '<div><div class="tt-name">' + t.name + '</div><div class="tt-ticker">' + t.ticker + '</div></div></div></td>' +
         '<td><div class="tt-price">' + (noData ? '—' : lfmt$(t.spot)) + (t.change7d !== undefined ? '<div style="font-size:11px;margin-top:2px;color:' + (t.change7d >= 0 ? 'var(--green)' : '#e84057') + '">' + (t.change7d >= 0 ? '▲' : '▼') + ' ' + Math.abs(t.change7d).toFixed(2) + '%</div>' : '') + '</div></td>' +
@@ -946,39 +951,6 @@ if (!_hasToken) {
   }
 
   renderTable();
-  setTimeout(renderStars, 50);
-
-  function renderStars() {
-    var wrap = document.querySelector('.token-table-wrap');
-    if (!wrap) return;
-    var old = document.getElementById('abs-star-wrap');
-    if (old) old.remove();
-    var sw = document.createElement('div');
-    sw.id = 'abs-star-wrap';
-    sw.style.cssText = 'position:absolute;left:8px;top:0;pointer-events:none;';
-    wrap.appendChild(sw);
-    var wrapTop = wrap.getBoundingClientRect().top;
-    document.querySelectorAll('#token-tbody tr').forEach(function(row) {
-      var key = row.dataset.key;
-      if (!key) return;
-      var r = row.getBoundingClientRect();
-      var el = document.createElement('span');
-      el.className = 'wl-star' + (isWatched(key) ? ' active' : '');
-      el.style.cssText = 'position:absolute;top:' + (r.top - wrapTop) + 'px;height:' + r.height + 'px;width:28px;display:inline-flex;align-items:center;justify-content:center;pointer-events:all;';
-      el.innerHTML = starSvg(isWatched(key));
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var idx = _watchlist.indexOf(key);
-        if (idx === -1) _watchlist.push(key); else _watchlist.splice(idx, 1);
-        localStorage.setItem('navgator_watchlist', JSON.stringify(_watchlist));
-        var watched = isWatched(key);
-        el.classList.toggle('active', watched);
-        el.innerHTML = starSvg(watched);
-        if (_activeFilter === 'watchlist') { renderTable(); setTimeout(renderStars, 50); }
-      });
-      sw.appendChild(el);
-    });
-  }
 
   // Column sort click handlers
   document.querySelectorAll('.token-table thead th').forEach((th, idx) => {
@@ -991,7 +963,7 @@ if (!_hasToken) {
         currentSort = key;
         sortDir = 'desc';
       }
-      renderTable(); setTimeout(renderStars, 50);
+      renderTable();
     });
   });
 
