@@ -76,6 +76,26 @@
   @media (max-width: 800px) { .token-metrics-row { flex-wrap: wrap; } }
   @media (max-width: 500px) { .token-header-title { font-size: 20px; } }
 
+
+  /* ── Inline token panel (left of chart) ── */
+  .token-page-layout { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 28px; }
+  .token-left-panel { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0; background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; max-height: calc(100vh - 120px); position: sticky; top: 65px; }
+  .tlp-search-wrap { padding: 10px 10px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tlp-search { width: 100%; font-family: "Inter", sans-serif; font-size: 11px; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border2); background: var(--bg); color: var(--white); outline: none; transition: border-color 0.15s; }
+  .tlp-search:focus { border-color: var(--green); }
+  .tlp-search::placeholder { color: var(--dim); }
+  .tlp-section-label { font-family: "Inter", sans-serif; font-size: 9px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.8px; padding: 8px 12px 4px; flex-shrink: 0; }
+  .tlp-list { overflow-y: auto; flex: 1; }
+  .tlp-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.025); transition: background 0.1s; }
+  .tlp-item:hover { background: rgba(255,255,255,0.03); }
+  .tlp-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); padding-left: 8px; }
+  .tlp-icon { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+  .tlp-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .tlp-name { font-size: 11px; font-weight: 600; color: var(--white); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tlp-price { font-size: 9px; color: var(--text); font-family: "JetBrains Mono", monospace; flex-shrink: 0; }
+  .tlp-empty { padding: 10px 12px; font-size: 10px; color: var(--dim); font-family: "Inter", sans-serif; }
+  .token-page-layout > .chart-and-metrics { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+  .token-page-layout > .chart-and-metrics > .chart-layout { margin-bottom: 0; }
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
@@ -440,6 +460,20 @@
   <nav class="nav" id="nav" style="display:none"></nav>
 
   <!-- Chart + Metrics Panel -->
+  <div class="token-page-layout">
+
+  <!-- Left token panel -->
+  <div class="token-left-panel" id="token-left-panel">
+    <div class="tlp-search-wrap">
+      <input class="tlp-search" id="tlp-search" type="text" placeholder="Search tokens…" autocomplete="off">
+    </div>
+    <div class="tlp-section-label" id="tlp-wl-label" style="display:none">Watchlist</div>
+    <div class="tlp-list" id="tlp-wl-list"></div>
+    <div class="tlp-section-label">All Tokens</div>
+    <div class="tlp-list" id="tlp-all-list"></div>
+  </div>
+
+  <div class="chart-and-metrics">
   <div class="chart-layout">
 
     <div class="chart-section">
@@ -499,6 +533,8 @@
       </div>
     </div>
   </div>
+  </div><!-- /chart-and-metrics -->
+  </div><!-- /token-page-layout -->
 
   <!-- Params below chart -->
   <div class="params" id="params" style="display:none"></div>
@@ -1218,6 +1254,7 @@ async function renderLeftPanel() {
 
   var fmtP = function(n) { return n >= 1 ? '$' + n.toFixed(2) : n > 0 ? '$' + n.toFixed(4) : '—'; };
 
+  renderTokenLeftPanel(priceMap);
   list.innerHTML = Object.entries(TOKENS).filter(function(e) { return e[1].live; }).map(function(e) {
     var key = e[0], tok = e[1];
     var data = priceMap[key] || {};
@@ -1235,6 +1272,79 @@ async function renderLeftPanel() {
 }
 
 renderLeftPanel();
+
+// ── Token left panel (inline, left of chart) ──
+function renderTokenLeftPanel(priceMap) {
+  var watchlist = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
+  var fmtP = function(n) { return n >= 1 ? '$' + n.toFixed(2) : n > 0 ? '$' + n.toFixed(4) : '—'; };
+
+  function makeItem(key, tok, spot) {
+    var isActive = key === tokenKey;
+    var iconHtml = tok.logo
+      ? '<div class="tlp-icon"><img src="' + tok.logo + '"></div>'
+      : '<div class="tlp-icon" style="background:' + (tok.color||'#333') + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000">' + tok.ticker[0] + '</div>';
+    return '<a class="tlp-item' + (isActive ? ' active' : '') + '" href="index.html?token=' + key + '">' +
+      iconHtml +
+      '<span class="tlp-name">' + tok.ticker + '</span>' +
+      '<span class="tlp-price">' + fmtP(spot) + '</span>' +
+    '</a>';
+  }
+
+  var liveTokens = Object.entries(TOKENS).filter(function(e) { return e[1].live; });
+
+  // Watchlist section
+  var wlItems = liveTokens.filter(function(e) { return watchlist.indexOf(e[0]) !== -1; });
+  var wlLabel = document.getElementById('tlp-wl-label');
+  var wlList = document.getElementById('tlp-wl-list');
+  if (wlLabel && wlList) {
+    if (wlItems.length > 0) {
+      wlLabel.style.display = '';
+      wlList.innerHTML = wlItems.map(function(e) {
+        var data = priceMap[e[0]] || {};
+        return makeItem(e[0], e[1], data.spot || 0);
+      }).join('');
+    } else {
+      wlLabel.style.display = 'none';
+      wlList.innerHTML = '';
+    }
+  }
+
+  // All tokens section
+  var allList = document.getElementById('tlp-all-list');
+  if (allList) {
+    allList.innerHTML = liveTokens.map(function(e) {
+      var data = priceMap[e[0]] || {};
+      return makeItem(e[0], e[1], data.spot || 0);
+    }).join('');
+  }
+}
+
+// Search filter for left panel
+var tlpSearch = document.getElementById('tlp-search');
+if (tlpSearch) {
+  tlpSearch.addEventListener('input', function() {
+    var q = this.value.toLowerCase().trim();
+    ['tlp-all-list', 'tlp-wl-list'].forEach(function(id) {
+      var list = document.getElementById(id);
+      if (!list) return;
+      list.querySelectorAll('.tlp-item').forEach(function(item) {
+        var name = item.querySelector('.tlp-name');
+        var text = name ? name.textContent.toLowerCase() : '';
+        var href = item.getAttribute('href') || '';
+        var key = href.split('token=')[1] || '';
+        var tok = TOKENS[key];
+        var fullName = tok ? tok.name.toLowerCase() : '';
+        item.style.display = (!q || text.includes(q) || fullName.includes(q)) ? '' : 'none';
+      });
+      // Hide section label if all items hidden
+      var wlLabel = document.getElementById('tlp-wl-label');
+      if (id === 'tlp-wl-list' && wlLabel) {
+        var anyVisible = Array.from(list.querySelectorAll('.tlp-item')).some(function(i) { return i.style.display !== 'none'; });
+        wlLabel.style.display = anyVisible ? '' : 'none';
+      }
+    });
+  });
+}
 
 // Left panel search filter
 var lpSearchEl = document.getElementById('lp-search');
