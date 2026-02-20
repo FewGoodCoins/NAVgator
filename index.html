@@ -76,23 +76,6 @@
   @media (max-width: 800px) { .token-metrics-row { flex-wrap: wrap; } }
   @media (max-width: 500px) { .token-header-title { font-size: 20px; } }
 
-
-  /* ── Vertical collapsible menu (token page) ── */
-  .token-vmenu-wrap { display: flex; gap: 16px; align-items: flex-start; }
-  .token-vmenu { flex-shrink: 0; width: 32px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; transition: width 0.25s ease; display: flex; flex-direction: column; }
-  .token-vmenu.expanded { width: 142px; }
-  .token-vmenu-toggle { display: flex; align-items: center; justify-content: center; width: 100%; height: 40px; cursor: pointer; border-bottom: 1px solid var(--border2); flex-shrink: 0; color: var(--muted); transition: color 0.15s; padding: 0; background: none; border-left: none; border-right: none; border-top: none; }
-  .token-vmenu-toggle:hover { color: var(--green); }
-  .token-vmenu-toggle svg { flex-shrink: 0; transition: transform 0.25s ease; }
-  .token-vmenu.expanded .token-vmenu-toggle svg { transform: rotate(180deg); }
-  .token-vmenu-items { display: flex; flex-direction: column; padding: 6px 0; overflow: hidden; }
-  .token-vmenu-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--muted); font-family: "Inter", sans-serif; font-size: 12px; font-weight: 500; transition: all 0.15s; border-radius: 6px; margin: 1px 4px; }
-  .token-vmenu-item:hover { color: var(--white); background: rgba(255,255,255,0.04); }
-  .token-vmenu-item.active { color: var(--green); background: var(--green-dim); }
-  .token-vmenu-item svg { flex-shrink: 0; }
-  .token-vmenu-label { opacity: 0; transition: opacity 0.15s; pointer-events: none; }
-  .token-vmenu.expanded .token-vmenu-label { opacity: 1; }
-  .token-vmenu-wrap > .chart-layout-inner { flex: 1; min-width: 0; display: flex; gap: 16px; }
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
@@ -457,38 +440,6 @@
   <nav class="nav" id="nav" style="display:none"></nav>
 
   <!-- Chart + Metrics Panel -->
-  <div class="token-vmenu-wrap">
-
-  <!-- Vertical collapsible menu -->
-  <div class="token-vmenu" id="token-vmenu">
-    <button class="token-vmenu-toggle" onclick="document.getElementById('token-vmenu').classList.toggle('expanded')" title="Toggle menu">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-    <div class="token-vmenu-items">
-      <a class="token-vmenu-item active" href="#">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span class="token-vmenu-label">Chart</span>
-      </a>
-      <a class="token-vmenu-item" href="#">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        <span class="token-vmenu-label">Overview</span>
-      </a>
-      <a class="token-vmenu-item" href="#">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        <span class="token-vmenu-label">Treasury</span>
-      </a>
-      <a class="token-vmenu-item" href="#">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span class="token-vmenu-label">History</span>
-      </a>
-      <a class="token-vmenu-item" href="#">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span class="token-vmenu-label">Governance</span>
-      </a>
-    </div>
-  </div>
-
-  <div class="chart-layout-inner">
   <div class="chart-layout">
 
     <div class="chart-section">
@@ -573,8 +524,6 @@
     <a href="index.html">← NAVgator Home</a> · <a href="submit.html">Submit a Token</a> · Treasury analytics for ownership tokens · Not financial advice
   </div>
 
-  </div><!-- /chart-layout-inner -->
-  </div><!-- /token-vmenu-wrap -->
   </div><!-- /dashboard-view -->
 </div><!-- /wrap -->
 
