@@ -78,10 +78,11 @@
 
 
   /* ── Inline token panel (left of chart) ── */
-  .token-page-layout { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 28px; margin-left: -24px; }
-  /* Collapsed = 44px (icons only), Expanded = 200px */
-  .token-left-panel { width: 44px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-radius: 0 10px 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 65px; transition: width 0.22s ease; }
+  .token-page-layout { display: flex; gap: 0; align-items: flex-start; margin-bottom: 28px; margin-left: -24px; }
+  /* Collapsed = 44px (icons only), Expanded = 200px, Wide = 260px */
+  .token-left-panel { width: 44px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 55px; transition: width 0.22s ease; }
   .token-left-panel.tlp-open { width: 200px; }
+  .token-left-panel.tlp-open2 { width: 260px; }
   /* Toggle button */
   .tlp-toggle { display: flex; align-items: center; justify-content: flex-end; padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: pointer; color: var(--dim); transition: color 0.15s; gap: 8px; white-space: nowrap; overflow: hidden; }
   .tlp-toggle:hover { color: var(--green); }
@@ -89,6 +90,12 @@
   .token-left-panel.tlp-open .tlp-toggle-label { opacity: 1; }
   .tlp-toggle svg { flex-shrink: 0; transition: transform 0.22s ease; }
   .token-left-panel.tlp-open .tlp-toggle svg { transform: rotate(180deg); }
+  .token-left-panel.tlp-open2 .tlp-toggle svg { transform: rotate(180deg); }
+  .token-left-panel.tlp-open2 .tlp-toggle-label { opacity: 1; }
+  .token-left-panel.tlp-open2 .tlp-search-wrap { max-height: 50px; opacity: 1; padding: 8px 8px 6px; }
+  .token-left-panel.tlp-open2 .tlp-section-label { opacity: 1; max-height: 30px; }
+  .token-left-panel.tlp-open2 .tlp-name { opacity: 1; }
+  .token-left-panel.tlp-open2 .tlp-price { opacity: 1; }
   /* Search — hidden when collapsed */
   .tlp-search-wrap { padding: 8px 8px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.22s ease, opacity 0.15s ease, padding 0.22s ease; padding-top: 0; padding-bottom: 0; }
   .token-left-panel.tlp-open .tlp-search-wrap { max-height: 50px; opacity: 1; padding: 8px 8px 6px; }
@@ -109,8 +116,8 @@
   .tlp-price { font-size: 9px; color: var(--text); font-family: "JetBrains Mono", monospace; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
   .token-left-panel.tlp-open .tlp-price { opacity: 1; }
   .tlp-empty { padding: 10px 12px; font-size: 10px; color: var(--dim); font-family: "Inter", sans-serif; }
-  .token-page-layout > .chart-and-metrics { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
-  .token-page-layout > .chart-and-metrics > .chart-layout { margin-bottom: 0; }
+  .token-page-layout > .chart-and-metrics { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; padding-left: 16px; }
+  .token-page-layout > .chart-and-metrics > .chart-layout { margin-bottom: 0; margin-top: 0; }
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
@@ -479,7 +486,7 @@
 
   <!-- Left token panel -->
   <div class="token-left-panel" id="token-left-panel">
-    <div class="tlp-toggle" id="tlp-toggle" onclick="document.getElementById('token-left-panel').classList.toggle('tlp-open')">
+    <div class="tlp-toggle" id="tlp-toggle" onclick="(function(){var p=document.getElementById('token-left-panel');if(!p.classList.contains('tlp-open')&&!p.classList.contains('tlp-open2')){p.classList.add('tlp-open');}else if(p.classList.contains('tlp-open')&&!p.classList.contains('tlp-open2')){p.classList.remove('tlp-open');p.classList.add('tlp-open2');}else{p.classList.remove('tlp-open2');}})()">
       <span class="tlp-toggle-label">Tokens</span>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </div>
