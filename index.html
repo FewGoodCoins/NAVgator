@@ -81,8 +81,8 @@
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
   .chart-layout .chart-section { flex: 1; margin-bottom: 0; min-width: 0; }
   /* Fixed sidebar on dashboard */
-  .dash-sidebar { position: fixed; left: 0; top: 57px; width: 200px; height: calc(100vh - 57px); background: var(--bg2); border-right: 1px solid var(--border); z-index: 80; display: flex; flex-direction: column; overflow: hidden; }
-  .dash-sidebar-brand { display: none; }
+  .dash-sidebar { position: fixed; left: 0; top: 0; width: 200px; height: 100vh; background: var(--bg2); border-right: 1px solid var(--border); z-index: 100; display: flex; flex-direction: column; overflow: hidden; }
+  .dash-sidebar-brand { padding: 20px 16px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .dash-sidebar-brand a { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; transition: text-shadow 0.2s; }
   .dash-sidebar-brand a:hover { text-shadow: 0 0 12px rgba(0,229,160,0.5); }
   .dash-sidebar-brand a span { color: #00b86e; }
@@ -103,10 +103,10 @@
   body.is-dashboard .wrap { padding-left: 24px; padding-right: 24px; max-width: 100%; }
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
-  /* Token page: fix nav to top, scroll-hide, preserve landing-nav styles */
-  body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); transition: transform 0.3s ease; }
+  /* Scroll-hide top nav on dashboard */
+  body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 32px; transition: transform 0.3s ease; display: flex; align-items: center; justify-content: space-between; }
   body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
-  body.is-dashboard .wrap { padding-top: 74px; }
+  body.is-dashboard .wrap { padding-top: 72px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
