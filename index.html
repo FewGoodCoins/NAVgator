@@ -18,7 +18,7 @@
   body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
   ::selection { background: rgba(0,229,160,0.25); }
 
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px 64px; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 10px 32px 64px; }
 
   /* Nav bar */
   .nav { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
@@ -104,10 +104,10 @@
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
   /* Token page: fix nav to top, scroll-hide, preserve landing-nav styles */
-  body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); transition: transform 0.3s ease; padding: 16px 0; }
+  body.is-dashboard #global-nav { position: fixed; top: 10px; left: 0; right: 0; z-index: 90; background: var(--bg); transition: transform 0.3s ease; padding: 16px 0; }
   body.is-dashboard .nav-inner { padding: 0 32px; }
   body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
-  body.is-dashboard .wrap { padding-top: 55px; }
+  body.is-dashboard .wrap { padding-top: 65px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
