@@ -105,6 +105,7 @@
   body.is-dashboard .left-panel-wrap { display: none; }
   /* Token page: fix nav to top, scroll-hide, preserve landing-nav styles */
   body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); transition: transform 0.3s ease; }
+  body.is-dashboard .nav-inner { padding: 0 32px; }
   body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
   body.is-dashboard .wrap { padding-top: 74px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
@@ -202,7 +203,7 @@
   .dashboard { display: none; }
   .dashboard.active { display: block; }
   .hero { padding: 0; text-align: left; }
-  .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 32px; width: 100%; display: flex; align-items: center; justify-content: space-between; position: relative; }
+  .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0; width: 100%; display: flex; align-items: center; justify-content: space-between; position: relative; }
   .landing-nav { display: flex; align-items: center; justify-content: center; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 0; position: sticky; top: 0; z-index: 50; background: var(--bg); }
   .landing-nav-left { display: flex; align-items: center; gap: 12px; }
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
