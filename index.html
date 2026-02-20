@@ -114,11 +114,6 @@
   .token-bottom-section .addr-row { padding: 10px 0; gap: 16px; }
   .token-bottom-section .addr-label { min-width: 120px; font-size: 12px; color: var(--muted); }
   .token-bottom-section .addr-val a { font-size: 12px; }
-  .tlp-sticky-brand { display: none; align-items: center; padding: 14px 12px 12px; border-bottom: 1px solid var(--border2); flex-shrink: 0; }
-  .tlp-sticky-brand a { font-family: "Inter", sans-serif; font-size: 18px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; transition: text-shadow 0.2s; }
-  .tlp-sticky-brand a:hover { text-shadow: 0 0 12px rgba(0,229,160,0.5); }
-  .tlp-sticky-brand a span { color: #00b86e; }
-  .tlp-sticky-brand.visible { display: flex; }
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
@@ -147,10 +142,10 @@
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
   /* Token page: fix nav to top matching landing page exactly */
-  body.is-dashboard #global-nav { position: relative; background: transparent; border-bottom: none; }
-  body.is-dashboard .landing-nav-left { position: fixed; top: 0; left: 32px; z-index: 100; background: var(--bg); padding: 16px 0; border-bottom: none; }
-  body.is-dashboard .landing-nav-center { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 90; padding: 22px 0; background: transparent; }
-  body.is-dashboard .landing-nav-right { position: fixed; top: 0; right: 32px; z-index: 90; padding: 16px 0; background: transparent; }
+  body.is-dashboard #global-nav { position: relative; background: var(--bg); border-bottom: 1px solid var(--border); }
+  body.is-dashboard .landing-nav-left { position: fixed; top: 0; left: 32px; z-index: 100; background: var(--bg); padding: 16px 0; }
+  body.is-dashboard .landing-nav-center { position: static; }
+  body.is-dashboard .landing-nav-right { position: static; }
   body.is-dashboard .nav-inner { min-height: 55px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
@@ -483,7 +478,6 @@
 
   <!-- Left token panel -->
   <div class="token-left-panel" id="token-left-panel">
-    <div class="tlp-sticky-brand" id="tlp-sticky-brand"><a href="index.html">NAV<span>gator</span></a></div>
     <div class="tlp-toggle" id="tlp-toggle" onclick="(function(){var p=document.getElementById('token-left-panel');if(!p.classList.contains('tlp-open')&&!p.classList.contains('tlp-open2')){p.classList.add('tlp-open');}else if(p.classList.contains('tlp-open')&&!p.classList.contains('tlp-open2')){p.classList.remove('tlp-open');p.classList.add('tlp-open2');}else{p.classList.remove('tlp-open2');}})()">
       <span class="tlp-toggle-label">Tokens</span>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -2729,21 +2723,6 @@ function renderAllowance(data) {
     cc2.parentNode.insertBefore(notice2, cc2.nextSibling);
   }
 })();
-
-// Sticky brand on left panel for token page
-if (document.body.classList.contains('is-dashboard')) {
-  var _tlpBrand = document.getElementById('tlp-sticky-brand');
-  var _globalNav = document.getElementById('global-nav');
-  window.addEventListener('scroll', function() {
-    if (!_tlpBrand || !_globalNav) return;
-    var navBottom = _globalNav.getBoundingClientRect().bottom;
-    if (navBottom <= 0) {
-      _tlpBrand.classList.add('visible');
-    } else {
-      _tlpBrand.classList.remove('visible');
-    }
-  }, { passive: true });
-}
 } // end if (_hasToken)
 </script>
 </body>
