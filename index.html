@@ -78,21 +78,36 @@
 
 
   /* ── Inline token panel (left of chart) ── */
-  .token-page-layout { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 28px; }
-  .token-left-panel { width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0; background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; max-height: calc(100vh - 120px); position: sticky; top: 65px; }
-  .tlp-search-wrap { padding: 10px 10px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .tlp-search { width: 100%; font-family: "Inter", sans-serif; font-size: 11px; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border2); background: var(--bg); color: var(--white); outline: none; transition: border-color 0.15s; }
+  .token-page-layout { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 28px; }
+  /* Collapsed = 44px (icons only), Expanded = 200px */
+  .token-left-panel { width: 44px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 65px; transition: width 0.22s ease; }
+  .token-left-panel.tlp-open { width: 200px; }
+  /* Toggle button */
+  .tlp-toggle { display: flex; align-items: center; justify-content: flex-end; padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: pointer; color: var(--dim); transition: color 0.15s; gap: 8px; white-space: nowrap; overflow: hidden; }
+  .tlp-toggle:hover { color: var(--green); }
+  .tlp-toggle-label { font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; color: var(--white); opacity: 0; transition: opacity 0.15s; pointer-events: none; flex: 1; }
+  .token-left-panel.tlp-open .tlp-toggle-label { opacity: 1; }
+  .tlp-toggle svg { flex-shrink: 0; transition: transform 0.22s ease; }
+  .token-left-panel.tlp-open .tlp-toggle svg { transform: rotate(180deg); }
+  /* Search — hidden when collapsed */
+  .tlp-search-wrap { padding: 8px 8px 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.22s ease, opacity 0.15s ease, padding 0.22s ease; padding-top: 0; padding-bottom: 0; }
+  .token-left-panel.tlp-open .tlp-search-wrap { max-height: 50px; opacity: 1; padding: 8px 8px 6px; }
+  .tlp-search { width: 100%; font-family: "Inter", sans-serif; font-size: 11px; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--border2); background: var(--bg); color: var(--white); outline: none; transition: border-color 0.15s; }
   .tlp-search:focus { border-color: var(--green); }
   .tlp-search::placeholder { color: var(--dim); }
-  .tlp-section-label { font-family: "Inter", sans-serif; font-size: 9px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.8px; padding: 8px 12px 4px; flex-shrink: 0; }
+  /* Section labels — hidden when collapsed */
+  .tlp-section-label { font-family: "Inter", sans-serif; font-size: 9px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 10px 3px; flex-shrink: 0; white-space: nowrap; overflow: hidden; opacity: 0; max-height: 0; transition: opacity 0.15s, max-height 0.22s; }
+  .token-left-panel.tlp-open .tlp-section-label { opacity: 1; max-height: 30px; }
   .tlp-list { overflow-y: auto; flex: 1; }
-  .tlp-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.025); transition: background 0.1s; }
+  .tlp-item { display: flex; align-items: center; gap: 8px; padding: 8px 11px; cursor: pointer; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.025); transition: background 0.1s; white-space: nowrap; overflow: hidden; }
   .tlp-item:hover { background: rgba(255,255,255,0.03); }
-  .tlp-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); padding-left: 8px; }
+  .tlp-item.active { background: rgba(0,229,160,0.06); border-left: 2px solid var(--green); padding-left: 9px; }
   .tlp-icon { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
   .tlp-icon img { width: 100%; height: 100%; object-fit: cover; }
-  .tlp-name { font-size: 11px; font-weight: 600; color: var(--white); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tlp-price { font-size: 9px; color: var(--text); font-family: "JetBrains Mono", monospace; flex-shrink: 0; }
+  .tlp-name { font-size: 11px; font-weight: 600; color: var(--white); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity 0.15s; }
+  .token-left-panel.tlp-open .tlp-name { opacity: 1; }
+  .tlp-price { font-size: 9px; color: var(--text); font-family: "JetBrains Mono", monospace; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+  .token-left-panel.tlp-open .tlp-price { opacity: 1; }
   .tlp-empty { padding: 10px 12px; font-size: 10px; color: var(--dim); font-family: "Inter", sans-serif; }
   .token-page-layout > .chart-and-metrics { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
   .token-page-layout > .chart-and-metrics > .chart-layout { margin-bottom: 0; }
@@ -464,6 +479,10 @@
 
   <!-- Left token panel -->
   <div class="token-left-panel" id="token-left-panel">
+    <div class="tlp-toggle" id="tlp-toggle" onclick="document.getElementById('token-left-panel').classList.toggle('tlp-open')">
+      <span class="tlp-toggle-label">Tokens</span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
     <div class="tlp-search-wrap">
       <input class="tlp-search" id="tlp-search" type="text" placeholder="Search tokens…" autocomplete="off">
     </div>
