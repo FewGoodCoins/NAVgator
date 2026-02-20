@@ -840,8 +840,8 @@ if (!_hasToken) {
   // Watchlist
   var _watchlist = JSON.parse(localStorage.getItem('navgator_watchlist') || '[]');
   var _activeFilter = 'all';
-  var _starFilled = '<svg viewBox="0 0 20 18" width="15" height="15"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" stroke-linejoin="round"/></svg>';
-  var _starEmpty = '<svg viewBox="0 0 20 18" width="15" height="15"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  var _starFilled = '<svg viewBox="0 0 20 18" width="15" height="15" style="fill:currentColor;flex-shrink:0"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" stroke-linejoin="round"/></svg>';
+  var _starEmpty = '<svg viewBox="0 0 20 18" width="15" height="15" style="flex-shrink:0"><polygon points="10,1 12.6,6.4 18.6,7.2 14.3,11.4 15.3,17.3 10,14.5 4.7,17.3 5.7,11.4 1.4,7.2 7.4,6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
   function starSvg(watched) { return watched ? _starFilled : _starEmpty; }
 
   function isWatched(key) { return _watchlist.indexOf(key) !== -1; }
@@ -957,16 +957,17 @@ if (!_hasToken) {
     container.id = 'abs-stars';
     container.style.cssText = 'position:absolute;left:8px;top:0;width:28px;pointer-events:none;';
     wrap.appendChild(container);
-    document.querySelectorAll('#token-tbody tr').forEach(function(row, i) {
-      var key = Object.keys(TOKENS)[i];
-      // get key from the onclick attribute
+    var wrapTop = wrap.getBoundingClientRect().top;
+    document.querySelectorAll('#token-tbody tr').forEach(function(row) {
       var onclick = row.getAttribute('onclick') || '';
       var m = onclick.match(/token=([^']+)/);
       if (!m) return;
-      key = m[1];
+      var key = m[1];
+      var r = row.getBoundingClientRect();
+      var top = r.top - wrapTop;
       var star = document.createElement('div');
       star.className = 'wl-star' + (isWatched(key) ? ' active' : '');
-      star.style.cssText = 'position:absolute;top:' + row.offsetTop + 'px;height:' + row.offsetHeight + 'px;width:28px;display:flex;align-items:center;justify-content:center;pointer-events:all;cursor:pointer;';
+      star.style.cssText = 'position:absolute;top:' + top + 'px;height:' + r.height + 'px;width:28px;display:flex;align-items:center;justify-content:center;pointer-events:all;cursor:pointer;';
       star.innerHTML = starSvg(isWatched(key));
       star.addEventListener('click', function(e) {
         e.stopPropagation();
