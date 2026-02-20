@@ -104,8 +104,9 @@
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
   /* Token page: fix nav to top, scroll-hide, preserve landing-nav styles */
-  body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); padding-left: 224px; padding-right: 24px; transition: transform 0.3s ease; }
+  body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); transition: transform 0.3s ease; }
   body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
+  body.is-dashboard .nav-inner { padding-left: 224px; }
   body.is-dashboard .wrap { padding-top: 74px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
@@ -202,7 +203,8 @@
   .dashboard { display: none; }
   .dashboard.active { display: block; }
   .hero { padding: 0; text-align: left; }
-  .landing-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 0; position: sticky; top: 0; z-index: 50; background: var(--bg); }
+  .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 32px; width: 100%; display: flex; align-items: center; justify-content: space-between; position: relative; }
+  .landing-nav { display: flex; align-items: center; justify-content: center; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 0; position: sticky; top: 0; z-index: 50; background: var(--bg); }
   .landing-nav-left { display: flex; align-items: center; gap: 12px; }
   .landing-nav-left .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
   .landing-nav-left .brand-logo { display: flex; align-items: center; }
@@ -357,6 +359,7 @@
 
   <!-- ══ GLOBAL NAV BAR ══ -->
   <div class="landing-nav" id="global-nav">
+    <div class="nav-inner">
     <div class="landing-nav-left">
       <a href="index.html" class="brand">
         <div class="brand-text">NAV<span>gator</span></div>
@@ -373,6 +376,7 @@
       <a href="#" class="sign-in-btn">Sign In</a>
       <a href="#" class="user-icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
     </div>
+    </div><!-- /nav-inner -->
   </div>
 
   <!-- ══ LANDING PAGE ══ -->
