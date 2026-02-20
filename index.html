@@ -143,9 +143,11 @@
   body.is-dashboard .left-panel-wrap { display: none; }
   /* Token page: fix nav to top matching landing page exactly */
   /* Token page: brand fixed, rest of header scrolls away */
-  body.is-dashboard #global-nav { position: relative; background: var(--bg); }
+  body.is-dashboard #global-nav { position: relative; background: var(--bg); border-bottom: 1px solid var(--border); }
   body.is-dashboard .landing-nav-left { position: fixed; top: 0; left: 32px; z-index: 100; background: var(--bg); height: 55px; display: flex; align-items: center; }
-  body.is-dashboard .landing-nav-center { margin-left: 200px; }
+  body.is-dashboard .landing-nav-left .brand { visibility: visible; }
+  body.is-dashboard .nav-inner { position: relative; display: flex; align-items: center; justify-content: space-between; min-height: 55px; padding: 0 32px; width: 100%; }
+  body.is-dashboard .landing-nav-center { position: absolute; left: 50%; transform: translateX(-50%); }
   body.is-dashboard .wrap { padding-top: 0; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
