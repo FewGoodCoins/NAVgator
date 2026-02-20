@@ -79,12 +79,12 @@
 
   /* ── Inline token panel (left of chart) ── */
   .token-page-layout { display: flex; gap: 0; align-items: flex-start; margin-bottom: 28px; margin-left: -24px; }
-  /* Collapsed = 44px (icons only), Expanded = 200px, Wide = 260px */
-  .token-left-panel { width: 44px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 75px; transition: width 0.22s ease; }
-  .token-left-panel.tlp-open { width: 200px; }
+  /* Collapsed = 20px (toggle only), Middle = 32px (icons), Wide = 260px */
+  .token-left-panel { width: 20px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 75px; transition: width 0.22s ease; }
+  .token-left-panel.tlp-open { width: 32px; }
   .token-left-panel.tlp-open2 { width: 260px; }
   /* Toggle button */
-  .tlp-toggle { display: flex; align-items: center; justify-content: flex-end; padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: pointer; color: var(--dim); transition: color 0.15s; gap: 8px; white-space: nowrap; overflow: hidden; }
+  .tlp-toggle { display: flex; align-items: center; justify-content: center; padding: 10px 0; border-bottom: 1px solid var(--border); flex-shrink: 0; cursor: pointer; color: var(--dim); transition: color 0.15s; gap: 8px; white-space: nowrap; overflow: hidden; }
   .tlp-toggle:hover { color: var(--green); }
   .tlp-toggle-label { font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; color: var(--white); opacity: 0; transition: opacity 0.15s; pointer-events: none; flex: 1; }
   .token-left-panel.tlp-open .tlp-toggle-label { opacity: 1; }
