@@ -80,7 +80,7 @@
   /* ── Inline token panel (left of chart) ── */
   .token-page-layout { display: flex; gap: 0; align-items: flex-start; margin-bottom: 28px; margin-left: -24px; }
   /* Collapsed = 44px (icons only), Expanded = 200px, Wide = 260px */
-  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 75px; }
+  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 0; }
   /* Toggle button */
   .tlp-toggle { display: none; }
   .tlp-toggle:hover { color: var(--green); }
@@ -114,6 +114,9 @@
   .token-bottom-section .addr-row { padding: 10px 0; gap: 16px; }
   .token-bottom-section .addr-label { min-width: 120px; font-size: 12px; color: var(--muted); }
   .token-bottom-section .addr-val a { font-size: 12px; }
+  .tlp-brand { display: flex; align-items: center; font-family: "Inter", sans-serif; font-size: 18px; font-weight: 700; color: var(--white); text-decoration: none; letter-spacing: -0.5px; padding: 14px 12px 12px; border-bottom: 1px solid var(--border2); flex-shrink: 0; transition: text-shadow 0.2s; }
+  .tlp-brand:hover { text-shadow: 0 0 12px rgba(0,229,160,0.5); }
+  .tlp-brand span { color: #00b86e; }
   /* Chart section — clean, no box */
   .chart-section { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 32px 16px 20px; margin-bottom: 28px; position: relative; overflow: visible; }
   .chart-layout { display: flex; gap: 16px; margin-bottom: 28px; }
@@ -142,9 +145,7 @@
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
   /* Token page: fix nav to top matching landing page exactly */
-  body.is-dashboard #global-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: var(--bg); padding: 16px 32px; }
-  body.is-dashboard #global-nav.nav-hidden { transform: translateY(-100%); }
-  body.is-dashboard .wrap { padding-top: 55px; }
+  body.is-dashboard #global-nav { position: relative; background: var(--bg); padding: 16px 32px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
@@ -476,6 +477,7 @@
 
   <!-- Left token panel -->
   <div class="token-left-panel" id="token-left-panel">
+    <a href="index.html" class="tlp-brand">NAV<span>gator</span></a>
     <div class="tlp-toggle" id="tlp-toggle" onclick="(function(){var p=document.getElementById('token-left-panel');if(!p.classList.contains('tlp-open')&&!p.classList.contains('tlp-open2')){p.classList.add('tlp-open');}else if(p.classList.contains('tlp-open')&&!p.classList.contains('tlp-open2')){p.classList.remove('tlp-open');p.classList.add('tlp-open2');}else{p.classList.remove('tlp-open2');}})()">
       <span class="tlp-toggle-label">Tokens</span>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1249,18 +1251,7 @@ window.toggleDashWatch = function() {
 
 // Mark body as dashboard, enable scroll-hide nav
 document.body.classList.add('is-dashboard');
-var _lastScrollY = 0;
-window.addEventListener('scroll', function() {
-  var nav = document.getElementById('global-nav');
-  if (!nav) return;
-  var currentY = window.scrollY;
-  if (currentY > _lastScrollY && currentY > 60) {
-    nav.classList.add('nav-hidden');
-  } else {
-    nav.classList.remove('nav-hidden');
-  }
-  _lastScrollY = currentY;
-}, { passive: true });
+// scroll-hide removed: header scrolls normally on token page
 
 // Left Panel - Token List
 async function renderLeftPanel() {
