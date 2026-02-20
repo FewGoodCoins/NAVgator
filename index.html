@@ -80,7 +80,7 @@
   /* ── Inline token panel (left of chart) ── */
   .token-page-layout { display: flex; gap: 0; align-items: flex-start; margin-bottom: 28px; margin-left: 139.5px; }
   /* Collapsed = 44px (icons only), Expanded = 200px, Wide = 260px */
-  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; height: 100vh; position: fixed; top: 0; left: 0; z-index: 40; }
+  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; height: calc(100vh - 55px); position: fixed; top: 55px; left: 0; z-index: 40; }
   /* Toggle button */
   .tlp-toggle { display: none; }
   .tlp-toggle:hover { color: var(--green); }
@@ -147,7 +147,11 @@
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
   /* Token page: fix nav to top matching landing page exactly */
-  body.is-dashboard #global-nav { position: relative; background: var(--bg); }
+  body.is-dashboard #global-nav { position: relative; background: transparent; border-bottom: none; }
+  body.is-dashboard .landing-nav-left { position: fixed; top: 0; left: 32px; z-index: 100; background: var(--bg); padding: 16px 0; border-bottom: none; }
+  body.is-dashboard .landing-nav-center { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 90; padding: 22px 0; background: transparent; }
+  body.is-dashboard .landing-nav-right { position: fixed; top: 0; right: 32px; z-index: 90; padding: 16px 0; background: transparent; }
+  body.is-dashboard .nav-inner { min-height: 55px; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
   .mp-box.price-box { padding: 18px 14px; }
