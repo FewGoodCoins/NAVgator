@@ -80,7 +80,7 @@
   /* ── Inline token panel (left of chart) ── */
   .token-page-layout { display: flex; gap: 0; align-items: flex-start; margin-bottom: 28px; margin-left: -24px; }
   /* Collapsed = 44px (icons only), Expanded = 200px, Wide = 260px */
-  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: calc(100vh - 80px); position: sticky; top: 0; }
+  .token-left-panel { width: 163.5px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border2); border-left: none; border-top: none; border-radius: 0 0 10px 0; overflow: hidden; max-height: 100vh; position: sticky; top: 0; }
   /* Toggle button */
   .tlp-toggle { display: none; }
   .tlp-toggle:hover { color: var(--green); }
@@ -141,7 +141,8 @@
   body.is-dashboard .wrap { padding-left: 24px; padding-right: 24px; max-width: 100%; }
   /* Hide left-panel-wrap (old inline panel) on dashboard */
   body.is-dashboard .left-panel-wrap { display: none; }
-  /* Token page: nav identical to landing page (sticky, scrolls with page) */
+  /* Token page: nav flows with page, not sticky */
+  body.is-dashboard #global-nav { position: static; }
   body.is-dashboard .wrap { padding-top: 0; }
   .metrics-panel { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
   .mp-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 14px; text-align: center; }
