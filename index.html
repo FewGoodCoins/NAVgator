@@ -79,12 +79,15 @@ body {
   flex-shrink: 0;
   background: var(--bg);
   border-right: 1px solid var(--bdr);
-  display: flex;
+  display: none;  /* hidden by default; JS adds .token-mode to show */
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
   position: relative;
   z-index: 50;
+}
+.app-left.token-mode {
+  display: flex;
 }
 
 /* Brand area at top of left rail */
@@ -946,19 +949,16 @@ body:not(.is-token) .topnav { border-top: none; }
 /* ═══════════════════════════════════════════════════════════════ */
 /* RESPONSIVE                                                      */
 /* ═══════════════════════════════════════════════════════════════ */
-/* Landing mode — token list is de-emphasised when on markets page */
-/* Hide sidebar on landing/compare — only show on token detail pages */
-.app-left { display: none; }
-.app-left.token-mode { display: flex; }
+/* Sidebar visibility controlled above in base .app-left rule      */
 
 @media (max-width: 1024px) {
   /* Shrink sidebar slightly on smaller desktops */
-  .app-left { width: 180px; }
+  .app-left.token-mode { width: 180px; }
 }
 @media (max-width: 900px) {
   /* Stack layout on tablet/mobile */
   .app-shell { flex-direction: column; height: auto; overflow: visible; }
-  .app-left { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--bdr); flex-direction: row; overflow: hidden; }
+  .app-left.token-mode { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--bdr); flex-direction: row; overflow: hidden; }
   .app-brand { border-bottom: none; border-right: 1px solid var(--bdr); padding: 10px 14px; flex-shrink: 0; }
   .app-token-list { flex-direction: row; overflow: hidden; }
   .tp-topbar { display: none; }
