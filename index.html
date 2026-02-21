@@ -167,6 +167,16 @@ body {
 body.is-token .topnav .nav-brand {
   display: none;
 }
+/* Landing/compare: topnav sticks at top */
+body:not(.is-token) .topnav {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+}
+/* Token pages: topnav scrolls away — token-header below is sticky */
+body.is-token .topnav {
+  position: static;
+}
 .nav-brand-mark {
   width: 26px; height: 26px;
   background: var(--green); border-radius: 6px;
@@ -1059,7 +1069,9 @@ body.is-token .topnav .nav-brand {
      ════════════════════════════════════════════ -->
 <div class="app-right">
 
-<!-- ══ TOPNAV — one bar, same on all pages ══ -->
+<div class="app-content" id="app-content">
+
+<!-- ══ TOPNAV — inside scroll on token pages, sticky on landing ══ -->
 <div class="topnav" id="global-nav">
   <a href="index.html" class="nav-brand" id="nav-brand">
     <div class="nav-brand-mark">N</div>
@@ -1075,8 +1087,6 @@ body.is-token .topnav .nav-brand {
     <a href="#" class="nav-btn-solid">Sign In</a>
   </div>
 </div><!-- /topnav -->
-
-<div class="app-content" id="app-content">
 
 <!-- ══ LANDING ══ -->
 <div class="landing" id="landing-view">
