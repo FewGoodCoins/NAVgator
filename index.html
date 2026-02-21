@@ -103,7 +103,7 @@ body {
   box-sizing: border-box;
 }
 .app-brand-mark {
-  width: 28px; height: 28px;
+  width: 26px; height: 26px;
   background: var(--green);
   border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
@@ -142,20 +142,30 @@ body {
 .topnav {
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 20px 0 0;
   height: 44px;
   border-bottom: 1px solid var(--bdr);
   background: var(--bg);
   flex-shrink: 0;
-  gap: 8px;
+  gap: 0;
 }
-/* On token pages: brand lives in sidebar, hide it from topnav */
-body.is-token .topnav .nav-brand { display: none; }
-/* On landing/compare: show brand in topnav */
-body:not(.is-token) .topnav .nav-brand { display: flex; }
-.topnav .nav-brand {
+
+/* Left anchor: on token pages this is empty (sidebar has the brand);
+   on landing it shows the brand — both are exactly 220px wide so
+   nav links land at the same X position on every page. */
+.nav-brand {
+  width: 220px;
+  flex-shrink: 0;
   display: flex; align-items: center; gap: 10px;
-  text-decoration: none; margin-right: 8px;
+  padding: 0 14px;
+  text-decoration: none;
+  border-right: 1px solid var(--bdr);
+  height: 100%;
+  box-sizing: border-box;
+}
+/* On token pages: brand is in sidebar — collapse the topnav anchor to 0 */
+body.is-token .topnav .nav-brand {
+  display: none;
 }
 .nav-brand-mark {
   width: 26px; height: 26px;
@@ -170,8 +180,7 @@ body:not(.is-token) .topnav .nav-brand { display: flex; }
 }
 .nav-brand-text span { color: var(--green); }
 .topnav .nav-center {
-  position: static; transform: none;
-  flex: 1; display: flex; gap: 2px;
+  flex: 1; display: flex; gap: 2px; align-items: center; padding: 0 12px;
 }
 .nav-link {
   font-family: 'Inter', sans-serif;
@@ -184,7 +193,7 @@ body:not(.is-token) .topnav .nav-brand { display: flex; }
 }
 .nav-link:hover { color: var(--white); background: var(--bg3); }
 .nav-link.nav-active { color: var(--white); font-weight: 600; }
-.nav-right { display: flex; align-items: center; gap: 8px; }
+.nav-right { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
 .nav-btn-outline {
   font-family: 'Inter', sans-serif;
   font-size: 11px; font-weight: 600;
