@@ -134,21 +134,60 @@ body {
 }
 
 /* Slim topbar — only on the right side */
-.topnav {
+/* ── Sticky brand bar — always on top, just the logo ── */
+.brand-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding: 0 20px;
+  justify-content: space-between;
+  padding: 0 24px;
   height: 48px;
   border-bottom: 1px solid var(--bdr);
   background: var(--bg);
   flex-shrink: 0;
-  gap: 8px;
-  transition: none;
+  position: sticky;
+  top: 0;
+  z-index: 80;
 }
-.topnav.nav-hidden { transform: none; } /* disable hide animation */
+.brand-bar-logo {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.brand-bar-mark {
+  width: 26px; height: 26px;
+  background: var(--green);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px; font-weight: 800;
+  color: #050807; letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+.brand-bar-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--white); letter-spacing: -0.3px;
+}
+.brand-bar-text span { color: var(--green); }
+.brand-bar-right { display: flex; align-items: center; gap: 8px; }
 
-/* Hide brand from topbar — it lives in sidebar now */
+/* ── Full topnav (links + buttons) — scrolls with content ── */
+.topnav {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  height: 44px;
+  border-bottom: 1px solid var(--bdr);
+  background: var(--bg2);
+  gap: 8px;
+}
+.topnav.nav-hidden { transform: none; }
+
+/* On token pages: brand-bar is hidden (brand lives in sidebar) */
+body.is-token .brand-bar { display: none; }
+/* On landing/compare: topnav gets extra top padding since brand-bar is sticky above it */
+body:not(.is-token) .topnav { border-top: none; }
+
+/* Brand in topnav hidden by default (lives in sidebar or brand-bar) */
 .topnav .nav-brand { display: none; }
 .topnav .nav-center {
   position: static;
@@ -538,6 +577,10 @@ body {
   padding: 14px 24px; gap: 20px;
   border-bottom: 1px solid var(--bdr);
   flex-shrink: 0; flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg);
 }
 .th-left  { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 .th-icon  { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; outline: 2px solid var(--bdr2); outline-offset: 1px; }
@@ -904,9 +947,9 @@ body {
 /* RESPONSIVE                                                      */
 /* ═══════════════════════════════════════════════════════════════ */
 /* Landing mode — token list is de-emphasised when on markets page */
-.app-left.landing-mode .tp-topbar { opacity: 0.5; pointer-events: none; }
-.app-left.landing-mode .tp-scroll { opacity: 0.35; pointer-events: none; }
-.app-left.landing-mode .tp-footer { display: none; }
+/* Hide sidebar on landing/compare — only show on token detail pages */
+.app-left { display: none; }
+.app-left.token-mode { display: flex; }
 
 @media (max-width: 1024px) {
   /* Shrink sidebar slightly on smaller desktops */
@@ -1033,7 +1076,21 @@ body {
      ════════════════════════════════════════════ -->
 <div class="app-right">
 
-<!-- ══ TOPBAR ══ -->
+<!-- ══ STICKY BRAND BAR (landing/compare only — hidden on token pages) ══ -->
+<div class="brand-bar" id="brand-bar">
+  <a href="index.html" class="brand-bar-logo">
+    <div class="brand-bar-mark">N</div>
+    <div class="brand-bar-text">NAV<span>gator</span></div>
+  </a>
+  <div class="brand-bar-right">
+    <a href="submit.html" class="nav-btn-outline">+ Submit Token</a>
+    <a href="#" class="nav-btn-solid">Sign In</a>
+  </div>
+</div>
+
+<div class="app-content" id="app-content">
+
+<!-- ══ SCROLLING NAV (links + buttons, scrolls with page) ══ -->
 <div class="topnav" id="global-nav">
   <a href="index.html" class="nav-brand">
     <div class="nav-brand-mark">N</div>
@@ -1049,8 +1106,6 @@ body {
     <a href="#" class="nav-btn-solid">Sign In</a>
   </div>
 </div><!-- /topnav -->
-
-<div class="app-content" id="app-content">
 
 <!-- ══ LANDING ══ -->
 <div class="landing" id="landing-view">
@@ -1386,14 +1441,15 @@ if (_isCompare) {
 } else if (_hasToken) {
   document.getElementById('dashboard-view').classList.add('active');
   document.title = 'NAVgator · Dashboard';
+  // Show the sidebar only on token pages
+  var appLeft = document.getElementById('app-left');
+  if (appLeft) appLeft.classList.add('token-mode');
+  document.body.classList.add('is-token');
 } else {
   document.getElementById('landing-view').classList.add('active');
   document.title = 'NAVgator — Treasury Analytics for Ownership Tokens';
   var mktsBtn = document.getElementById('nav-markets-btn');
   if (mktsBtn) mktsBtn.classList.add('nav-active');
-  // On landing page, collapse the token list section label
-  var appLeft = document.getElementById('app-left');
-  if (appLeft) appLeft.classList.add('landing-mode');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
