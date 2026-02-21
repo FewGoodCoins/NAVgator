@@ -90,12 +90,13 @@ body {
   display: flex;
 }
 
-/* Brand area at top of left rail */
+/* Brand area at top of left rail — must match .topnav height exactly */
 .app-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 14px 12px;
+  padding: 0 14px;
+  height: 48px;
   border-bottom: 1px solid var(--bdr);
   text-decoration: none;
   flex-shrink: 0;
@@ -178,9 +179,9 @@ body {
   display: flex;
   align-items: center;
   padding: 0 24px;
-  height: 44px;
+  height: 48px;
   border-bottom: 1px solid var(--bdr);
-  background: var(--bg2);
+  background: var(--bg);
   gap: 8px;
 }
 .topnav.nav-hidden { transform: none; }
@@ -1088,9 +1089,7 @@ body:not(.is-token) .topnav { border-top: none; }
   </div>
 </div>
 
-<div class="app-content" id="app-content">
-
-<!-- ══ SCROLLING NAV (links + buttons, scrolls with page) ══ -->
+<!-- ══ TOPNAV — fixed in app-right, aligns with brand on left ══ -->
 <div class="topnav" id="global-nav">
   <a href="index.html" class="nav-brand">
     <div class="nav-brand-mark">N</div>
@@ -1106,6 +1105,8 @@ body:not(.is-token) .topnav { border-top: none; }
     <a href="#" class="nav-btn-solid">Sign In</a>
   </div>
 </div><!-- /topnav -->
+
+<div class="app-content" id="app-content">
 
 <!-- ══ LANDING ══ -->
 <div class="landing" id="landing-view">
