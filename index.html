@@ -138,68 +138,40 @@ body {
   overflow: hidden;
 }
 
-/* Slim topbar — only on the right side */
-/* ── Sticky brand bar — always on top, just the logo ── */
-.brand-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 48px;
-  border-bottom: 1px solid var(--bdr);
-  background: var(--bg);
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 80;
-}
-.brand-bar-logo {
-  display: flex; align-items: center; gap: 10px;
-  text-decoration: none;
-}
-.brand-bar-mark {
-  width: 26px; height: 26px;
-  background: var(--green);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-size: 12px; font-weight: 800;
-  color: #050807; letter-spacing: -0.5px;
-  flex-shrink: 0;
-}
-.brand-bar-text {
-  font-family: 'Syne', sans-serif;
-  font-size: 16px; font-weight: 700;
-  color: var(--white); letter-spacing: -0.3px;
-}
-.brand-bar-text span { color: var(--green); }
-.brand-bar-right { display: flex; align-items: center; gap: 8px; }
-
-/* ── Full topnav (links + buttons) — scrolls with content ── */
+/* ── Single unified topnav — same on all pages ── */
 .topnav {
   display: flex;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 20px;
   height: 44px;
   border-bottom: 1px solid var(--bdr);
   background: var(--bg);
+  flex-shrink: 0;
   gap: 8px;
 }
-.topnav.nav-hidden { transform: none; }
-
-/* On token pages: brand-bar is hidden (brand lives in sidebar) */
-body.is-token .brand-bar { display: none; }
-/* On landing/compare: topnav gets extra top padding since brand-bar is sticky above it */
-body:not(.is-token) .topnav { border-top: none; }
-
-/* Brand in topnav hidden by default (lives in sidebar or brand-bar) */
-.topnav .nav-brand { display: none; }
+/* On token pages: brand lives in sidebar, hide it from topnav */
+body.is-token .topnav .nav-brand { display: none; }
+/* On landing/compare: show brand in topnav */
+body:not(.is-token) .topnav .nav-brand { display: flex; }
+.topnav .nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; margin-right: 8px;
+}
+.nav-brand-mark {
+  width: 26px; height: 26px;
+  background: var(--green); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800;
+  color: #050807; letter-spacing: -0.5px; flex-shrink: 0;
+}
+.nav-brand-text {
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+  color: var(--white); letter-spacing: -0.3px;
+}
+.nav-brand-text span { color: var(--green); }
 .topnav .nav-center {
-  position: static;
-  transform: none;
-  flex: 1;
-  display: flex;
-  gap: 2px;
+  position: static; transform: none;
+  flex: 1; display: flex; gap: 2px;
 }
 .nav-link {
   font-family: 'Inter', sans-serif;
@@ -1078,23 +1050,9 @@ body:not(.is-token) .topnav { border-top: none; }
      ════════════════════════════════════════════ -->
 <div class="app-right">
 
-<!-- ══ STICKY BRAND BAR (landing/compare only — hidden on token pages) ══ -->
-<div class="brand-bar" id="brand-bar">
-  <a href="index.html" class="brand-bar-logo">
-    <div class="brand-bar-mark">N</div>
-    <div class="brand-bar-text">NAV<span>gator</span></div>
-  </a>
-  <div class="brand-bar-right">
-    <a href="submit.html" class="nav-btn-outline">+ Submit Token</a>
-    <a href="#" class="nav-btn-solid">Sign In</a>
-  </div>
-</div>
-
-<div class="app-content" id="app-content">
-
-<!-- ══ SCROLLING NAV (links + buttons, scrolls with page) ══ -->
+<!-- ══ TOPNAV — one bar, same on all pages ══ -->
 <div class="topnav" id="global-nav">
-  <a href="index.html" class="nav-brand">
+  <a href="index.html" class="nav-brand" id="nav-brand">
     <div class="nav-brand-mark">N</div>
     <div class="nav-brand-text">NAV<span>gator</span></div>
   </a>
@@ -1108,6 +1066,8 @@ body:not(.is-token) .topnav { border-top: none; }
     <a href="#" class="nav-btn-solid">Sign In</a>
   </div>
 </div><!-- /topnav -->
+
+<div class="app-content" id="app-content">
 
 <!-- ══ LANDING ══ -->
 <div class="landing" id="landing-view">
