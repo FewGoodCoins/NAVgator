@@ -390,23 +390,21 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* DASHBOARD VIEW                                                  */
+/* DASHBOARD VIEW — TOKEN PAGE                                     */
 /* ═══════════════════════════════════════════════════════════════ */
 .dash-body { display: flex; gap: 0; align-items: flex-start; margin-left: -28px; }
 
-/* ── Left token panel ── */
+/* ── Left token switcher ── */
 .token-panel {
-  width: 180px;
+  width: 172px;
   flex-shrink: 0;
-  background: var(--bg2);
-  border-right: 1px solid var(--bdr2);
-  border-bottom: 1px solid var(--bdr2);
-  border-radius: 0 0 10px 0;
+  background: var(--bg);
+  border-right: 1px solid var(--bdr);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 80px);
+  height: calc(100vh - 56px);
   position: sticky;
-  top: 68px;
+  top: 56px;
   overflow: hidden;
 }
 .tp-search-wrap { padding: 10px 10px 8px; border-bottom: 1px solid var(--bdr); flex-shrink: 0; }
@@ -415,9 +413,9 @@ body {
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   padding: 6px 9px;
-  border-radius: 7px;
+  border-radius: 6px;
   border: 1px solid var(--bdr);
-  background: var(--bg);
+  background: var(--bg2);
   color: var(--white);
   outline: none;
   transition: border-color 0.15s;
@@ -428,139 +426,135 @@ body {
   font-size: 8px; font-weight: 600;
   color: var(--dim);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 7px 10px 3px;
+  letter-spacing: 1.2px;
+  padding: 10px 12px 4px;
   flex-shrink: 0;
 }
 .tp-list { overflow-y: auto; flex: 1; }
 .tp-item {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 9px;
   padding: 9px 12px;
   cursor: pointer;
   text-decoration: none;
-  border-bottom: 1px solid rgba(255,255,255,0.025);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
   transition: background 0.1s;
-  white-space: nowrap;
-  overflow: hidden;
+  white-space: nowrap; overflow: hidden;
 }
 .tp-item:hover { background: rgba(255,255,255,0.025); }
 .tp-item.active {
-  background: rgba(0,229,160,0.05);
+  background: rgba(0,229,160,0.04);
   border-left: 2px solid var(--green);
   padding-left: 10px;
 }
-.tp-icon { width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.tp-icon { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
 .tp-icon img { width: 100%; height: 100%; object-fit: cover; }
 .tp-name { font-size: 11px; font-weight: 600; color: var(--white); flex: 1; overflow: hidden; text-overflow: ellipsis; }
-.tp-price { font-size: 9px; color: var(--body); font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
+.tp-price { font-size: 9px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
 
-/* ── Main chart area ── */
-.dash-main { flex: 1; min-width: 0; padding: 0 0 0 20px; }
+/* ── Main column ── */
+.dash-main { flex: 1; min-width: 0; padding: 0 0 0 24px; }
 
-/* ── Token header ── */
+/* ════════════════════════════════════
+   TOKEN HERO HEADER
+   ════════════════════════════════════ */
 .token-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0 16px;
-  gap: 16px;
-  flex-wrap: wrap;
+  padding: 20px 0 18px;
+  gap: 20px;
+  border-bottom: 1px solid var(--bdr);
+  margin-bottom: 18px;
 }
 .th-left { display: flex; align-items: center; gap: 14px; }
-.th-icon { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.th-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  box-shadow: 0 0 0 2px var(--bdr2);
+}
 .th-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .th-name {
   font-family: 'Syne', sans-serif;
   font-size: 24px; font-weight: 700;
   color: var(--white);
-  letter-spacing: -0.3px;
-}
-.th-ticker {
-  font-size: 13px; font-weight: 500;
-  color: var(--dim);
-  margin-top: 1px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.th-right { display: flex; align-items: center; gap: 8px; }
-.th-price-block { text-align: right; }
-.th-price {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 28px; font-weight: 400;
-  color: var(--white);
-  letter-spacing: -1px;
+  letter-spacing: -0.4px;
   line-height: 1;
 }
-.th-price-change {
-  font-size: 12px; font-weight: 600;
-  margin-top: 3px;
-}
-.th-price-change.up { color: var(--green); }
-.th-price-change.down { color: var(--red); }
-#price-hero-pct {
-  font-size: 11px;
-  margin-left: 8px;
-  padding: 2px 6px;
+.th-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.th-ticker {
+  font-size: 10px; font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border: 1px solid var(--bdr2);
   border-radius: 4px;
+  padding: 2px 7px;
+}
+.th-live-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 9px; font-weight: 600;
+  color: var(--green);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.th-live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--green);
+  animation: livePulse 2s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,229,160,0.5); }
+  50%       { box-shadow: 0 0 0 4px rgba(0,229,160,0); }
+}
+.th-right { text-align: right; flex-shrink: 0; }
+.th-price {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 34px; font-weight: 300;
+  color: var(--white);
+  letter-spacing: -2px;
+  line-height: 1;
+}
+.th-price-meta { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.th-price-change {
+  font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.th-price-change.up   { background: rgba(0,229,160,0.1); color: var(--green); border: 1px solid rgba(0,229,160,0.15); }
+.th-price-change.down { background: rgba(240,64,96,0.1);  color: var(--red);   border: 1px solid rgba(240,64,96,0.15); }
+#price-hero-pct {
+  font-size: 11px; padding: 3px 9px; border-radius: 5px;
   font-family: 'IBM Plex Mono', monospace;
 }
 
-/* ── Metrics row (under header) ── */
-.metrics-strip {
+/* ════════════════════════════════════
+   TWO-COLUMN BODY
+   ════════════════════════════════════ */
+.token-body {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 1px;
-  background: var(--bdr);
-  border: 1px solid var(--bdr);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 20px;
+  grid-template-columns: 1fr 236px;
+  gap: 16px;
+  align-items: start;
 }
-.ms-item {
-  background: var(--bg2);
-  padding: 12px 16px;
-  transition: background 0.15s;
-}
-.ms-item:hover { background: var(--bg3); }
-.ms-label {
-  font-size: 8px; font-weight: 600;
-  color: var(--dim);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-.ms-val {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 15px; font-weight: 400;
-  color: var(--white);
-  line-height: 1;
-}
-.ms-sub {
-  font-size: 9px;
-  color: var(--dim);
-  margin-top: 3px;
-}
-.ms-val.green { color: var(--green); }
-.ms-val.red { color: var(--red); }
-.ms-val.orange { color: var(--orange); }
-.ms-val.large {
-  font-size: 22px;
-  letter-spacing: -0.5px;
-}
+.token-chart-col { min-width: 0; }
+.token-stats-col { display: flex; flex-direction: column; gap: 10px; }
+
+/* hide old flat metrics strip */
+.metrics-strip { display: none !important; }
 
 /* ── Chart section ── */
 .chart-section {
-  border: 1px solid var(--bdr2);
+  border: 1px solid var(--bdr);
   border-radius: 10px;
   overflow: hidden;
   background: var(--bg2);
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .chart-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 11px 16px;
   border-bottom: 1px solid var(--bdr);
   gap: 8px;
   flex-wrap: wrap;
@@ -576,7 +570,7 @@ body {
 .cbtn {
   font-family: 'Inter', sans-serif;
   font-size: 10px; font-weight: 500;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border-radius: 5px;
   border: 1px solid var(--bdr2);
   background: transparent;
@@ -586,13 +580,9 @@ body {
   letter-spacing: 0.2px;
 }
 .cbtn:hover { color: var(--white); border-color: var(--bdr3); }
-.cbtn.active {
-  border-color: var(--green);
-  color: var(--green);
-  background: var(--green-dim);
-}
-.chart-body { padding: 16px 8px 8px; position: relative; }
-#chart-container { width: 100%; min-height: 440px; position: relative; cursor: default; }
+.cbtn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+.chart-body { padding: 14px 8px 8px; position: relative; }
+#chart-container { width: 100%; min-height: 380px; position: relative; cursor: default; }
 #chart-canvas { display: block; }
 .chart-loading {
   position: absolute; top: 50%; left: 50%;
@@ -600,14 +590,10 @@ body {
   font-size: 11px; color: var(--dim);
   font-family: 'IBM Plex Mono', monospace;
 }
-
-/* Legend */
 .chart-legend {
-  display: flex;
-  gap: 20px;
-  padding: 8px 16px 14px;
-  font-size: 10px;
-  color: var(--muted);
+  display: flex; gap: 18px;
+  padding: 8px 16px 12px;
+  font-size: 10px; color: var(--muted);
 }
 .leg-item { display: flex; align-items: center; gap: 6px; }
 .leg-line { width: 18px; height: 2px; border-radius: 1px; }
@@ -619,9 +605,7 @@ body {
 
 /* Tooltip */
 .chart-tooltip {
-  position: absolute;
-  display: none;
-  pointer-events: none;
+  position: absolute; display: none; pointer-events: none;
   background: rgba(8,10,12,0.96);
   border: 1px solid var(--bdr2);
   border-radius: 10px;
@@ -636,52 +620,152 @@ body {
 .tt-key { font-size: 10px; color: var(--muted); }
 .tt-v { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--bright); }
 
-/* NAV Stats bar */
+/* ── NAV stats (compact, below chart in chart col) ── */
 .nav-stats-bar {
-  display: flex;
-  gap: 0;
-  border: 1px solid var(--bdr2);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--bdr);
+  border: 1px solid var(--bdr);
   border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 20px;
-  font-family: 'Inter', sans-serif;
+  margin-bottom: 12px;
 }
-.ns-item { flex: 1; padding: 14px 18px; }
-.ns-label { font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; }
-.ns-value { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 400; }
-.ns-sub { font-size: 9px; opacity: 0.6; margin-top: 2px; }
-.ns-progress { height: 3px; border-radius: 1px; margin-top: 8px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.ns-item { padding: 12px 16px; background: var(--bg2); }
+.ns-label { font-size: 8px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+.ns-value { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 400; }
+.ns-sub { font-size: 9px; color: var(--muted); margin-top: 2px; }
+.ns-progress { height: 2px; border-radius: 1px; margin-top: 8px; background: rgba(255,255,255,0.06); overflow: hidden; }
 .ns-progress-fill { height: 100%; border-radius: 1px; }
-.ns-above { background: rgba(0,229,160,0.05); color: var(--green); border-right: 1px solid var(--bdr2); }
-.ns-below { background: rgba(240,64,96,0.05); color: var(--red); border-right: 1px solid var(--bdr2); }
-.ns-neutral { background: var(--bg2); color: var(--muted); }
+.ns-above { color: var(--green); }
+.ns-below { color: var(--red); }
+.ns-neutral { color: var(--muted); }
 
-/* ── Params bar ── */
-.params-bar {
-  display: flex; flex-wrap: wrap; gap: 6px 24px;
-  font-size: 11px; color: var(--muted);
-  padding: 12px 0;
-  border-top: 1px solid var(--bdr);
-  border-bottom: 1px solid var(--bdr);
-  margin-bottom: 20px;
+/* ── Params bar (hidden) ── */
+.params-bar { display: none; }
+
+/* ════════════════════════════════════
+   STATS SIDEBAR COMPONENTS
+   ════════════════════════════════════ */
+
+/* NAV prominence card */
+.nav-card {
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg2);
+  padding: 16px 14px 14px;
+  position: relative;
 }
-.params-bar b { color: var(--body); font-weight: 600; }
-.params-bar .hl { color: var(--green); font-weight: 600; }
-.params-bar .sp { color: var(--red); font-weight: 600; }
+.nav-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--green) 0%, rgba(0,229,160,0.3) 100%);
+}
+.nc-eyebrow {
+  font-size: 8px; font-weight: 600;
+  color: var(--dim); text-transform: uppercase;
+  letter-spacing: 1.5px; margin-bottom: 8px;
+}
+.nc-nav-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 30px; font-weight: 300;
+  color: var(--white);
+  letter-spacing: -1.5px; line-height: 1;
+}
+.nc-nav-sub {
+  font-size: 10px; color: var(--muted);
+  margin-top: 4px; margin-bottom: 12px;
+}
+.nc-vs-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 7px;
+  font-size: 11px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.nc-vs-nav.above { background: rgba(0,229,160,0.07); color: var(--green); border: 1px solid rgba(0,229,160,0.12); }
+.nc-vs-nav.below { background: rgba(240,64,96,0.07);  color: var(--red);   border: 1px solid rgba(240,64,96,0.12); }
+.nc-vs-label { font-size: 9px; font-weight: 500; opacity: 0.7; font-family: 'Inter', sans-serif; }
+
+/* Treasury card */
+.treasury-card {
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  background: var(--bg2);
+  padding: 14px;
+}
+.tc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.tc-label { font-size: 8px; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: 1.5px; }
+.tc-total {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px; font-weight: 400;
+  color: var(--green); letter-spacing: -0.5px;
+}
+.tc-bar {
+  height: 5px; border-radius: 3px;
+  background: var(--bdr);
+  overflow: hidden; display: flex;
+  margin-bottom: 10px;
+}
+.tc-bar-seg { height: 100%; }
+.tc-rows { display: flex; flex-direction: column; gap: 6px; }
+.tc-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px;
+}
+.tc-row-left { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.tc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.tc-row-right { font-family: 'IBM Plex Mono', monospace; color: var(--body); font-size: 10px; }
+
+/* Generic stat card */
+.stat-card {
+  border: 1px solid var(--bdr);
+  border-radius: 10px;
+  background: var(--bg2);
+  overflow: hidden;
+}
+.sc-header {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--bdr);
+  font-size: 8px; font-weight: 600;
+  color: var(--dim); text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.sc-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.025);
+  transition: background 0.1s;
+}
+.sc-row:last-child { border-bottom: none; }
+.sc-row:hover { background: rgba(255,255,255,0.02); }
+.sc-key { font-size: 11px; color: var(--muted); }
+.sc-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; color: var(--bright);
+}
+.sc-val.green  { color: var(--green); }
+.sc-val.red    { color: var(--red); }
+.sc-val.orange { color: var(--orange); }
+.sc-val.dim    { color: var(--muted); }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/* BOTTOM SECTIONS                                                 */
+/* BOTTOM SECTIONS (full width, below the two-column body)        */
 /* ═══════════════════════════════════════════════════════════════ */
 .section-block {
   background: var(--bg2);
-  border: 1px solid var(--bdr2);
+  border: 1px solid var(--bdr);
   border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .sb-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--bdr);
 }
 .sb-title {
@@ -892,9 +976,11 @@ body {
 @media (max-width: 900px) {
   .nav-center { display: none; }
   .dash-body { flex-direction: column; margin-left: 0; }
-  .token-panel { width: 100%; max-height: 120px; flex-direction: row; border-radius: 0; position: static; }
+  .token-panel { width: 100%; height: auto; max-height: 120px; flex-direction: row; border-radius: 0; position: static; border-right: none; border-bottom: 1px solid var(--bdr); }
   .tp-list { flex-direction: row; display: flex; }
   .dash-main { padding: 0; }
+  .token-body { grid-template-columns: 1fr; }
+  .token-stats-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
   .token-table td:nth-child(7), .token-table th:nth-child(7) { display: none; }
 }
 @media (max-width: 768px) {
@@ -1042,18 +1128,27 @@ body {
 <!-- ══ DASHBOARD ══ -->
 <div class="dashboard" id="dashboard-view">
 
-  <!-- Hidden compat elements -->
-  <div class="sub" id="sub-line" style="display:none"></div>
+  <!-- Hidden compat IDs used by JS -->
+  <div id="sub-line" style="display:none"></div>
   <h1 id="title" style="display:none"></h1>
-  <div id="desc" style="display:none"></div>
   <div id="chart-label" style="display:none"></div>
   <div id="params" style="display:none"></div>
   <div id="treasury-flow" style="display:none"></div>
-  <div id="nav-stats-bar" class="nav-stats-bar" style="display:none"></div>
+  <div id="nav-stats-bar" style="display:none"></div>
+  <div id="metrics-panel" style="display:none">
+    <div id="mp-price"></div><div id="mp-nav"></div><div id="mp-vsnav"></div>
+    <div id="mp-treasury"></div><div id="mp-runway"></div><div id="mp-mcap"></div>
+    <div id="mp-circ"></div><div id="mp-age"></div>
+    <div id="mp-chg-1h"></div><div id="mp-chg-1d"></div><div id="mp-chg-7d"></div>
+    <div id="mp-watchlist-btn"></div><div id="mp-outflow"></div><div id="mp-inflow"></div>
+    <div id="dash-wl-star"></div><div id="mp-wl-label"></div>
+    <div id="mp-ticker-label"></div><div id="mp-mint-copy"></div><div id="cards"></div>
+    <div id="desc"></div>
+  </div>
 
   <div class="dash-body">
 
-    <!-- Left token panel -->
+    <!-- ── Left token switcher ── -->
     <div class="token-panel" id="token-left-panel">
       <div class="tp-search-wrap">
         <input type="text" class="tp-search" id="tlp-search" placeholder="Search…" autocomplete="off">
@@ -1064,125 +1159,185 @@ body {
       <div class="tp-list" id="tlp-all-list"></div>
     </div>
 
-    <!-- Main content -->
+    <!-- ── Main content ── -->
     <div class="dash-main">
 
-      <!-- Token header -->
+      <!-- HERO HEADER -->
       <div class="token-header">
         <div class="th-left">
           <div class="th-icon" id="token-icon"></div>
           <div>
             <div class="th-name" id="token-title-name">—</div>
-            <div class="th-ticker" id="token-title-ticker">—</div>
+            <div class="th-meta">
+              <span class="th-ticker" id="token-title-ticker">—</span>
+              <span class="th-live-pill" id="th-live-pill" style="display:none">
+                <span class="th-live-dot"></span>LIVE
+              </span>
+            </div>
           </div>
         </div>
         <div class="th-right">
-          <div class="th-price-block">
-            <div class="th-price">
-              <span id="price-hero-val">—</span>
-              <span id="price-hero-pct" style="display:none"></span>
-            </div>
-            <div id="price-hero-change" class="th-price-change" style="display:none"></div>
+          <div class="th-price" id="price-hero-val">—</div>
+          <div class="th-price-meta">
+            <span id="price-hero-pct" style="display:none"></span>
+            <span id="price-hero-change" class="th-price-change" style="display:none"></span>
           </div>
         </div>
       </div>
 
-      <!-- Metrics strip -->
-      <div class="metrics-strip" id="metrics-panel" style="opacity:0;transition:opacity 0.3s">
-        <div class="ms-item" id="mp-price"></div>
-        <div class="ms-item" id="mp-nav"></div>
-        <div class="ms-item" id="mp-vsnav"></div>
-        <div class="ms-item" id="mp-treasury"></div>
-        <div class="ms-item" id="mp-runway"></div>
-        <div class="ms-item" id="mp-mcap"></div>
-        <div class="ms-item" id="mp-circ"></div>
-        <div class="ms-item" id="mp-age"></div>
-        <!-- hidden compat -->
-        <div id="mp-chg-1h" style="display:none"></div>
-        <div id="mp-chg-1d" style="display:none"></div>
-        <div id="mp-chg-7d" style="display:none"></div>
-        <div id="mp-watchlist-btn" style="display:none"></div>
-        <div id="mp-outflow" style="display:none"></div>
-        <div id="mp-inflow" style="display:none"></div>
-        <div id="dash-wl-star" style="display:none"></div>
-        <div id="mp-wl-label" style="display:none"></div>
-        <div id="mp-ticker-label" style="display:none"></div>
-        <div id="mp-mint-copy" style="display:none"></div>
-        <div id="cards" style="display:none"></div>
-      </div>
+      <!-- TWO-COLUMN BODY -->
+      <div class="token-body">
 
-      <!-- NAV stats (revealed by JS) -->
-      <div id="nav-stats-outer"></div>
+        <!-- LEFT: chart + NAV stats + sections -->
+        <div class="token-chart-col">
 
-      <!-- Chart -->
-      <div class="chart-section">
-        <div class="chart-topbar">
-          <div class="chart-label" id="chart-label-vis">Price vs NAV</div>
-          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-            <div class="chart-controls" id="chart-controls">
-              <button class="cbtn" data-tf="6H">6H</button>
-              <button class="cbtn" data-tf="12H">12H</button>
-              <button class="cbtn active" data-tf="1D">1D</button>
+          <div class="chart-section">
+            <div class="chart-topbar">
+              <div class="chart-label" id="chart-label-vis">Price vs NAV</div>
+              <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                <div class="chart-controls" id="chart-controls">
+                  <button class="cbtn" data-tf="6H">6H</button>
+                  <button class="cbtn" data-tf="12H">12H</button>
+                  <button class="cbtn active" data-tf="1D">1D</button>
+                </div>
+                <div class="chart-controls">
+                  <button class="cbtn active" id="btn-lin">LINE</button>
+                </div>
+                <div class="chart-controls">
+                  <button class="cbtn" id="btn-nav-focus" onclick="toggleNavFocus()">NAV ZOOM</button>
+                </div>
+              </div>
             </div>
-            <div class="chart-controls" style="margin-left:6px;padding-left:10px;border-left:1px solid var(--bdr2)">
-              <button class="cbtn active" id="btn-lin">LINE</button>
+            <div class="chart-body">
+              <div id="chart-container" style="position:relative">
+                <canvas id="chart-canvas"></canvas>
+                <div class="chart-tooltip" id="chart-tooltip"></div>
+                <div class="chart-loading" id="chart-loading">Loading chart…</div>
+              </div>
             </div>
-            <div class="chart-controls" style="margin-left:2px">
-              <button class="cbtn" id="btn-nav-focus" onclick="toggleNavFocus()">NAV</button>
+            <div class="chart-legend">
+              <div class="leg-item"><div class="leg-line" style="background:#c8d8e4"></div><span id="leg-spot-label">Price</span></div>
+              <div class="leg-item"><div class="leg-dash"></div><span id="leg-nav-label">NAV</span></div>
+              <div class="leg-item"><div class="leg-fill" style="background:rgba(0,229,160,0.18)"></div><span>Above NAV</span></div>
+              <div class="leg-item"><div class="leg-fill" style="background:rgba(240,64,96,0.18)"></div><span>Below NAV</span></div>
             </div>
           </div>
-        </div>
-        <div class="chart-body">
-          <div id="chart-container" style="position:relative">
-            <canvas id="chart-canvas"></canvas>
-            <div class="chart-tooltip" id="chart-tooltip"></div>
-            <div class="chart-loading" id="chart-loading">Loading chart…</div>
-          </div>
-        </div>
-        <div class="chart-legend">
-          <div class="leg-item">
-            <div class="leg-line" style="background:#c8d8e4"></div>
-            <span id="leg-spot-label">Price</span>
-          </div>
-          <div class="leg-item">
-            <div class="leg-dash"></div>
-            <span id="leg-nav-label">NAV</span>
-          </div>
-          <div class="leg-item">
-            <div class="leg-fill" style="background:rgba(0,229,160,0.18)"></div>
-            <span>Above NAV</span>
-          </div>
-          <div class="leg-item">
-            <div class="leg-fill" style="background:rgba(240,64,96,0.18)"></div>
-            <span>Below NAV</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- Relevant Addresses -->
-      <div class="section-block" id="addr-section-block">
-        <div class="sb-header">
-          <span class="sb-title">Relevant Addresses</span>
-          <span class="sb-sub">Verified wallets · Solana</span>
-        </div>
-        <div class="addr-inner" id="addr-section"></div>
-      </div>
+          <!-- NAV stats row below chart -->
+          <div id="nav-stats-outer"></div>
 
-      <!-- Allowance Schedule -->
-      <div class="section-block" id="allowance-section" style="display:none">
-        <div class="sb-header">
-          <span class="sb-title">Allowance Schedule</span>
-          <span class="sb-sub" id="allowance-sub-label"></span>
-        </div>
-        <div class="allowance-cards" id="allowance-cards"></div>
-        <div class="allowance-history" id="allowance-history"></div>
-      </div>
+          <!-- Wallet Addresses -->
+          <div class="section-block" id="addr-section-block">
+            <div class="sb-header">
+              <span class="sb-title">Wallet Addresses</span>
+              <span class="sb-sub">Verified · Solana</span>
+            </div>
+            <div class="addr-inner" id="addr-section"></div>
+          </div>
 
-      <div class="footer">
-        <a href="index.html">← NAVgator Home</a> ·
-        <a href="submit.html">Submit a Token</a> ·
-        Treasury analytics for ownership tokens · Not financial advice
-      </div>
+          <!-- Allowance Schedule -->
+          <div class="section-block" id="allowance-section" style="display:none">
+            <div class="sb-header">
+              <span class="sb-title">Allowance Schedule</span>
+              <span class="sb-sub" id="allowance-sub-label"></span>
+            </div>
+            <div class="allowance-cards" id="allowance-cards"></div>
+            <div class="allowance-history" id="allowance-history"></div>
+          </div>
+
+          <div class="footer" style="padding-left:0;text-align:left">
+            <a href="index.html">← Markets</a> ·
+            <a href="submit.html">Submit Token</a> ·
+            Not financial advice
+          </div>
+
+        </div><!-- /token-chart-col -->
+
+        <!-- RIGHT: stats sidebar -->
+        <div class="token-stats-col" id="token-stats-col">
+
+          <!-- NAV card -->
+          <div class="nav-card" id="nc-nav-card">
+            <div class="nc-eyebrow">Net Asset Value</div>
+            <div class="nc-nav-val" id="nc-nav-val">—</div>
+            <div class="nc-nav-sub" id="nc-nav-sub">per token</div>
+            <div class="nc-vs-nav above" id="nc-vs-row" style="display:none">
+              <span id="nc-vs-pct">—</span>
+              <span class="nc-vs-label" id="nc-vs-label">vs floor</span>
+            </div>
+          </div>
+
+          <!-- Treasury card -->
+          <div class="treasury-card" id="tc-card">
+            <div class="tc-header">
+              <span class="tc-label">Treasury</span>
+              <span class="tc-total" id="tc-total">—</span>
+            </div>
+            <div class="tc-bar" id="tc-bar"></div>
+            <div class="tc-rows" id="tc-rows"></div>
+          </div>
+
+          <!-- Valuation stats -->
+          <div class="stat-card">
+            <div class="sc-header">Valuation</div>
+            <div class="sc-row">
+              <span class="sc-key">Spot Price</span>
+              <span class="sc-val" id="sc-spot">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">Market Cap</span>
+              <span class="sc-val" id="sc-mcap">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">Circulating</span>
+              <span class="sc-val dim" id="sc-circ">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">ICO Price</span>
+              <span class="sc-val dim" id="sc-ico">—</span>
+            </div>
+          </div>
+
+          <!-- Health stats -->
+          <div class="stat-card">
+            <div class="sc-header">Treasury Health</div>
+            <div class="sc-row">
+              <span class="sc-key">Monthly Burn</span>
+              <span class="sc-val orange" id="sc-burn">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">Runway</span>
+              <span class="sc-val" id="sc-runway">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">Age (post-TGE)</span>
+              <span class="sc-val dim" id="sc-age">—</span>
+            </div>
+          </div>
+
+          <!-- Performance stats -->
+          <div class="stat-card">
+            <div class="sc-header">Performance</div>
+            <div class="sc-row">
+              <span class="sc-key">24H</span>
+              <span class="sc-val dim" id="sc-chg-1d">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">7D</span>
+              <span class="sc-val dim" id="sc-chg-7d">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">30D</span>
+              <span class="sc-val dim" id="sc-chg-30d">—</span>
+            </div>
+            <div class="sc-row">
+              <span class="sc-key">Since ICO</span>
+              <span class="sc-val dim" id="sc-chg-ico">—</span>
+            </div>
+          </div>
+
+        </div><!-- /token-stats-col -->
+      </div><!-- /token-body -->
 
     </div><!-- /dash-main -->
   </div><!-- /dash-body -->
@@ -2280,18 +2435,19 @@ function initChart(rawCandles, navPerToken) {
       }
       return null;
     }
-    function updateMsItem(id, label, pct) {
+    // Write to new sidebar sc-chg-* elements
+    function setSidebarChg(id, pct) {
       var el = document.getElementById(id);
       if (!el) return;
-      if (pct === null) { el.innerHTML = '<div class="ms-label">' + label + '</div><div class="ms-val" style="color:var(--dim)">—</div>'; return; }
-      var c = pct >= 0 ? 'var(--green)' : 'var(--red)';
-      el.innerHTML = '<div class="ms-label">' + label + '</div><div class="ms-val" style="color:' + c + ';font-size:14px">' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%</div>';
+      if (pct === null) { el.textContent = '—'; el.className = 'sc-val dim'; return; }
+      el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+      el.className = 'sc-val ' + (pct >= 0 ? 'green' : 'red');
     }
-    updateMsItem('mp-chg-1h', '24H', calcChange(24));
-    updateMsItem('mp-chg-1d', '7D', calcChange(168));
-    updateMsItem('mp-chg-7d', '30D', calcChange(720));
+    setSidebarChg('sc-chg-1d',  calcChange(24));
+    setSidebarChg('sc-chg-7d',  calcChange(168));
+    setSidebarChg('sc-chg-30d', calcChange(720));
 
-    // Update price-hero-pct
+    // price-hero-pct (timeframe badge)
     var tfHours = { '6H': 6, '12H': 12, '1D': 24 }[_chartTF] || 24;
     var cutoff2 = now - tfHours * 3600;
     var first = candles[0];
@@ -2303,11 +2459,12 @@ function initChart(rawCandles, navPerToken) {
     if (pctEl && openPrice && openPrice > 0) {
       var pct = ((lastPrice - openPrice) / openPrice) * 100;
       pctEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-      pctEl.style.background = pct >= 0 ? 'rgba(0,229,160,0.12)' : 'rgba(240,64,96,0.12)';
+      pctEl.style.background = pct >= 0 ? 'rgba(0,229,160,0.1)' : 'rgba(240,64,96,0.1)';
       pctEl.style.color = pct >= 0 ? 'var(--green)' : 'var(--red)';
+      pctEl.style.border = pct >= 0 ? '1px solid rgba(0,229,160,0.15)' : '1px solid rgba(240,64,96,0.15)';
       pctEl.style.borderRadius = '5px';
-      pctEl.style.padding = '2px 7px';
-      pctEl.style.fontSize = '12px';
+      pctEl.style.padding = '3px 9px';
+      pctEl.style.fontSize = '11px';
       pctEl.style.display = 'inline';
     }
   }
@@ -2346,7 +2503,7 @@ function renderUI(isLive) {
   var circulatingSupply = (CFG.onChainSupply || supplyForNAV) - (CFG.lockTokenBalance || 0);
   if (circulatingSupply <= 0) circulatingSupply = supplyForNAV;
 
-  // Token icon
+  // Token icon + name
   var iconEl = document.getElementById('token-icon');
   if (iconEl) {
     if (CFG.logo) iconEl.innerHTML = '<img src="' + CFG.logo + '" alt="' + CFG.ticker + '" style="width:100%;height:100%;object-fit:cover;display:block">';
@@ -2355,56 +2512,103 @@ function renderUI(isLive) {
   document.getElementById('token-title-name').textContent = CFG.name;
   document.getElementById('token-title-ticker').textContent = CFG.ticker;
 
+  // Live pill
+  if (isLive) {
+    var livePill = document.getElementById('th-live-pill');
+    if (livePill) livePill.style.display = 'flex';
+  }
+
   // Price hero
   document.getElementById('price-hero-val').textContent = fmt$(CFG.spot);
   var phc = document.getElementById('price-hero-change');
   if (phc) {
-    phc.textContent = (isDiscount ? '' : '+') + discPct.toFixed(2) + '% vs NAV (' + fmt$(strike) + ')';
+    phc.textContent = (isDiscount ? '' : '+') + discPct.toFixed(2) + '% vs NAV';
     phc.className = 'th-price-change ' + (isDiscount ? 'down' : 'up');
-    phc.style.display = 'block';
+    phc.style.display = 'inline-block';
   }
 
-  // Compat hidden elements
-  document.getElementById('sub-line').innerHTML = CFG.pair + ' · FUTARCHY CPMM · ' + (isLive ? 'LIVE' : 'SNAPSHOT');
+  // Hidden compat IDs
+  document.getElementById('sub-line').innerHTML = CFG.pair + ' · ' + (isLive ? 'LIVE' : 'SNAPSHOT');
   document.getElementById('title').textContent = CFG.ticker;
   document.getElementById('chart-label').textContent = CFG.ticker + ' Price vs NAV';
   document.getElementById('leg-spot-label').textContent = CFG.ticker + ' Price';
   document.getElementById('leg-nav-label').textContent = CFG.ticker + ' NAV';
+  document.getElementById('chart-label-vis').textContent = CFG.ticker + ' · Price vs NAV';
 
-  // Metrics strip
-  var msPrice = document.getElementById('mp-price');
-  if (msPrice) msPrice.innerHTML = '<div class="ms-label">Price</div><div class="ms-val large">' + fmt$(CFG.spot) + '</div>';
-
-  var msNav = document.getElementById('mp-nav');
-  if (msNav) msNav.innerHTML = '<div class="ms-label">NAV / Token</div><div class="ms-val">' + fmt$(strike) + '</div>';
-
-  var msVsnav = document.getElementById('mp-vsnav');
-  if (msVsnav) {
-    var color = isDiscount ? 'var(--red)' : 'var(--green)';
-    var txt = isDiscount ? '-' + Math.abs(discPct).toFixed(1) + '%' : '+' + discPct.toFixed(0) + '%';
-    msVsnav.innerHTML = '<div class="ms-label">P/NAV</div><div class="ms-val" style="color:' + color + '">' + txt + '</div><div class="ms-sub">' + (isDiscount ? 'Discount to floor' : 'Premium to floor') + '</div>';
+  // ── NAV card ──
+  var ncNav = document.getElementById('nc-nav-val');
+  if (ncNav) ncNav.textContent = fmt$(strike);
+  var ncSub = document.getElementById('nc-nav-sub');
+  if (ncSub) ncSub.textContent = fmtM(CFG.treasuryUSDC) + ' ÷ ' + (circulatingSupply / 1e6).toFixed(2) + 'M tokens';
+  var ncVsRow = document.getElementById('nc-vs-row');
+  var ncVsPct  = document.getElementById('nc-vs-pct');
+  var ncVsLbl  = document.getElementById('nc-vs-label');
+  if (ncVsRow && ncVsPct && strike > 0) {
+    ncVsRow.style.display = 'flex';
+    ncVsRow.className = 'nc-vs-nav ' + (isDiscount ? 'below' : 'above');
+    ncVsPct.textContent = (isDiscount ? '' : '+') + discPct.toFixed(2) + '%';
+    ncVsLbl.textContent = isDiscount ? 'below floor' : 'above floor';
   }
 
-  var msTreas = document.getElementById('mp-treasury');
-  if (msTreas) msTreas.innerHTML = '<div class="ms-label">Treasury</div><div class="ms-val green">' + fmtM(CFG.treasuryUSDC) + '</div><div class="ms-sub">DAO + AMMs</div>';
+  // ── Treasury card ──
+  var totalTreasury = CFG.treasuryUSDC || 0;
+  var daoUSDC = CFG.daoUSDC || 0;
+  var futUSDC = CFG.futAmmUSDC || 0;
+  var metUSDC = CFG.metAmmUSDC || 0;
+  var safe = totalTreasury || 1;
 
-  var msRunway = document.getElementById('mp-runway');
-  if (msRunway) msRunway.innerHTML = '<div class="ms-label">Runway</div><div class="ms-val orange">' + monthsLeft + ' mo</div><div class="ms-sub">' + fmtBurn(burn) + '/mo burn</div>';
+  var tcTotal = document.getElementById('tc-total');
+  if (tcTotal) tcTotal.textContent = fmtM(totalTreasury);
 
-  var msMcap = document.getElementById('mp-mcap');
-  if (msMcap) msMcap.innerHTML = '<div class="ms-label">Market Cap</div><div class="ms-val">' + fmtM(CFG.spot * circulatingSupply) + '</div>';
+  var tcBar = document.getElementById('tc-bar');
+  if (tcBar) {
+    var segs = [
+      { pct: (daoUSDC / safe * 100), color: 'var(--green)' },
+      { pct: (futUSDC / safe * 100), color: '#4d8fff' },
+      { pct: (metUSDC / safe * 100), color: '#a48ffc' },
+    ].filter(function(s) { return s.pct > 0; });
+    tcBar.innerHTML = segs.map(function(s) {
+      return '<div class="tc-bar-seg" style="width:' + s.pct.toFixed(1) + '%;background:' + s.color + '"></div>';
+    }).join('');
+  }
 
-  var msCirc = document.getElementById('mp-circ');
-  if (msCirc) msCirc.innerHTML = '<div class="ms-label">Circulating</div><div class="ms-val">' + (circulatingSupply / 1e6).toFixed(1) + 'M</div>';
+  var tcRows = document.getElementById('tc-rows');
+  if (tcRows) {
+    var sources = [
+      { label: 'DAO Treasury',  val: daoUSDC, color: 'var(--green)' },
+      { label: 'Futarchy AMM',  val: futUSDC, color: '#4d8fff' },
+      { label: 'Meteora AMM',   val: metUSDC, color: '#a48ffc' },
+    ].filter(function(r) { return r.val > 0; });
+    tcRows.innerHTML = sources.map(function(r) {
+      return '<div class="tc-row"><span class="tc-row-left"><span class="tc-dot" style="background:' + r.color + '"></span>' + r.label + '</span><span class="tc-row-right">' + fmtM(r.val) + '</span></div>';
+    }).join('');
+  }
 
-  var msAge = document.getElementById('mp-age');
-  if (msAge) {
-    var ageMo = '—';
-    if (CFG.launchDate) {
-      var launch = new Date(CFG.launchDate);
-      ageMo = Math.floor((new Date() - launch) / (30.44 * 24 * 60 * 60 * 1000));
-    }
-    msAge.innerHTML = '<div class="ms-label">Runtime</div><div class="ms-val">' + ageMo + ' mo</div><div class="ms-sub">Post TGE</div>';
+  // ── Valuation stats ──
+  var set = function(id, text, cls) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    if (cls) el.className = 'sc-val ' + cls;
+  };
+  set('sc-spot', fmt$(CFG.spot));
+  set('sc-mcap', fmtM(CFG.spot * circulatingSupply));
+  set('sc-circ', (circulatingSupply / 1e6).toFixed(2) + 'M', 'dim');
+  set('sc-ico', CFG.icoPrice ? fmt$(CFG.icoPrice) : '—', 'dim');
+
+  // ── Health stats ──
+  set('sc-burn', fmtBurn(burn) + '/mo', 'orange');
+  set('sc-runway', monthsLeft + ' months');
+  var ageMo = '—';
+  if (CFG.launchDate) {
+    ageMo = Math.floor((new Date() - new Date(CFG.launchDate)) / (30.44 * 24 * 60 * 60 * 1000)) + ' mo';
+  }
+  set('sc-age', ageMo, 'dim');
+
+  // Since ICO perf
+  if (CFG.icoPrice > 0 && CFG.spot > 0) {
+    var sinceIco = ((CFG.spot - CFG.icoPrice) / CFG.icoPrice * 100);
+    set('sc-chg-ico', (sinceIco >= 0 ? '+' : '') + sinceIco.toFixed(1) + '%', sinceIco >= 0 ? 'green' : 'red');
   }
 
   return strike;
@@ -2578,8 +2782,6 @@ function renderAllowance(data) {
   CFG.effectiveSupply = CFG.supply;
 
   document.getElementById('price-hero-val').textContent = '—';
-  var metricsPanel = document.getElementById('metrics-panel');
-  if (metricsPanel) metricsPanel.style.opacity = '0';
 
   // Set token header immediately
   var iconEl = document.getElementById('token-icon');
@@ -2597,7 +2799,6 @@ function renderAllowance(data) {
     var ohlcv = results[0], apiOk = results[1];
     var isLive = !!(ohlcv || apiOk);
     var navPerToken = renderUI(isLive);
-    if (metricsPanel) metricsPanel.style.opacity = '1';
     renderBalances();
     fetchAllowance();
 
